@@ -4,14 +4,14 @@ from utils import get_root_path
 
 
 class PropagationTask:
-    def __init__(self, alpha=0.1, n_max_iterations=200, convergence_th=1e-5, network_file='H_sapiens.net',
+    def __init__(self, experiment_name, alpha=0.1, network_file='H_sapiens.net',
                  create_similarity_matrix=True):
         """
         Initialize the Propagation Task with default and optional parameters.
         """
 
         # General Parameters
-        self.experiment_name = 'T_N'
+        self.experiment_name = experiment_name
         self.experiment_file = 'scores.xlsx'
         self.root_folder = path.dirname(path.realpath(__file__))
         self.data_file = 'Data'
@@ -24,8 +24,6 @@ class PropagationTask:
         self.remove_self_propagation = False
         # Propagation Parameters
         self.alpha = alpha
-        self.n_max_iterations = n_max_iterations
-        self.convergence_th = convergence_th
 
         # Derived Parameters (Initial placeholders)
         self.data_dir = None
@@ -73,7 +71,7 @@ class EnrichTask:
 
 
 class RawScoreTask:
-    def __init__(self, name, score_file_path, sheet_name, statistic_test, propagation_input_type,
+    def __init__(self, name, experiment_file_path, score_file_path, sheet_name, statistic_test, propagation_input_type,
                  constrain_to_network_genes=True):
         self.name = name
         self.score_file_path = score_file_path
@@ -82,10 +80,11 @@ class RawScoreTask:
         self.propagation_input_type = propagation_input_type
         self.constrain_to_experiment = constrain_to_network_genes
         self.results = dict()
+        self.experiment_file_path = experiment_file_path
 
 
 class GeneralArgs:
-    def __init__(self, network_path, genes_names_path, pathway_members_path,
+    def __init__(self, network_path, genes_names_path, pathway_members_path, FDR_threshold=0.1,
                  output_folder_name=None, figure_name=None, figure_title='Pathway Enrichment '):
         self.minimum_gene_per_pathway = 10
         self.maximum_gene_per_pathway = 50
@@ -94,10 +93,18 @@ class GeneralArgs:
         self.genes_names_file_path = genes_names_path
         self.pathway_databases = ['_']
         self.pathway_keywords = ['_']
-        self.significant_pathway_threshold = 1
+        self.significant_pathway_threshold = FDR_threshold
         if output_folder_name is None:
-            output_folder_name = path.basename(__file__).split('.')[0]
+            output_folder_name = 'Enrichment_maps'
         self.output_path = path.join(get_root_path(), 'Outputs', output_folder_name)
         self.figure_name = figure_name if figure_name is not None else 'figure'
         self.pathway_members_path = pathway_members_path
         self.figure_title = figure_title
+
+
+class PathwayResults:
+    def __init__(self, p_value, direction, score):
+        self.p_value = p_value
+        self.direction = direction
+        self.adj_p_value = None
+        self.score = score

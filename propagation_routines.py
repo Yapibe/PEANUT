@@ -109,14 +109,15 @@ def read_sparse_matrix_txt(network, similarity_matrix_path):
     return matrix, genes
 
 
-def propagate_network(network, propagation_input, task: PropagationTask, matrix, genes):
+def propagate_network(propagation_input, matrix, genes):
     num_genes = len(genes)
     gene_indexes = dict([(gene, index) for (index, gene) in enumerate(genes)])
 
     time_start = time.time()
-    gene_scores = propagate_with_inverse([x for x in propagation_input.keys()], propagation_input, matrix,
-                                             gene_indexes, num_genes)
+    inverted_gene_scores = propagate_with_inverse([x for x in propagation_input.keys()], propagation_input, matrix,
+                                                  gene_indexes, num_genes)
+
     time_end = time.time()
     print(f"Time to propagate: {time_end - time_start} seconds")
 
-    return gene_indexes, gene_scores
+    return gene_indexes, inverted_gene_scores

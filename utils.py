@@ -3,6 +3,9 @@ import networkx as nx
 import numpy as np
 import os
 from os import path
+import pickle
+import zlib
+
 
 def read_network(network_filename):
     """
@@ -103,3 +106,47 @@ def save_propagation_score(propagation_scores, prior_set, propagation_input, gen
 
 def get_root_path():
     return path.dirname(path.realpath(__file__))
+
+
+def load_pathways_genes(pathways_dir):
+    """
+    load the pathways from a file
+    :param pathways_dir: the file containing the pathways
+    :return: a dictionary from pathway name to a list of genes in the pathway
+    """
+    with open(pathways_dir, 'r') as f:
+        lines = [str.upper(x.strip()).split('\t') for x in f]
+    pathways = {x[0]: [int(y) for y in x[2:]] for x in lines}
+
+    return pathways
+
+
+def load_file(load_dir, decompress=True):
+    """
+    load a file from a directory using pickle with optional decompression
+    :param load_dir: the directory to load the file from
+    :param decompress: whether to decompress the file
+    :return: the loaded object
+    """
+    with open(load_dir, 'rb') as f:
+        file = pickle.load(f)
+    if decompress:
+        try:
+            file = pickle.loads(zlib.decompress(file))
+        except zlib.error:
+            print('Entered an uncompressed file but asked to decompress it')
+    return file
+
+
+def load_propagation_scores(task, propagation_file_name=None):
+    """
+    this function loads the propagation scores from a file
+    :param task: the arguments of the program
+    :param propagation_file_name: the name of the file to load the results from
+    :return: the propagation scores, the propagation input, a dictionary from gene index to gene id
+    """
+
+    propagation_results_path = path.join(task.propagation_scores_path, propagation_file_name)
+    propagation_result_dict: dict = load_file(propagation_results_path, decompress=True)
+
+    return propagation_result_dict

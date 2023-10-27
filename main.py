@@ -2,11 +2,14 @@ from args import PropagationTask, EnrichTask, GeneralArgs
 import utils
 from propagation_routines import propagate_network, generate_similarity_matrix, read_sparse_matrix_txt
 from statistic_methods import wilcoxon_rank_sums_test
+from pathway_enrichment import run
+import numpy as np
+import time
 
 
 def main(full_calculation=True):
     # create a propagation task
-    task = PropagationTask(create_similarity_matrix=False)
+    task = PropagationTask(experiment_name='500nm_v_T', create_similarity_matrix=False)
 
     # reads the network graph from a file
     network = utils.read_network(task.network_file_path)
@@ -35,20 +38,28 @@ def main(full_calculation=True):
 
     print("propagating")
     # Propagate network
-    score_genes_id_to_idx, score_gene_scores = propagate_network(network, propagation_input, task, matrix, genes)
-    ones_genes_id_to_idx, ones_gene_scores = propagate_network(network, ones_input, task, matrix, genes)
+    score_genes_id_to_idx, score_gene_scores_inverse = propagate_network(propagation_input, matrix, genes)
+    ones_genes_id_to_idx, ones_gene_scores_inverse = propagate_network(ones_input, matrix, genes)
     del matrix
-    # genes_idx_to_id = {xx: x for x, xx in genes_id_to_idx.items()}
-    # Replace zeros in ones_gene_scores with a small constant
-    ones_gene_scores[ones_gene_scores == 0] = 1e-10
+    score_genes_idx_to_id = {xx: x for x, xx in score_genes_id_to_idx.items()}
 
-    # Normalize the actual propagated scores
-    normalized_gene_scores = score_gene_scores / ones_gene_scores
+    # Identify genes with zero normalization score but non-zero propagation score
+    zero_normalization_genes = np.nonzero(ones_gene_scores_inverse == 0)[0]
+    zero_propagation_genes = np.nonzero(score_gene_scores_inverse == 0)[0]
+    genes_to_delete = list(set(zero_normalization_genes).difference(zero_propagation_genes))
+
+    # Set the normalization score of these genes to 1
+    ones_gene_scores_inverse[genes_to_delete] = 1
+
+    # Perform the normalization
+    non_zero_indices = np.nonzero(score_gene_scores_inverse != 0)[0]
+    score_gene_scores_inverse[non_zero_indices] = score_gene_scores_inverse[non_zero_indices] / np.abs(
+        ones_gene_scores_inverse[non_zero_indices])
 
     # save propagation score
     print("saving propagation score")
-    utils.save_propagation_score(propagation_scores=normalized_gene_scores, prior_set=prior_data,
-                                 propagation_input=propagation_input, genes_idx_to_id=score_genes_id_to_idx,
+    utils.save_propagation_score(propagation_scores=score_gene_scores_inverse, prior_set=prior_data,
+                                 propagation_input=propagation_input, genes_idx_to_id=score_genes_idx_to_id,
                                  task=task, save_dir=task.output_folder, date=task.date)
 
     if not full_calculation:
@@ -56,21 +67,29 @@ def main(full_calculation=True):
 
     # run enrichment
     print("running enrichment")
-    file_name = f"{task.experiment_name}_{task.propagation_input_type}_{task.alpha}_{task.date}"
-
-    propagation_scores_file = '{}_{}_{}_{}_IPN'.format(task.experiment_name, task.propagation_input_type,
-                                                       task.alpha, task.date)
+    tasks = []
+    propagation_scores_file = '{}_{}_{}_{}'.format(task.experiment_name, task.propagation_input_type,
+                                                   task.alpha, task.date)
     task1 = EnrichTask(name=task.experiment_name, propagation_file=propagation_scores_file,
-                       propagation_folder='propagation_scores', statistic_test=wilcoxon_rank_sums_test,
-                       target_field='randomization_ranks', constrain_to_experiment_genes=True)
+                       propagation_folder=f'Outputs\\propagation_scores\\{task.experiment_name}', statistic_test=wilcoxon_rank_sums_test,
+                       target_field='gene_prop_scores', constrain_to_experiment_genes=True)
 
-    figure_name = task.experiment_file.split('.')[
-                      0] + '_sortedEnrichment_Prop-' + 'alpha' + task.alpha + '-' + '.pdf'
+    FDR_threshold = 0.001
+
+    figure_name = task.experiment_name + '-alpha' + str(
+        task.alpha) + '-Threshold' + str(FDR_threshold) + '.pdf'
+
     general_args = GeneralArgs(task.network_file_path, genes_names_path=task.genes_names_file_path,
-                               pathway_members_path=task.pathway_file_dir, figure_name=figure_name)
+                               pathway_members_path=task.pathway_file_dir, FDR_threshold=FDR_threshold,
+                               figure_name=figure_name)
 
+    tasks.append(task1)
     print('running')
+    run(tasks, general_args)
 
 
 if __name__ == '__main__':
+    start = time.time()
     main()
+    end = time.time()
+    print("time elapsed: " + str(end - start) + " seconds")
