@@ -1,9 +1,9 @@
 from os import path
-from statistic_methods import bh_correction
-from utils import read_network, load_pathways_genes, get_propagation_input
 import numpy as np
-from args import RawScoreTask, EnrichTask, GeneralArgs, PathwayResults
+from args import EnrichTask, PathwayResults
+from statistic_methods import bh_correction
 from utils import load_propagation_scores
+from utils import read_network, load_pathways_genes
 from visualization_tools import plot_enrichment_table
 
 
@@ -39,26 +39,33 @@ def process_tasks(task_list, network_graph, general_args, interesting_pathways, 
     pathways_to_display = set()
     all_genes_by_pathway_filtered = {}
 
+    all_genes_in_experiment_and_network = set(network_graph.nodes)
+
     for task in task_list:
         scores = get_scores(task)
 
-        # Filter genes for each pathway
-        genes_by_pathway_filtered = {pathway: [id for id in genes_by_pathway[pathway] if id in scores]
-                                     for pathway in interesting_pathways}
+        # Step 1: Filter genes that are in the experiment and in the network
+        all_genes_in_experiment_and_network &= set(scores.keys())
 
-        # keep only pathway with certain amount of genes
+        # Step 2: Filter pathways and keep only those that have the right size
+        genes_by_pathway_filtered = {
+            pathway: [id for id in genes_by_pathway[pathway] if id in all_genes_in_experiment_and_network]
+            for pathway in interesting_pathways}
+
         pathways_with_many_genes = [pathway_name for pathway_name in genes_by_pathway_filtered.keys() if
-                                    (len(genes_by_pathway_filtered[
-                                             pathway_name]) >= general_args.minimum_gene_per_pathway and len(
-                                        genes_by_pathway_filtered[
-                                            pathway_name]) <= general_args.maximum_gene_per_pathway)]
+                                    (general_args.minimum_gene_per_pathway <= len(genes_by_pathway_filtered[
+                                                                                      pathway_name]) <= general_args.maximum_gene_per_pathway)]
 
-        # Perform statistical tests
+        # Step 3: Filter genes that are in the remaining pathways
+        remaining_genes = set()
+        for genes in [genes_by_pathway_filtered[p] for p in pathways_with_many_genes]:
+            remaining_genes.update(genes)
+
         print('after filtering', len(pathways_with_many_genes))
         for pathway in pathways_with_many_genes:
             pathways_to_display.add(pathway)
             pathway_scores = [scores[id] for id in genes_by_pathway_filtered[pathway]]
-            background_scores = [scores[id] for id in scores if id not in genes_by_pathway_filtered[pathway]]
+            background_scores = [scores[id] for id in remaining_genes if id not in genes_by_pathway_filtered[pathway]]
             result = task.statistic_test(pathway_scores, background_scores)
             task.results[pathway] = PathwayResults(p_value=result.p_value, direction=result.directionality,
                                                    score=np.mean(pathway_scores))
@@ -70,7 +77,7 @@ def process_tasks(task_list, network_graph, general_args, interesting_pathways, 
         # Store the filtered genes by pathway for this task
         all_genes_by_pathway_filtered[task.name] = genes_by_pathway_filtered
 
-    return n_genes_per_task_per_pathway, pathways_to_display, all_genes_by_pathway_filtered, pathways_with_many_genes
+    return pathways_to_display, all_genes_by_pathway_filtered, pathways_with_many_genes
 
 
 def create_matrices(task_list, pathways_to_display):
@@ -93,8 +100,7 @@ def create_matrices(task_list, pathways_to_display):
     return p_vals_mat, adj_p_vals_mat, directions_mat, coll_names_in_heatmap
 
 
-def filter_and_adjust_matrices(p_vals_mat, adj_p_vals_mat, directions_mat, pathways_to_display, general_args,
-                               n_genes_per_task_per_pathway):
+def filter_and_adjust_matrices(p_vals_mat, adj_p_vals_mat, directions_mat, pathways_to_display, general_args):
     if general_args.display_only_significant_pathways:
         keep_rows = np.nonzero(np.any(adj_p_vals_mat <= general_args.significant_pathway_threshold, axis=1))[0]
         pathways_to_display = list(pathways_to_display)  # Convert set to list
@@ -103,15 +109,6 @@ def filter_and_adjust_matrices(p_vals_mat, adj_p_vals_mat, directions_mat, pathw
         p_vals_mat = p_vals_mat[keep_rows, :]
         adj_p_vals_mat = adj_p_vals_mat[keep_rows, :]
         directions_mat = directions_mat[keep_rows, :]
-
-    # if p_vals_mat.shape[0] > general_args.maximum_number_of_pathways and general_args.merge_similar_pathways:
-    #     keep_rows = np.sort(
-    #         filter_pathways(p_vals_mat, adj_p_vals_mat, pathways_to_display, n_genes_per_task_per_pathway,
-    #                         general_args))
-    #     p_vals_mat = p_vals_mat[keep_rows]
-    #     adj_p_vals_mat = adj_p_vals_mat[keep_rows]
-    #     directions_mat = directions_mat[keep_rows]
-    #     pathways_to_display = [pathways_to_display[x] for x in keep_rows]
 
     return p_vals_mat, adj_p_vals_mat, directions_mat, pathways_to_display
 
@@ -137,12 +134,12 @@ def plot_results(p_vals_mat, adj_p_vals_mat, directions_mat, row_names, general_
                  dataset_type, n_pathways_before):
     res = -np.log10(p_vals_mat)
     fig_out_dir = path.join(general_args.output_path, general_args.figure_name)
-    row_names = [x.replace("-", "-\n") for x in row_names]
+    row_names = [x.replace("_", " ") for x in row_names]
     plot_enrichment_table(res, adj_p_vals_mat, directions_mat, row_names, fig_out_dir,
                           experiment_names=coll_names_in_heatmap,
                           title=general_args.figure_title + ' {} {}/{}'.format(dataset_type,
                                                                                len(row_names), n_pathways_before),
-                          res_type='-log10(p_val)',adj_p_value_threshold=general_args.significant_pathway_threshold)
+                          res_type='-log10(p_val)', adj_p_value_threshold=general_args.significant_pathway_threshold)
 
 
 def run(task_list, general_args, dataset_type=''):
@@ -155,9 +152,10 @@ def run(task_list, general_args, dataset_type=''):
     """
     network_graph, interesting_pathways, genes_by_pathway = load_network_and_pathways(general_args)
 
-    n_genes_per_task_per_pathway, pathways_to_display, genes_by_pathway_filtered, pathways_with_many_genes = (
-        process_tasks(
-        task_list, network_graph, general_args, interesting_pathways, genes_by_pathway))
+    pathways_to_display, genes_by_pathway_filtered, pathways_with_many_genes = (process_tasks(task_list, network_graph,
+                                                                                             general_args,
+                                                                                             interesting_pathways,
+                                                                                             genes_by_pathway))
 
     # Create matrices for p-values, adjusted p-values, and directions
     p_vals_mat, adj_p_vals_mat, directions_mat, coll_names_in_heatmap = create_matrices(task_list, pathways_to_display)
@@ -167,8 +165,7 @@ def run(task_list, general_args, dataset_type=''):
                                                                                                  adj_p_vals_mat,
                                                                                                  directions_mat,
                                                                                                  pathways_to_display,
-                                                                                                 general_args,
-                                                                                                 n_genes_per_task_per_pathway)
+                                                                                                 general_args)
 
     row_names = ['{}'.format(pathway) for pathway in pathways_to_display]
     # Plot the results

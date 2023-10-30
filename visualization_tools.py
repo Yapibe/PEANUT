@@ -155,7 +155,7 @@ def plot_enrichment_table(enrichment_table, adj_p_mat, direction, interesting_pa
     ax.legend(handles=legend_handles, bbox_to_anchor=[1, 0, 1, 1], ncol=1, loc='lower left', fontsize=14)
     ax.set_title(title, fontsize=28)
     sns.set(font_scale=0.9)
-    fig.set_size_inches(8.5, 18.5)
+    fig.set_size_inches(20, 40)
     plt.savefig(save_dir, bbox_inches='tight')
     sns.set(font_scale=1 / 0.9)
 
