@@ -35,47 +35,50 @@ def load_network_and_pathways(general_args):
 
 
 def process_tasks(task_list, network_graph, general_args, interesting_pathways, genes_by_pathway):
-    n_genes_per_task_per_pathway = []
     pathways_to_display = set()
     all_genes_by_pathway_filtered = {}
 
-    all_genes_in_experiment_and_network = set(network_graph.nodes)
+    # Create a set to hold all genes that are in some pathway and are in the network.
+    all_genes_in_filtered_pathways_and_network = set()
 
     for task in task_list:
         scores = get_scores(task)
 
-        # Step 1: Filter genes that are in the experiment and in the network
-        all_genes_in_experiment_and_network &= set(scores.keys())
+        # Filter genes for each pathway, contains only genes that are in the experiment and in the pathway file
+        genes_by_pathway_filtered = {pathway: [id for id in genes_by_pathway[pathway] if id in scores]
+                                     for pathway in interesting_pathways}
 
-        # Step 2: Filter pathways and keep only those that have the right size
-        genes_by_pathway_filtered = {
-            pathway: [id for id in genes_by_pathway[pathway] if id in all_genes_in_experiment_and_network]
-            for pathway in interesting_pathways}
-
+        # keep only pathway with certain amount of genes
         pathways_with_many_genes = [pathway_name for pathway_name in genes_by_pathway_filtered.keys() if
-                                    (general_args.minimum_gene_per_pathway <= len(genes_by_pathway_filtered[
-                                                                                      pathway_name]) <= general_args.maximum_gene_per_pathway)]
+                                    (len(genes_by_pathway_filtered[
+                                             pathway_name]) >= general_args.minimum_gene_per_pathway and len(
+                                        genes_by_pathway_filtered[
+                                            pathway_name]) <= general_args.maximum_gene_per_pathway)]
 
-        # Step 3: Filter genes that are in the remaining pathways
-        remaining_genes = set()
-        for genes in [genes_by_pathway_filtered[p] for p in pathways_with_many_genes]:
-            remaining_genes.update(genes)
+        # Update all_genes_in_filtered_pathways_and_network
+        for pathway in pathways_with_many_genes:
+            all_genes_in_filtered_pathways_and_network.update(genes_by_pathway_filtered[pathway])
 
+        # Intersect with network nodes to refine the set
+        all_genes_in_filtered_pathways_and_network &= set(network_graph.nodes)
+
+
+        # Perform statistical tests
         print('after filtering', len(pathways_with_many_genes))
         for pathway in pathways_with_many_genes:
             pathways_to_display.add(pathway)
             pathway_scores = [scores[id] for id in genes_by_pathway_filtered[pathway]]
-            background_scores = [scores[id] for id in remaining_genes if id not in genes_by_pathway_filtered[pathway]]
+            # background_scores1 = [scores[id] for id in scores.keys() if id not in genes_by_pathway_filtered[pathway]]
+            background_scores = [scores[id] for id in all_genes_in_filtered_pathways_and_network if
+                                   id not in genes_by_pathway_filtered[pathway]]
             result = task.statistic_test(pathway_scores, background_scores)
             task.results[pathway] = PathwayResults(p_value=result.p_value, direction=result.directionality,
                                                    score=np.mean(pathway_scores))
 
-        # Append the number of genes per task per pathway
-        n_genes_per_task_per_pathway.append(
-            {pathway: len(genes_by_pathway_filtered[pathway]) for pathway in genes_by_pathway_filtered})
-
         # Store the filtered genes by pathway for this task
         all_genes_by_pathway_filtered[task.name] = genes_by_pathway_filtered
+
+    pathways_to_display = np.sort(list(pathways_to_display))
 
     return pathways_to_display, all_genes_by_pathway_filtered, pathways_with_many_genes
 
