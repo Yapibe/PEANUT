@@ -119,5 +119,6 @@ def propagate_network(propagation_input, matrix, genes):
 
     time_end = time.time()
     print(f"Time to propagate: {time_end - time_start} seconds")
-
-    return gene_indexes, inverted_gene_scores
+    # return dictionary of gene indexes and inverted gene scores
+    gene_indexes_scores = dict([(gene_indexes[gene], inverted_gene_scores[gene_indexes[gene]]) for gene in propagation_input.keys() if gene in gene_indexes])
+    return gene_indexes, inverted_gene_scores, gene_indexes_scores

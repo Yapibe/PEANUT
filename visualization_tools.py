@@ -10,7 +10,7 @@ from matplotlib import colors
 from os import path
 
 
-def sort_y_ticks_by_dir_and_pvalue_of_one_column(enrichment_table, y_ticks, annotation_map, direction, adj_p_mat,
+def sort_y_ticks_by_dir_and_pvalue_of_one_column(enrichment_table, y_ticks, annotation_map, direction,
                                                  dir_column_to_sort_by=0):
     # 1. sort 0s from 1s in direction table
     sorted_indexes1 = np.argsort(direction[:, dir_column_to_sort_by])
@@ -18,7 +18,6 @@ def sort_y_ticks_by_dir_and_pvalue_of_one_column(enrichment_table, y_ticks, anno
     y_ticks = list(np.array(y_ticks)[sorted_indexes1])
     annotation_map = annotation_map[sorted_indexes1, :]
     direction = direction[sorted_indexes1, :]
-    adj_p_mat = adj_p_mat[sorted_indexes1, :]
 
     # 2. sort p_value within indexes with sorted direction (negative first, positives after)
     negatives = len(direction[direction[:, dir_column_to_sort_by] == 0, dir_column_to_sort_by])
@@ -29,8 +28,6 @@ def sort_y_ticks_by_dir_and_pvalue_of_one_column(enrichment_table, y_ticks, anno
     positive_annotation_map = annotation_map[negatives:, ]
     negative_direction = direction[:negatives, ]
     positive_direction = direction[negatives:, ]
-    negative_adj_p_mat = adj_p_mat[:negatives, ]
-    positive_adj_p_mat = adj_p_mat[negatives:, ]
     y_ticks_n = list(np.array(y_ticks)[:negatives])
     y_ticks_p = list(np.array(y_ticks)[negatives:])
 
@@ -43,8 +40,6 @@ def sort_y_ticks_by_dir_and_pvalue_of_one_column(enrichment_table, y_ticks, anno
     sorted_negative_annotation_map = negative_annotation_map[sorted_negative_indexes, :]
     sorted_positive_direction = positive_direction[sorted_positive_indexes, :]
     sorted_negative_direction = negative_direction[sorted_negative_indexes, :]
-    sorted_positive_adj_p_mat = positive_adj_p_mat[sorted_positive_indexes, :]
-    sorted_negative_adj_p_mat = negative_adj_p_mat[sorted_negative_indexes, :]
     y_ticks_ns = list(np.array(y_ticks_n)[sorted_negative_indexes])
     y_ticks_ps = list(np.array(y_ticks_p)[sorted_positive_indexes])
 
@@ -52,8 +47,7 @@ def sort_y_ticks_by_dir_and_pvalue_of_one_column(enrichment_table, y_ticks, anno
     return np.concatenate((sorted_negative_enrichment_table, sorted_positive_enrichment_table),
                           axis=0), y_ticks_ns + y_ticks_ps, np.concatenate(
         (sorted_negative_annotation_map, sorted_positive_annotation_map), axis=0), np.concatenate(
-        (sorted_negative_direction, sorted_positive_direction), axis=0), np.concatenate(
-        (sorted_negative_adj_p_mat, sorted_positive_adj_p_mat), axis=0)
+        (sorted_negative_direction, sorted_positive_direction), axis=0)
 
 
 def sort_y_ticks_by_dir(enrichment_table, y_ticks, annotation_map, direction):
@@ -86,79 +80,140 @@ def sort_y_ticks(enrichment_table, y_ticks, annotation_map):
     return enrichment_table[new_ind, :], srtd_y_ticks, annotation_map[new_ind, :]
 
 
-def plot_enrichment_table(enrichment_table, adj_p_mat, direction, interesting_pathways, save_dir=None,
-                          experiment_names=None,
-                          title=None, res_type=None, adj_p_value_threshold=0.03):
+def plot_enrichment_table(enrichment_table, direction, interesting_pathways, save_dir=None, experiment_names=None,
+                          title=None, res_type=None, adj_p_value_threshold=0.01):
+
+    # Initialize the plot
     fig, ax = plt.subplots()
 
+    # Find non-zero columns and rows in the enrichment table
     enriched_clusters = np.nonzero(np.sum(enrichment_table, axis=0) != 0)[0]
     found_pathways = np.nonzero(np.sum(enrichment_table, axis=1) != 0)[0]
+
+    # Filter the enrichment table to include only non-zero rows and columns
     enrichment_table = enrichment_table[:, enriched_clusters][found_pathways, :]
-    interesting_pathways_filtered = {x: xx for x, xx in enumerate(interesting_pathways) if x in found_pathways}
+    interesting_pathways_filtered = {i: path for i, path in enumerate(interesting_pathways) if i in found_pathways}
+
+    # Prepare the annotations for the heatmap
     annotation_map = (np.round(enrichment_table, 3)).astype(str)
     annotation_map[annotation_map == '0.0'] = ''
-    y_ticks = [x[:60] for x in interesting_pathways_filtered.values()]
-    enrichment_table, y_ticks, annotation_map, direction, adj_p_mat = sort_y_ticks_by_dir_and_pvalue_of_one_column(
-        enrichment_table, y_ticks, annotation_map, direction, adj_p_mat)
-    important_indexes = np.where(adj_p_mat < 0.05)
+    y_ticks = [path[:60] for path in interesting_pathways_filtered.values()]
 
+    # Sort pathways for visualization
+    enrichment_table, y_ticks, annotation_map, direction = sort_y_ticks_by_dir_and_pvalue_of_one_column(
+        enrichment_table, y_ticks, annotation_map, direction)
+
+    # Find indexes of important pathways (below the adj. p-value threshold)
+    important_indexes = np.where(enrichment_table < adj_p_value_threshold)
+
+    # Color negative enrichment values if direction is given and res_type is not 'z_score'
     if direction is not None and res_type != 'z_score':
-        print("Shape of enrichment_table:", enrichment_table.shape)
-        print("Shape of direction:", direction.shape)
-
-        # set low propagation scores to be negative in order to color them blue
         enrichment_table[np.logical_not(direction)] = -enrichment_table[np.logical_not(direction)]
-        # enrichment_table[np.logical_not(direction[:, 0]), 0] = -enrichment_table[np.logical_not(direction[:, 0]), 0]
-        # enrichment_table[np.logical_not(direction[:, 2]), 2] = -enrichment_table[np.logical_not(direction[:, 2]), 2]
-        # enrichment_table[np.logical_not(direction[:, 3]), 3] = -enrichment_table[np.logical_not(direction[:, 3]), 3]
-        # enrichment_table[np.logical_not(direction[:, 5]), 5] = -enrichment_table[np.logical_not(direction[:, 5]), 5]
+        # Create a color axis for the heatmap
+    colorbar_edge = np.max(np.abs(enrichment_table))
+    cax = inset_axes(ax, width="100%", height="70%", loc='lower left',
+                     bbox_to_anchor=(1.1, 0.2, 0.2, 1), bbox_transform=ax.transAxes, borderpad=0)
 
-    # set color bar size and location
-    cax = inset_axes(ax,
-                     width="100%",  # width: 40% of parent_bbox width
-                     height="70%",  # height: 10% of parent_bbox height
-                     loc='lower left',
-                     bbox_to_anchor=(1.1, 0.2, 0.2, 1),
-                     bbox_transform=ax.transAxes,
-                     borderpad=0,
-                     )
-    colorbar_edge = np.maximum(np.abs(np.min(enrichment_table)), np.abs(np.max(enrichment_table)))
-    heatmap = sns.heatmap(enrichment_table, fmt=".4s", yticklabels=y_ticks,
-                          cbar_ax=cax, annot=annotation_map, cmap="coolwarm",
-                          linewidths=.1, linecolor='gray',
-                          cbar_kws={'label': res_type}, ax=ax, vmin=-20,
-                          vmax=20)  # vmin=np.min([0, -colorbar_edge]), vmax=colorbar_edge)
+    # Plot the heatmap
+    heatmap = sns.heatmap(enrichment_table, fmt=".4s", yticklabels=y_ticks, cbar_ax=cax,
+                          annot=annotation_map, cmap="coolwarm", linewidths=.1, linecolor='gray',
+                          cbar_kws={'label': res_type}, ax=ax, vmin=-colorbar_edge, vmax=colorbar_edge)
     ax.set_xticklabels(experiment_names, fontsize=24)
 
-    # circle significant scores (<0.05)
+    # Highlight significant pathways with a rectangle
     for i in range(len(important_indexes[0])):
-        heatmap.add_patch(
-            Rectangle((important_indexes[1][i], important_indexes[0][i]), 1, 1, fill=False, edgecolor='black', lw=3))
+        heatmap.add_patch(Rectangle((important_indexes[1][i], important_indexes[0][i]), 1, 1,
+                                    fill=False, edgecolor='black', lw=3))
     # set font size of colobar ticks
     heatmap.figure.axes[-1].yaxis.label.set_size(20)
 
-    # set colorbar tick values to be positive in both direction
+    # Set colorbar properties
     cbar = heatmap.collections[0].colorbar
     cbar.set_ticks(cbar.get_ticks())
     cbar.set_ticklabels(np.round(np.abs(cbar.get_ticks()), 1))
 
-    # rotate test names
+    # Adjust x-tick labels
     heatmap.set_xticklabels(heatmap.get_xticklabels(), rotation=45, horizontalalignment='right')
 
-    # add square color legend
+    # Add legend for significance and direction
     legend_handles = [Patch(fill=False, edgecolor='black', label=f'adj_p_value<{adj_p_value_threshold}')]
     if direction is not None:
         legend_handles.append(Patch(fill=True, color='red', label='Upwards'))
         legend_handles.append(Patch(fill=True, color='blue', label='Downwards'))
-
-    # locate legend
     ax.legend(handles=legend_handles, bbox_to_anchor=[1, 0, 1, 1], ncol=1, loc='lower left', fontsize=14)
+
+    # Set plot title
     ax.set_title(title, fontsize=28)
-    sns.set(font_scale=0.9)
+
+    # Adjust figure size and save the plot
     fig.set_size_inches(20, 40)
     plt.savefig(save_dir, bbox_inches='tight')
-    sns.set(font_scale=1 / 0.9)
 
+
+# def plot_enrichment_table(enrichment_table, adj_p_mat, direction, interesting_pathways, save_dir=None,
+#                           experiment_names=None,
+#                           title=None, res_type=None, adj_p_value_threshold=0.01):
+#     # Initialize the plot
+#     fig, ax = plt.subplots()
+#
+#     # Find non-zero columns and rows in the enrichment table
+#     enriched_clusters = np.nonzero(np.sum(enrichment_table, axis=0) != 0)[0]
+#     found_pathways = np.nonzero(np.sum(enrichment_table, axis=1) != 0)[0]
+#
+#     # Filter the enrichment table to include only non-zero rows and columns
+#     enrichment_table = enrichment_table[:, enriched_clusters][found_pathways, :]
+#     interesting_pathways_filtered = {i: path for i, path in enumerate(interesting_pathways) if i in found_pathways}
+#
+#     # Prepare the annotations for the heatmap
+#     annotation_map = (np.round(enrichment_table, 3)).astype(str)
+#     annotation_map[annotation_map == '0.0'] = ''
+#     y_ticks = [path[:60] for path in interesting_pathways_filtered.values()]
+#
+#     # Sort pathways for visualization
+#     enrichment_table, y_ticks, annotation_map, direction, adj_p_mat = sort_y_ticks_by_dir_and_pvalue_of_one_column(
+#         enrichment_table, y_ticks, annotation_map, direction, adj_p_mat)
+#
+#     # Color negative enrichment values if direction is given and res_type is not 'z_score'
+#     if direction is not None and res_type != 'z_score':
+#         enrichment_table[np.logical_not(direction)] = -enrichment_table[np.logical_not(direction)]
+#
+#     # Create a color axis for the heatmap
+#     colorbar_edge = np.max(np.abs(enrichment_table))
+#     cax = inset_axes(ax, width="100%", height="70%", loc='lower left',
+#                      bbox_to_anchor=(1.1, 0.2, 0.2, 1), bbox_transform=ax.transAxes, borderpad=0)
+#
+#     # Plot the heatmap
+#     heatmap = sns.heatmap(enrichment_table, fmt=".4s", yticklabels=y_ticks, cbar_ax=cax,
+#                           annot=annotation_map, cmap="coolwarm", linewidths=.1, linecolor='gray',
+#                           cbar_kws={'label': res_type}, ax=ax, vmin=-colorbar_edge, vmax=colorbar_edge)
+#     ax.set_xticklabels(experiment_names, fontsize=24)
+#
+#     # Highlight all pathways with a rectangle, assuming they are all significant
+#     for i in range(enrichment_table.shape[0]):
+#         for j in range(enrichment_table.shape[1]):
+#             heatmap.add_patch(Rectangle((j, i), 1, 1, fill=False, edgecolor='black', lw=3))
+#
+#     # Set colorbar properties
+#     cbar = heatmap.collections[0].colorbar
+#     cbar.set_ticks(cbar.get_ticks())
+#     cbar.set_ticklabels(np.round(np.abs(cbar.get_ticks()), 1))
+#
+#     # Adjust x-tick labels
+#     heatmap.set_xticklabels(heatmap.get_xticklabels(), rotation=45, horizontalalignment='right')
+#
+#     # Add legend for significance and direction
+#     legend_handles = [Patch(fill=False, edgecolor='black', label=f'Significant (adj_p_value<{adj_p_value_threshold})')]
+#     if direction is not None:
+#         legend_handles.append(Patch(fill=True, color='red', label='Upwards'))
+#         legend_handles.append(Patch(fill=True, color='blue', label='Downwards'))
+#     ax.legend(handles=legend_handles, bbox_to_anchor=[1, 0, 1, 1], ncol=1, loc='lower left', fontsize=14)
+#
+#     # Set plot title
+#     ax.set_title(title, fontsize=28)
+#
+#     # Adjust figure size and save the plot
+#     fig.set_size_inches(20, 40)
+#     plt.savefig(save_dir, bbox_inches='tight')
 
 def visualise_pathway(network_graph, pathway_genes, reference_scores, propagation_scores, pathway_name,
                       id_to_label_dict=None,

@@ -12,13 +12,13 @@ class PropagationTask:
 
         # General Parameters
         self.experiment_name = experiment_name
-        self.experiment_file = 'scores.xlsx'
+        self.experiment_file = 'simulated_scores.xlsx'
         self.root_folder = path.dirname(path.realpath(__file__))
         self.data_file = 'Data'
         self.network_file = network_file
         self.genes_names_file = 'H_sapiens.gene_info'
         self.pathway_file = 'pathway_file'
-        self.propagation_input_type = 'abs_Score'
+        self.propagation_input_type = 'Score'
         self.date = datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
         self.create_similarity_matrix = create_similarity_matrix
         self.remove_self_propagation = False
@@ -87,8 +87,7 @@ class GeneralArgs:
     def __init__(self, network_path, genes_names_path, pathway_members_path, FDR_threshold=0.1,
                  output_folder_name=None, figure_name=None, figure_title='Pathway Enrichment '):
         self.minimum_gene_per_pathway = 10
-        self.maximum_gene_per_pathway = 50
-        self.display_only_significant_pathways = True
+        self.maximum_gene_per_pathway = 60
         self.network_file_path = network_path
         self.genes_names_file_path = genes_names_path
         self.pathway_databases = ['_']
@@ -100,11 +99,11 @@ class GeneralArgs:
         self.figure_name = figure_name if figure_name is not None else 'figure'
         self.pathway_members_path = pathway_members_path
         self.figure_title = figure_title
+        self.use_gsea = True
 
 
 class PathwayResults:
-    def __init__(self, p_value, direction, score):
+    def __init__(self, p_value, direction, adj_p_value=None):
         self.p_value = p_value
         self.direction = direction
         self.adj_p_value = None
-        self.score = score

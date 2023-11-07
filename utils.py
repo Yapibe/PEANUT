@@ -40,8 +40,7 @@ def get_propagation_input(prior_gene_ids, prior_data, input_type, network):
     elif input_type == 'Score':
         inputs = {int(id): float(prior_data[prior_data.GeneID == id]['Score'].values[0]) for id in prior_gene_ids}
     elif input_type == 'Score_all':
-        inputs = {int(id): float(prior_data[prior_data.GeneID == id]['Score'].values[0])
-                  for name, id in prior_gene_ids}
+        inputs = {int(id): float(prior_data[prior_data.GeneID == id]['Score'].values[0]) for name, id in prior_gene_ids}
         mean_input = np.mean([x for x in inputs.values()])
         for id in network.nodes:
             if id not in inputs:
