@@ -10,7 +10,7 @@ from typing import List, Dict
 import pandas as pd
 
 
-def run_gsea(task, ranked_genes: Dict[str, float], gene_sets: Dict[str, List[str]]) -> Dict[str, float]:
+def run_gsea(task, ranked_genes: Dict[str, float], gene_sets: Dict[str, List[str]]):
     """
     Run Gene Set Enrichment Analysis (GSEA) using the gseapy library.
 
@@ -47,8 +47,8 @@ def run_gsea(task, ranked_genes: Dict[str, float], gene_sets: Dict[str, List[str
 def get_scores(task):
     """
     takes a task, a network graph and a general args object and returns a dictionary of scores
-    :param task:
-    :return:
+    :param task: EnrichTask or RawScoreTask
+    :return: dictionary of scores
     """
 
     if isinstance(task, EnrichTask):
@@ -74,6 +74,7 @@ def load_network_and_pathways(general_args):
 def process_tasks(task_list, network_graph, general_args, interesting_pathways, genes_by_pathway):
     pathways_to_display = set()
     all_genes_by_pathway_filtered = {}
+    pathways_with_many_genes = []
 
     # Create a set to hold all genes that are in some pathway and are in the network.
     all_genes_in_filtered_pathways_and_network = set()
@@ -105,9 +106,8 @@ def process_tasks(task_list, network_graph, general_args, interesting_pathways, 
             pathways_to_display.add(pathway)
 
         if general_args.use_gsea:  # Assume you add this flag to general_args or similar
-            ranked_genes = get_scores(task)
             # Replace with how you get your ranked genes
-            run_gsea(task, ranked_genes, genes_by_pathway)
+            run_gsea(task, scores, genes_by_pathway)
         else:
             # Perform statistical tests
             print('after filtering', len(pathways_with_many_genes))
@@ -185,16 +185,25 @@ def process_matrices(task_list, pathways_to_display, general_args):
         indexes = []
         for p, pathway in enumerate(pathways_to_display):
             if pathway in task.results:
-                indexes.append(p)
-                p_vals_mat[p, t] = task.results[pathway].p_value
+                if general_args.use_gsea:
+                    # Directly use the adjusted p-value from GSEA results
+                    adj_p_vals_mat[p, t] = task.results[pathway].adj_p_value
+                else:
+                    # Use p-value for non-GSEA results and collect indexes for BH correction
+                    p_vals_mat[p, t] = task.results[pathway].p_value
+                    indexes.append(p)
+                    # Direction should be collected in both cases
                 directions_mat[p, t] = task.results[pathway].direction
-        adj_p_vals_mat[indexes, t] = bh_correction(p_vals_mat[indexes, t])
+        if not general_args.use_gsea:
+            # Apply BH correction outside the inner loop
+            adj_p_vals_mat[indexes, t] = bh_correction(p_vals_mat[indexes, t])
+            # Append task name to heatmap column names
         coll_names_in_heatmap.append(task.name)
 
     # Filter and adjust matrices
     keep_rows = np.nonzero(np.any(adj_p_vals_mat <= general_args.significant_pathway_threshold, axis=1))[0]
     pathways_to_display = list(pathways_to_display)  # Convert set to list
-    pathways_to_display = [pathways_to_display[x] for x in keep_rows]  # Now this should work
+    pathways_to_display = [pathways_to_display[x] for x in keep_rows]
     specific_pathways = [
         "REACTOME_PRESYNAPTIC_DEPOLARIZATION_AND_CALCIUM_CHANNEL_OPENING",
         "REACTOME_NEUROTRANSMITTER_RECEPTORS_AND_POSTSYNAPTIC_SIGNAL_TRANSMISSION",
@@ -243,12 +252,6 @@ def process_matrices(task_list, pathways_to_display, general_args):
     return adj_p_vals_mat, directions_mat, pathways_to_display, coll_names_in_heatmap
 
 
-def prepare_row_names(pathways_to_display, genes_by_pathway_filtered):
-    row_names = ['({}) {}'.format(len(genes_by_pathway_filtered[pathway]), pathway) for pathway in pathways_to_display]
-    row_names = [x.replace("-", "-\n") for x in row_names]
-    return row_names
-
-
 def filter_by_minimum_p_values(p_vals_mat, adj_p_vals_mat, directions_mat, pathways_to_display, general_args):
     candidates = np.min(p_vals_mat, axis=1)
     ind = np.sort(
@@ -262,7 +265,14 @@ def filter_by_minimum_p_values(p_vals_mat, adj_p_vals_mat, directions_mat, pathw
 
 def plot_results(adj_p_vals_mat, directions_mat, row_names, general_args, coll_names_in_heatmap,
                  dataset_type, n_pathways_before):
-    res = -np.log10(adj_p_vals_mat)
+    # Set a small value to represent the minimum p-value
+    min_p_val = np.finfo(adj_p_vals_mat.dtype).tiny
+
+    # Replace 0 with the minimum p-value
+    adj_p_vals_mat_no_zeros = np.where(adj_p_vals_mat == 0, min_p_val, adj_p_vals_mat)
+
+    # Calculate -log10, avoiding log10(0) which gives inf
+    res = -np.log10(adj_p_vals_mat_no_zeros)
     fig_out_dir = path.join(general_args.output_path, general_args.figure_name)
     plot_enrichment_table(res, directions_mat, row_names, fig_out_dir, experiment_names=coll_names_in_heatmap,
                           title=general_args.figure_title + ' {} {}/{}'.format(dataset_type,

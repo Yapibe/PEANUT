@@ -14,10 +14,10 @@ print(len(all_gene_ids))
 selected_gene_ids = np.random.choice(all_gene_ids, 15000, replace=False)
 
 # Simulate scores from a standard normal distribution (N(0, 1)) for all selected GeneIDs
-scores_standard = np.random.normal(5, 1, len(selected_gene_ids))
+scores_standard = np.random.normal(10, 1, len(selected_gene_ids))
 
 # Simulate a new set of scores from a standard normal distribution (N(0, 1)) for 'Score_Unique'
-scores_unique_full_set = np.random.normal(5, 1, len(selected_gene_ids))
+scores_unique_full_set = np.random.normal(10, 1, len(selected_gene_ids))
 
 # Create a DataFrame for the selected GeneIDs and their scores
 df = pd.DataFrame({
@@ -30,7 +30,7 @@ df = pd.DataFrame({
 decoy_genes = np.random.choice(df['GeneID'], 50, replace=False)
 
 # Generate scores for the decoy genes from a normal distribution with mean=1 and std=1
-decoy_scores = np.random.normal(3, 1, len(decoy_genes))
+decoy_scores = np.random.normal(4, 1, len(decoy_genes))
 
 # Update the scores for the selected decoy genes in the DataFrame
 df.loc[df['GeneID'].isin(decoy_genes), 'Score_Unique'] = decoy_scores

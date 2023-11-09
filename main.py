@@ -52,6 +52,21 @@ def perform_propagation(task):
     score_gene_scores_inverse[non_zero_indices] = score_gene_scores_inverse[non_zero_indices] / np.abs(
         ones_gene_scores_inverse[non_zero_indices])
 
+    # # Identify genes with zero normalization score but non-zero propagation score
+    # zero_normalization_genes = np.nonzero(ones_gene_scores_inverse == 0)[0]
+    # non_zero_normalization_genes = np.nonzero(ones_gene_scores_inverse != 0)[0]
+    #
+    # # Calculate the mean of non-zero normalization scores
+    # mean_non_zero_normalization = np.mean(ones_gene_scores_inverse[non_zero_normalization_genes])
+    #
+    # # Set the normalization score of zero normalization genes to the mean of non-zero genes
+    # ones_gene_scores_inverse[zero_normalization_genes] = mean_non_zero_normalization
+    #
+    # # Perform the normalization
+    # non_zero_indices = np.nonzero(score_gene_scores_inverse != 0)[0]
+    # normalized_scores = score_gene_scores_inverse.copy()  # Make a copy to keep the original scores
+    # normalized_scores[non_zero_indices] /= ones_gene_scores_inverse[non_zero_indices]
+
     # save propagation score
     print("saving propagation score")
     utils.save_propagation_score(propagation_scores=score_gene_scores_inverse, prior_set=prior_data,
@@ -70,6 +85,16 @@ def perform_enrichment(task):
                        statistic_test=wilcoxon_rank_sums_test,
                        target_field='gene_prop_scores', constrain_to_experiment_genes=True)
 
+    # task1 = EnrichTask(name='500nm_v_T', propagation_file='500nm_v_T_Score_0.1_08_11_2023__12_22_59',
+    #                    propagation_folder=f'Outputs\\propagation_scores\\500nm_v_T',
+    #                    statistic_test=wilcoxon_rank_sums_test,
+    #                    target_field='gene_prop_scores', constrain_to_experiment_genes=True)
+    #
+    # task2 = EnrichTask(name='TvN', propagation_file='TvN_Score_0.1_07_11_2023__16_17_29',
+    #                    propagation_folder=f'Outputs\\propagation_scores\\TvN',
+    #                    statistic_test=wilcoxon_rank_sums_test,
+    #                    target_field='gene_prop_scores', constrain_to_experiment_genes=True)
+
     FDR_threshold = 0.01
 
     figure_name = task.experiment_name + '-alpha' + str(
@@ -86,7 +111,7 @@ def perform_enrichment(task):
 
 def main(run_propagation=True, run_enrichment=True):
     # create a propagation task
-    task = PropagationTask(experiment_name='decoy', create_similarity_matrix=False)
+    task = PropagationTask(experiment_name='TvN', create_similarity_matrix=False)
 
     if run_propagation:
         perform_propagation(task)
