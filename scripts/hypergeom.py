@@ -90,7 +90,7 @@ enriched_p_vals = get_p_values(prior_data_df)
 
 # get pathway gene sets
 dir_path = path.dirname(path.realpath(__file__))
-genes_by_pathway = load_pathways_genes(path.join(dir_path, '../Data', 'H_sapiens', 'pathways', 'pathway_file'))
+genes_by_pathway = load_pathways_genes(path.join(dir_path, 'Data', 'H_sapiens', 'pathways', 'pathway_file'))
 
 # Total number of genes in the background
 M = len(prior_data_df['GeneID'])
