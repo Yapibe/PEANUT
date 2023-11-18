@@ -1,7 +1,7 @@
 from args import PropagationTask, EnrichTask, GeneralArgs
 import utils
 from propagation_routines import propagate_network, generate_similarity_matrix, read_sparse_matrix_txt
-from statistic_methods import wilcoxon_rank_sums_test
+from statistic_methods import wilcoxon_rank_sums_test, students_t_test
 from pathway_enrichment import run
 import numpy as np
 import time
@@ -80,8 +80,8 @@ def perform_enrichment(task):
     tasks = []
     propagation_scores_file = '{}_{}_{}_{}'.format(task.experiment_name, task.propagation_input_type,
                                                    task.alpha, task.date)
-    task1 = EnrichTask(name=task.experiment_name, propagation_file=propagation_scores_file,
-                       propagation_folder=f'Outputs\\propagation_scores\\{task.experiment_name}',
+    task1 = EnrichTask(name='TvN', propagation_file='TvN_Score_1_14_11_2023__12_55_46',
+                       propagation_folder=f'Outputs\\propagation_scores\\TvN',
                        statistic_test=wilcoxon_rank_sums_test,
                        target_field='gene_prop_scores', constrain_to_experiment_genes=True)
 

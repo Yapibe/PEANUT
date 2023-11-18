@@ -4,7 +4,7 @@ from utils import get_root_path
 
 
 class PropagationTask:
-    def __init__(self, experiment_name, alpha=0.1, network_file='H_sapiens.net',
+    def __init__(self, experiment_name, alpha=1, network_file='H_sapiens.net',
                  create_similarity_matrix=True):
         """
         Initialize the Propagation Task with default and optional parameters.
@@ -12,7 +12,7 @@ class PropagationTask:
 
         # General Parameters
         self.experiment_name = experiment_name
-        self.experiment_file = 'scores.xlsx'
+        self.experiment_file = 'scores_T_v_N.xlsx'
         self.root_folder = path.dirname(path.realpath(__file__))
         self.data_file = 'Data'
         self.network_file = network_file
@@ -23,8 +23,9 @@ class PropagationTask:
         self.create_similarity_matrix = create_similarity_matrix
         self.remove_self_propagation = False
         # Propagation Parameters
+        # for no propagation use alpha=1
         self.alpha = alpha
-
+        self.results = dict()
         # Derived Parameters (Initial placeholders)
         self.data_dir = None
         self.network_file_path = None
@@ -92,7 +93,7 @@ class GeneralArgs:
         self.genes_names_file_path = genes_names_path
         self.pathway_databases = ['_']
         self.pathway_keywords = ['_']
-        self.significant_pathway_threshold = FDR_threshold
+        self.FDR_threshold = FDR_threshold
         if output_folder_name is None:
             output_folder_name = 'Enrichment_maps'
         self.output_path = path.join(get_root_path(), 'Outputs', output_folder_name)
@@ -100,7 +101,6 @@ class GeneralArgs:
         self.pathway_members_path = pathway_members_path
         self.figure_title = figure_title
         self.use_gsea = False
-
 
 class PathwayResults:
     def __init__(self, p_value, direction, adj_p_value=None):

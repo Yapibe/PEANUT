@@ -3,7 +3,7 @@ import random
 from os import path
 from collections import defaultdict
 from decimal import Decimal
-from scipy.stats import rankdata
+from scipy.stats import rankdata, mannwhitneyu
 from statsmodels.stats.multitest import multipletests
 from args import PropagationTask
 import utils
@@ -48,8 +48,6 @@ def generate_random_scores(ranks, pathways, num_sim=10000):
         for pathway_name, pathway_genes in pathways.items():
             score = 0
             for gene in pathway_genes:
-                if gene not in shuffled_ranks:
-                    print(f"Pathway: {pathway_name}, Missing Gene: {gene}")
                 score += shuffled_ranks.get(gene, 0)
             random_scores[pathway_name].append(score)
     return random_scores
@@ -75,7 +73,7 @@ def calculate_empirical_p_values(ranks, pathways, random_scores):
         observed_score = calculate_pathway_score(ranks, pathway_genes)
         random_scores_list = random_scores[pathway_name]
         empirical_p_values[pathway_name] = calculate_empirical_p_value(observed_score, random_scores_list)
-        if empirical_p_values[pathway_name] < 0.005:
+        if empirical_p_values[pathway_name] < 0.05:
             print(f'Pathway: {pathway_name}, Empirical P-Value: {empirical_p_values[pathway_name]}')
     return empirical_p_values
 
@@ -119,7 +117,7 @@ gene_ranks = get_fold_change_ranks(prior_data)
 experiment_gene_set = set(gene_ranks.keys())
 
 dir_path = path.dirname(path.realpath(__file__))
-pathway_file_path = path.join(dir_path, 'Data', 'H_sapiens', 'pathways', 'pathway_file')
+pathway_file_path = path.join(dir_path, '../Data', 'H_sapiens', 'pathways', 'pathway_file')
 genes_by_pathway = load_pathways_genes(pathway_file_path)
 
 # Filter pathways to include only genes in the experiment and with sizes 10-60
@@ -135,47 +133,24 @@ significant_pathways = filter_significant_pathways(empirical_p_values.keys(), co
 corrected_p_values = {pathway: pval for pathway, pval in zip(empirical_p_values.keys(), corrected_p_values)}
 
 specific_pathways = [
-    "REACTOME_PRESYNAPTIC_DEPOLARIZATION_AND_CALCIUM_CHANNEL_OPENING",
-    "REACTOME_NEUROTRANSMITTER_RECEPTORS_AND_POSTSYNAPTIC_SIGNAL_TRANSMISSION",
-    "REACTOME_DOPAMINE_CLEARANCE_FROM_THE_SYNAPTIC_CLEFT",
-    "REACTOME_ACTIVATION_OF_NMDA_RECEPTORS_AND_POSTSYNAPTIC_EVENTS",
-    "REACTOME_PRESYNAPTIC_FUNCTION_OF_KAINATE_RECEPTORS",
-    "REACTOME_HIGHLY_SODIUM_PERMEABLE_POSTSYNAPTIC_ACETYLCHOLINE_NICOTINIC_RECEPTORS",
-    "REACTOME_HIGHLY_CALCIUM_PERMEABLE_POSTSYNAPTIC_NICOTINIC_ACETYLCHOLINE_RECEPTORS",
-    "REACTOME_SYNAPTIC_ADHESION_LIKE_MOLECULES",
-    "WP_SPLICING_FACTOR_NOVA_REGULATED_SYNAPTIC_PROTEINS",
+    "REACTOME_ELASTIC_FIBRE_FORMATION",
+    "REACTOME_NUCLEAR_EVENTS_KINASE_AND_TRANSCRIPTION_FACTOR_ACTIVATION",
+    "REACTOME_BASIGIN_INTERACTIONS",
+    "REACTOME_NGF_STIMULATED_TRANSCRIPTION",
+    "WP_PHOTODYNAMIC_THERAPYINDUCED_HIF1_SURVIVAL_SIGNALING",
+    "WP_HAIR_FOLLICLE_DEVELOPMENT_CYTODIFFERENTIATION_PART_3_OF_3",
+    "WP_OLIGODENDROCYTE_SPECIFICATION_AND_DIFFERENTIATION_LEADING_TO_MYELIN_COMPONENTS_FOR_CNS",
     "WP_DISRUPTION_OF_POSTSYNAPTIC_SIGNALING_BY_CNV",
-    "WP_SYNAPTIC_VESICLE_PATHWAY",
+    "WP_PHOTODYNAMIC_THERAPYINDUCED_UNFOLDED_PROTEIN_RESPONSE",
     "WP_SYNAPTIC_SIGNALING_PATHWAYS_ASSOCIATED_WITH_AUTISM_SPECTRUM_DISORDER",
-    "KEGG_LYSOSOME",
-    "REACTOME_LYSOSPHINGOLIPID_AND_LPA_RECEPTORS",
-    "REACTOME_LYSOSOME_VESICLE_BIOGENESIS",
-    "REACTOME_PREVENTION_OF_PHAGOSOMAL_LYSOSOMAL_FUSION",
-    "PID_LYSOPHOSPHOLIPID_PATHWAY",
-    "BIOCARTA_CARM_ER_PATHWAY",
-    "REACTOME_SYNTHESIS_OF_PIPS_AT_THE_ER_MEMBRANE",
-    "REACTOME_ER_TO_GOLGI_ANTEROGRADE_TRANSPORT",
-    "REACTOME_N_GLYCAN_TRIMMING_IN_THE_ER_AND_CALNEXIN_CALRETICULIN_CYCLE",
-    "REACTOME_COPI_DEPENDENT_GOLGI_TO_ER_RETROGRADE_TRAFFIC",
-    "REACTOME_COPI_INDEPENDENT_GOLGI_TO_ER_RETROGRADE_TRAFFIC",
-    "REACTOME_INTRA_GOLGI_AND_RETROGRADE_GOLGI_TO_ER_TRAFFIC",
-    "REACTOME_GOLGI_TO_ER_RETROGRADE_TRANSPORT",
-    "REACTOME_ER_QUALITY_CONTROL_COMPARTMENT_ERQC",
-    "WP_METABOLISM_OF_SPHINGOLIPIDS_IN_ER_AND_GOLGI_APPARATUS",
-    "PID_ER_NONGENOMIC_PATHWAY",
-    "WP_NEUROINFLAMMATION_AND_GLUTAMATERGIC_SIGNALING",
-    "WP_RELATIONSHIP_BETWEEN_INFLAMMATION_COX2_AND_EGFR",
-    "WP_RESISTIN_AS_A_REGULATOR_OF_INFLAMMATION",
-    "WP_APOE_AND_MIR146_IN_INFLAMMATION_AND_ATHEROSCLEROSIS",
-    "WP_SUPRESSION_OF_HMGB1_MEDIATED_INFLAMMATION_BY_THBD",
-    "WP_RESOLVIN_E1_AND_RESOLVIN_D1_SIGNALING_PATHWAYS_PROMOTING_INFLAMMATION_RESOLUTION",
-    "WP_NEUROINFLAMMATION"
-]  # List of specific pathways
+    "PID_AP1_PATHWAY",
+    "PID_HIF1_TFPATHWAY"
+    ]  # List of specific pathways
 
 csv_data = []
 for pathway in specific_pathways:
-    if pathway in significant_pathways:
-        print(f'{pathway}: {significant_pathways[pathway]}')
+    # print the pathway name, p-value, and corrected p-value
+    print(f'{pathway}: {empirical_p_values[pathway]} {corrected_p_values[pathway]}')
 
 for pathway in specific_pathways:
     if pathway in empirical_p_values:
