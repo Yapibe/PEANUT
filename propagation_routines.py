@@ -9,6 +9,18 @@ import time
 
 
 def propagate(seeds, propagation_input, matrix, gene_indexes, num_genes, task: PropagationTask):
+    """
+    Propagates the influence of seed genes through the network using the specified propagation matrix.
+    Args:
+        seeds (list): List of seed gene IDs.
+        propagation_input (dict): Mapping of gene IDs to their initial propagation values.
+        matrix (numpy.ndarray or scipy.sparse matrix): Propagation matrix.
+        gene_indexes (dict): Mapping of gene IDs to their indices in the matrix.
+        num_genes (int): Total number of genes in the network.
+        task (PropagationTask): Propagation task object containing propagation parameters.
+    Returns:
+        numpy.ndarray: Array containing the final propagated values for each gene.
+    """
     F_t = np.zeros(num_genes)
     if not propagation_input:
         propagation_input = {x: 1 for x in seeds}
@@ -27,6 +39,17 @@ def propagate(seeds, propagation_input, matrix, gene_indexes, num_genes, task: P
 
 
 def propagate_with_inverse(seeds, propagation_input, inverse_matrix, gene_indexes, num_genes):
+    """
+    Propagates seed gene values through a precomputed inverse matrix for faster calculation.
+    Args:
+        seeds (list): List of seed gene IDs.
+        propagation_input (dict): Mapping of gene IDs to their initial values for propagation.
+        inverse_matrix (numpy.ndarray): Precomputed inverse matrix for propagation.
+        gene_indexes (dict): Mapping of gene IDs to their indices in the matrix.
+        num_genes (int): Total number of genes in the network.
+    Returns:
+        numpy.ndarray: Array containing the final propagated values for each gene.
+    """
     F_0 = np.zeros(num_genes)
     for seed in seeds:
         F_0[gene_indexes[seed]] = propagation_input[seed]
@@ -38,6 +61,15 @@ def propagate_with_inverse(seeds, propagation_input, inverse_matrix, gene_indexe
 
 
 def generate_similarity_matrix(network, similarity_matrix_path, alpha):
+    """
+    Generates and saves a similarity matrix for network propagation, based on the provided network graph.
+    Args:
+        network (networkx.Graph or scipy.sparse matrix): Network graph or sparse matrix.
+        similarity_matrix_path (str): Path to save the computed similarity matrix.
+        alpha (float): Propagation parameter, controls the influence of the network structure.
+    Returns:
+        tuple: A tuple containing the inverse of the similarity matrix and the list of genes.
+    """
     genes = sorted(network.nodes())
 
     if not sp.sparse.issparse(network):
@@ -83,23 +115,17 @@ def generate_similarity_matrix(network, similarity_matrix_path, alpha):
 
 
 def read_sparse_matrix_txt(network, similarity_matrix_path):
+    """
+    Reads a precomputed sparse similarity matrix from a file.
+    Args:
+        network (networkx.Graph): Network graph used to generate the similarity matrix.
+        similarity_matrix_path (str): Path to the file containing the sparse matrix.
+    Returns:
+        tuple: A tuple containing the sparse matrix and the list of genes.
+    """
     genes = sorted(network.nodes())
     if not os.path.exists(similarity_matrix_path):
         raise FileNotFoundError(f"The specified file {similarity_matrix_path} does not exist.")
-
-    # rows, cols, data = [], [], []
-    # with open(similarity_matrix_path, 'r') as f:
-    #     for line in f:
-    #         # Extract row, col, and data from the line
-    #         i, j, v = line.split()
-    #         i = int(i[1:-1])  # Remove parentheses and convert to int
-    #         j = int(j[:-1])  # Remove trailing comma and convert to int
-    #         v = float(v)  # Convert to float
-    #         rows.append(i)
-    #         cols.append(j)
-    #         data.append(v)
-    # coo_mat = sp.sparse.coo_matrix((data, (rows, cols)))
-    # csr_mat = coo_mat.tocsr()
 
     # Load the matrix in .npz format
     start = time.time()
@@ -110,6 +136,16 @@ def read_sparse_matrix_txt(network, similarity_matrix_path):
 
 
 def propagate_network(propagation_input, matrix, genes):
+    """
+    Performs network propagation using a given input and similarity matrix.
+    Args:
+        propagation_input (dict): Mapping of gene IDs to their initial values for propagation.
+        matrix (numpy.ndarray or scipy.sparse matrix): Propagation matrix.
+        genes (list): List of genes corresponding to the indices in the matrix.
+    Returns:
+        tuple: A tuple containing a dictionary of gene indexes, the array of inverted gene scores,
+               and a dictionary of gene indexes to scores.
+    """
     num_genes = len(genes)
     gene_indexes = dict([(gene, index) for (index, gene) in enumerate(genes)])
 

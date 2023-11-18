@@ -13,14 +13,21 @@ import csv
 
 def run_gsea(task, ranked_genes: Dict[str, float], gene_sets: Dict[str, List[str]]):
     """
-    Run Gene Set Enrichment Analysis (GSEA) using the gseapy library.
+    Executes Gene Set Enrichment Analysis (GSEA) using the gseapy library.
 
-    Parameters:
-    - ranked_genes (Dict[str, float]): A dictionary of gene IDs mapped to their respective scores.
-    - gene_sets (Dict[str, List[str]]): A dictionary where keys are pathway names and values are lists of gene IDs in that pathway.
+    Args:
+        task (Task): The task object containing relevant settings and results.
+        ranked_genes (Dict[str, float]): Dictionary mapping gene names to their ranking scores.
+        gene_sets (Dict[str, List[str]]): Dictionary where keys are pathway names and values are lists of gene names.
+
+    Modifies:
+        task.results (Dict): Updates the task's results dictionary with GSEA results for each pathway.
+
+    Side Effects:
+        Writes GSEA results to a CSV file.
 
     Returns:
-    - Dict[str, float]: A dictionary where keys are pathway names and values are the enrichment p-values for those pathways.
+        None
     """
 
     # Convert dictionary to Series, ensuring it's of float data type
@@ -47,9 +54,16 @@ def run_gsea(task, ranked_genes: Dict[str, float], gene_sets: Dict[str, List[str
 
 def get_scores(task):
     """
-    takes a task, a network graph and a general args object and returns a dictionary of scores
-    :param task: EnrichTask or RawScoreTask
-    :return: dictionary of scores
+    Retrieves gene scores based on the given task configuration.
+
+    Args:
+        task (EnrichTask or RawScoreTask): Task object specifying the type of analysis and associated parameters.
+
+    Raises:
+        ValueError: If the task type is not supported.
+
+    Returns:
+        Dict[int, float]: Dictionary mapping gene IDs to their corresponding scores.
     """
 
     if isinstance(task, EnrichTask):
@@ -65,6 +79,14 @@ def get_scores(task):
 
 
 def load_network_and_pathways(general_args):
+    """
+    Loads the network graph and pathways based on the provided configuration.
+    Args:
+        general_args (GeneralArgs): Object containing general configuration settings.
+    Returns:
+        tuple: A tuple containing the network graph, a list of interesting pathways, and a dictionary mapping
+               pathways to their genes.
+    """
     network_graph = read_network(general_args.network_file_path)
     genes_by_pathway = load_pathways_genes(general_args.pathway_members_path)
     interesting_pathways = list(genes_by_pathway.keys())
@@ -73,6 +95,17 @@ def load_network_and_pathways(general_args):
 
 
 def process_tasks(task_list, network_graph, general_args, interesting_pathways, genes_by_pathway):
+    """
+    Processes a list of tasks for pathway enrichment analysis.
+    Args:
+        task_list (List[Task]): List of tasks to be processed.
+        network_graph (Graph): Graph representing the network.
+        general_args (GeneralArgs): General configuration settings.
+        interesting_pathways (List[str]): List of pathways of interest.
+        genes_by_pathway (Dict[str, List[int]]): Dictionary mapping pathways to their gene IDs.
+    Returns:
+        Set[str]: Set of pathways to be displayed in the analysis.
+    """
     pathways_to_display = set()
     pathways_with_many_genes = []
 
@@ -126,6 +159,16 @@ def process_tasks(task_list, network_graph, general_args, interesting_pathways, 
 
 
 def process_matrices(task_list, pathways_to_display, general_args):
+    """
+    Processes the matrices for p-values, adjusted p-values, and directions based on task results.
+    Args:
+        task_list (List[Task]): List of tasks with their respective results.
+        pathways_to_display (Set[str]): Set of pathways to be included in the analysis.
+        general_args (GeneralArgs): General configuration settings.
+    Returns:
+        tuple: A tuple containing matrices for adjusted p-values, directions, pathway names, and column names
+               for the heatmap.
+    """
     p_vals_mat = np.ones((len(pathways_to_display), len(task_list)))
     adj_p_vals_mat = np.ones_like(p_vals_mat)
     directions_mat = np.zeros_like(p_vals_mat)
@@ -205,6 +248,17 @@ def process_matrices(task_list, pathways_to_display, general_args):
 
 
 def filter_by_minimum_p_values(p_vals_mat, adj_p_vals_mat, directions_mat, pathways_to_display, general_args):
+    """
+    Filters pathways based on minimum p-values and limits the number of pathways to display.
+    Args:
+        p_vals_mat (numpy.ndarray): Matrix of p-values.
+        adj_p_vals_mat (numpy.ndarray): Matrix of adjusted p-values.
+        directions_mat (numpy.ndarray): Matrix indicating the direction of changes.
+        pathways_to_display (List[str]): List of pathway names to be considered.
+        general_args (args): General configuration settings.
+    Returns:
+        tuple: Filtered matrices for p-values, adjusted p-values, directions, and a list of pathway names.
+    """
     candidates = np.min(p_vals_mat, axis=1)
     ind = np.sort(
         np.argpartition(candidates, general_args.maximum_number_of_pathways)[:general_args.maximum_number_of_pathways])
@@ -215,8 +269,23 @@ def filter_by_minimum_p_values(p_vals_mat, adj_p_vals_mat, directions_mat, pathw
     return p_vals_mat, adj_p_vals_mat, directions_mat, pathways_to_display
 
 
-def plot_results(adj_p_vals_mat, directions_mat, row_names, general_args, coll_names_in_heatmap,
-                 dataset_type, n_pathways_before):
+def plot_results(adj_p_vals_mat, directions_mat, row_names, general_args, coll_names_in_heatmap, dataset_type,
+                 n_pathways_before):
+    """
+    Plots the results of pathway enrichment analysis.
+    Args:
+        adj_p_vals_mat (numpy.ndarray): Matrix of adjusted p-values.
+        directions_mat (numpy.ndarray): Matrix indicating the direction of changes.
+        row_names (List[str]): Names of the pathways (rows).
+        general_args (GeneralArgs): General configuration settings.
+        coll_names_in_heatmap (List[str]): Names of the columns in the heatmap.
+        dataset_type (str): Type of the dataset.
+        n_pathways_before (int): Number of pathways before filtering.
+    Side Effects:
+        Generates and saves a heatmap plot.
+    Returns:
+        None
+    """
     # Set a small value to represent the minimum p-value
     min_p_val = np.finfo(adj_p_vals_mat.dtype).tiny
 
@@ -234,11 +303,19 @@ def plot_results(adj_p_vals_mat, directions_mat, row_names, general_args, coll_n
 
 def run(task_list, general_args, dataset_type=''):
     """
-    takes a list of tasks, a general args object and an optional dataset type and runs the pathway enrichment analysis
-    :param task_list: list of tasks
-    :param general_args: general args object
-    :param dataset_type: optional dataset type
-    :return: None
+    Main function to run the pathway enrichment analysis.
+
+    Args:
+        task_list (List[Task]): List of tasks to be processed.
+        general_args (args): General configuration settings.
+        dataset_type (str, optional): Type of the dataset. Defaults to an empty string.
+
+    Side Effects:
+        Executes the entire pathway enrichment analysis workflow, including data loading, processing,
+        analysis, and plotting results.
+
+    Returns:
+        None
     """
     network_graph, interesting_pathways, genes_by_pathway = load_network_and_pathways(general_args)
 

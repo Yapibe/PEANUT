@@ -3,6 +3,15 @@ from scipy.stats import ranksums, rankdata, ttest_ind
 
 
 class StatResults:
+    """
+    Class to store the results of a statistical test.
+    Attributes:
+        p_value (float): The p-value of the test.
+        directionality (bool): Indicates the direction of the difference (True if experiment > elements).
+        z_score (float): The z-score from the test (if applicable).
+        name (str): Name of the statistical test.
+    """
+
     def __init__(self, p_value=None, directionality=None, z_score=None, name=None):
         self.p_value = p_value
         self.directionality = directionality
@@ -11,23 +20,33 @@ class StatResults:
 
 
 def wilcoxon_rank_sums_test(experiment_scores, elements_scores, alternative='two-sided', **kwargs) -> StatResults:
+    """
+    Performs the Wilcoxon rank-sums test (Mann-Whitney U test) on two sets of scores.
+
+    Args:
+        experiment_scores (array_like): Array of scores from the experiment group.
+        elements_scores (array_like): Array of scores from the control group.
+        alternative (str, optional): Defines the alternative hypothesis. Possible values are 'two-sided', 'less', or 'greater'.
+
+    Returns:
+        StatResults: Object containing the p-value, directionality, and name of the test.
+    """
     wilcoxon_rank_sums_test.name = 'Wilcoxon_rank_sums_test'
     p_vals = ranksums(experiment_scores, elements_scores, alternative=alternative).pvalue
     direction = np.mean(experiment_scores) > np.mean(elements_scores)
     return StatResults(p_value=p_vals, directionality=direction, name=wilcoxon_rank_sums_test.name)
 
 
-from scipy.stats import ttest_ind
-import numpy as np
-
-
 def students_t_test(experiment_scores, elements_scores):
     """
-    Perform a Student's t-test or Welch's t-test on two sets of data.
+    Performs Student's t-test or Welch's t-test to compare two sets of scores.
 
-    :param experiment_scores: Scores from the experiment.
-    :param elements_scores: Scores from the elements (population).
-    :return: t-statistic, p-value, and directionality of the difference.
+    Args:
+        experiment_scores (array_like): Array of scores from the experiment group.
+        elements_scores (array_like): Array of scores from the control group.
+
+    Returns:
+        StatResults: Object containing the p-value, directionality, and name of the test.
     """
     students_t_test.name = 'Students_t_test'
 
@@ -46,6 +65,13 @@ def students_t_test(experiment_scores, elements_scores):
 
 
 def bh_correction(p_values):
+    """
+    Applies the Benjamini-Hochberg procedure for controlling the false discovery rate in multiple hypothesis testing.
+    Args:
+        p_values (array_like): Array of p-values obtained from multiple statistical tests.
+    Returns:
+        numpy.ndarray: Array of adjusted p-values.
+    """
     p_vals_rank = rankdata(p_values, 'max') - 1
     p_vals_rank_ord = rankdata(p_values, 'ordinal') - 1
 

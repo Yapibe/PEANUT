@@ -8,6 +8,18 @@ import time
 
 
 def perform_propagation(task):
+    """
+    Executes the gene score propagation process using a provided network and prior data.
+
+    This function reads the network graph, loads the prior data, and performs gene score propagation.
+    It involves normalization of propagation scores and saving these scores for further analysis.
+
+    Parameters:
+    - task (PropagationTask): An object containing all necessary parameters and file paths for propagation.
+
+    Returns:
+    - None: This function does not return a value but saves the propagation scores to a specified directory.
+    """
     # reads the network graph from a file
     network = utils.read_network(task.network_file_path)
 
@@ -71,10 +83,19 @@ def perform_propagation(task):
     print("saving propagation score")
     utils.save_propagation_score(propagation_scores=score_gene_scores_inverse, prior_set=prior_data,
                                  propagation_input=propagation_input, genes_idx_to_id=score_genes_idx_to_id,
-                                 task=task, save_dir=task.output_folder, date=task.date)
+                                 task=task, save_dir=task.output_folder)
 
 
 def perform_enrichment(task):
+    """
+    Executes the enrichment analysis on propagated gene scores.
+    This function sets up tasks for enrichment analysis, including defining parameters and file paths.
+    It then runs the enrichment analysis and processes the results.
+    Parameters:
+    - task (EnrichTask): An object containing parameters and file paths for running the enrichment analysis.
+    Returns:
+    - None: This function does not return a value but may generate output files like plots or data summaries.
+    """
     # run enrichment
     print("running enrichment")
     tasks = []
@@ -110,8 +131,18 @@ def perform_enrichment(task):
 
 
 def main(run_propagation=True, run_enrichment=True):
+    """
+    Main function to execute propagation and enrichment analysis based on specified flags.
+    This function initializes tasks for propagation and enrichment and executes them based on the
+    provided flags. It serves as the entry point for running the gene score propagation and enrichment analysis pipeline.
+    Parameters:
+    - run_propagation (bool): Flag to determine whether to run propagation (default: True).
+    - run_enrichment (bool): Flag to determine whether to run enrichment analysis (default: True).
+    Returns:
+    - None: This function orchestrates the execution of other functions but does not return a value.
+    """
     # create a propagation task
-    task = PropagationTask(experiment_name='TvN', create_similarity_matrix=False)
+    task = PropagationTask(experiment_name='TvN')
 
     if run_propagation:
         perform_propagation(task)

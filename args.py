@@ -4,10 +4,21 @@ from utils import get_root_path
 
 
 class PropagationTask:
-    def __init__(self, experiment_name, alpha=1, network_file='H_sapiens.net',
-                 create_similarity_matrix=True):
+    def __init__(self, experiment_name, alpha=0.1, network_file='H_sapiens.net',
+                 create_similarity_matrix=False):
         """
-        Initialize the Propagation Task with default and optional parameters.
+        Initializes a task for gene score propagation.
+
+        This class sets up the necessary parameters and paths for performing gene score propagation in a network.
+
+        Parameters:
+        - experiment_name (str): Name of the experiment.
+        - alpha (float): Propagation parameter, controlling the influence of network structure on propagation.
+        - network_file (str): Name of the file containing the network data.
+        - create_similarity_matrix (bool): Flag to indicate whether to create a new similarity matrix.
+
+        Attributes:
+        - Various paths and parameters are set up based on the input parameters to facilitate gene score propagation.
         """
 
         # General Parameters
@@ -62,6 +73,20 @@ class PropagationTask:
 class EnrichTask:
     def __init__(self, name, propagation_file, propagation_folder, statistic_test, target_field,
                  constrain_to_experiment_genes):
+        """
+        Initializes an enrichment task with specified parameters.
+
+        This class configures an enrichment analysis task, including setting file paths and statistical tests
+        Parameters:
+        - name (str): Name of the task.
+        - propagation_file (str): Filename of the propagated gene scores.
+        - propagation_folder (str): Folder path where the propagation file is located.
+        - statistic_test (function): Statistical test function to use for enrichment analysis.
+        - target_field (str): Field in the data to target for enrichment analysis.
+        - constrain_to_experiment_genes (bool): Flag to constrain analysis to experiment genes only
+        Attributes:
+        - Paths and parameters for running enrichment analysis.
+        """
         self.name = name
         self.propagation_file = propagation_file
         self.propagation_scores_path = path.join(get_root_path(), propagation_folder)
@@ -74,6 +99,21 @@ class EnrichTask:
 class RawScoreTask:
     def __init__(self, name, experiment_file_path, score_file_path, sheet_name, statistic_test, propagation_input_type,
                  constrain_to_network_genes=True):
+        """
+        Initializes a task for processing raw scores from an experiment
+        This class is used for setting up tasks that involve working with raw experimental scores, including
+        applying statistical tests and managing score files
+        Parameters:
+        - name (str): Name of the task.
+        - experiment_file_path (str): Path to the experiment data file.
+        - score_file_path (str): Path to the file containing scores.
+        - sheet_name (str): Name of the sheet in the score file.
+        - statistic_test (function): Statistical test to be applied to the scores.
+        - propagation_input_type (str): Type of input used for propagation.
+        - constrain_to_network_genes (bool): Whether to constrain the analysis to genes in the network
+        Attributes:
+        - Configuration for processing and analyzing raw scores from experiments.
+        """
         self.name = name
         self.score_file_path = score_file_path
         self.sheet_name = sheet_name
@@ -87,6 +127,20 @@ class RawScoreTask:
 class GeneralArgs:
     def __init__(self, network_path, genes_names_path, pathway_members_path, FDR_threshold=0.1,
                  output_folder_name=None, figure_name=None, figure_title='Pathway Enrichment '):
+        """
+        Contains general arguments and settings for pathway enrichment analysis
+        This class encapsulates various parameters and settings used across different stages of pathway enrichment analysis
+        Parameters:
+        - network_path (str): Path to the network file.
+        - genes_names_path (str): Path to the genes names file.
+        - pathway_members_path (str): Path to the file containing pathway members.
+        - FDR_threshold (float): False Discovery Rate threshold for statistical significance.
+        - output_folder_name (str, optional): Name of the output folder.
+        - figure_name (str, optional): Name of the figure to be generated.
+        - figure_title (str): Title for the figure or output
+        Attributes:
+        - Configurations like minimum and maximum genes per pathway, FDR threshold, and paths for output and figures.
+        """
         self.minimum_gene_per_pathway = 10
         self.maximum_gene_per_pathway = 60
         self.network_file_path = network_path
@@ -102,8 +156,20 @@ class GeneralArgs:
         self.figure_title = figure_title
         self.use_gsea = False
 
+
 class PathwayResults:
     def __init__(self, p_value, direction, adj_p_value=None):
+        """
+        Stores the results of pathway analysis
+        This class is used to hold the results of a pathway analysis, including the p-value, direction of change,
+        and adjusted p-value if available
+        Parameters:
+        - p_value (float): The p-value resulting from the statistical test.
+        - direction (bool): Indicates the direction of the effect (True for positive, False for negative).
+        - adj_p_value (float, optional): The adjusted p-value after correction for multiple testing
+        Attributes:
+        - Holds the statistical results for a specific pathway.
+        """
         self.p_value = p_value
         self.direction = direction
         self.adj_p_value = adj_p_value

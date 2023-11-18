@@ -7,28 +7,45 @@ import pickle
 import zlib
 
 
+# noinspection PyTypeChecker
 def read_network(network_filename):
     """
-    read a network from a file
-    :param network_filename: the file containing the network
-    :return: a networkx graph
+    Reads a network from a file and returns a NetworkX graph.
+
+    Args:
+        network_filename (str): Path to the file containing the network data.
+
+    Returns:
+        networkx.Graph: A graph object representing the network.
     """
     network = pd.read_table(network_filename, header=None, usecols=[0, 1, 2])
     return nx.from_pandas_edgelist(network, 0, 1, 2)
 
 
 def read_prior_set(excel_dir):
+    """
+    Reads prior data set from an Excel file.
+    Args:
+        excel_dir (str): Path to the Excel file containing the prior data.
+    Returns:
+        pandas.DataFrame: DataFrame containing the prior data.
+    """
     prior_data = pd.read_excel(excel_dir, engine='openpyxl')
     return prior_data
 
 
 def get_propagation_input(prior_gene_ids, prior_data, input_type, network):
     """
-    :param network:
-    :param prior_gene_ids: list of gene_ids
-    :param prior_data: all excel file
-    :param input_type:
-    :return:
+    Generates propagation inputs based on specified type and network.
+
+    Args:
+        prior_gene_ids (set): List of gene IDs for the prior set.
+        prior_data (pandas.DataFrame): DataFrame containing all experimental data.
+        input_type (str): Type of input to generate (e.g., 'ones', 'abs_Score', etc.).
+        network (networkx.Graph): Network graph object.
+
+    Returns:
+        dict: A dictionary mapping gene IDs to their corresponding input values.
     """
 
     if input_type == 'ones':
@@ -66,7 +83,15 @@ def get_propagation_input(prior_gene_ids, prior_data, input_type, network):
 
 
 def save_file(obj, save_dir=None, compress=True):
-    import pickle, zlib
+    """
+    Saves an object to a file, with optional compression.
+    Args:
+        obj (object): The object to be saved.
+        save_dir (str, optional): The directory where the file will be saved.
+        compress (bool, optional): Whether to compress the file.
+    Returns:
+        None
+    """
     obj = pickle.dumps(obj)
     if compress:
         obj = zlib.compress(obj)
@@ -75,19 +100,20 @@ def save_file(obj, save_dir=None, compress=True):
     print('File was saved in {}'.format(save_dir))
 
 
-def save_propagation_score(propagation_scores, prior_set, propagation_input, genes_idx_to_id, task,
-                           save_dir=None, date=None):
+def save_propagation_score(propagation_scores, prior_set, propagation_input, genes_idx_to_id, task, save_dir=None):
     """
-    this function saves the propagation scores to a file
-    :param propagation_scores: the propagation scores
-    :param prior_set: the set of prior genes
-    :param propagation_input: the propagation input
-    :param genes_idx_to_id: a dictionary from gene index to gene id
-    :param task: the arguments of the program
-    :param date: the date of the experiment
-    :param file_name: the name of the file to save the results to
-    :param save_dir: the directory to save the results to
-    :return: None
+    Saves the propagation scores to a file.
+
+    Args:
+        propagation_scores (dict): The propagation scores to be saved.
+        prior_set (set): The set of prior genes.
+        propagation_input (dict): The input used for propagation.
+        genes_idx_to_id (dict): Mapping from gene indices to gene IDs.
+        task (PropagationTask): The propagation task object containing program arguments.
+        save_dir (str, optional): Directory to save the results.
+
+    Returns:
+        dict: A dictionary containing the saved data.
     """
     file_name = f"{task.experiment_name}_{task.propagation_input_type}_{task.alpha}_{task.date}"
     save_dir = save_dir or task.propagation_scores_path
@@ -104,14 +130,23 @@ def save_propagation_score(propagation_scores, prior_set, propagation_input, gen
 
 
 def get_root_path():
+    """
+    Retrieves the root path of the current script.
+    Returns:
+        str: The root directory path of the current script file.
+    """
     return path.dirname(path.realpath(__file__))
 
 
 def load_pathways_genes(pathways_dir):
     """
-    load the pathways from a file
-    :param pathways_dir: the file containing the pathways
-    :return: a dictionary from pathway name to a list of genes in the pathway
+    Loads the pathways and their associated genes from a file.
+
+    Args:
+        pathways_dir (str): Path to the file containing the pathway data.
+
+    Returns:
+        dict: A dictionary mapping pathway names to lists of genes in each pathway.
     """
     with open(pathways_dir, 'r') as f:
         lines = [str.upper(x.strip()).split('\t') for x in f]
@@ -122,10 +157,14 @@ def load_pathways_genes(pathways_dir):
 
 def load_file(load_dir, decompress=True):
     """
-    load a file from a directory using pickle with optional decompression
-    :param load_dir: the directory to load the file from
-    :param decompress: whether to decompress the file
-    :return: the loaded object
+    Loads an object from a file using pickle with optional decompression.
+
+    Args:
+        load_dir (str): The directory from which to load the file.
+        decompress (bool, optional): Whether to decompress the file.
+
+    Returns:
+        object: The object loaded from the file.
     """
     with open(load_dir, 'rb') as f:
         file = pickle.load(f)
@@ -139,12 +178,15 @@ def load_file(load_dir, decompress=True):
 
 def load_propagation_scores(task, propagation_file_name=None):
     """
-    this function loads the propagation scores from a file
-    :param task: the arguments of the program
-    :param propagation_file_name: the name of the file to load the results from
-    :return: the propagation scores, the propagation input, a dictionary from gene index to gene id
-    """
+    Loads the propagation scores from a file.
 
+    Args:
+        task (PropagationTask): The propagation task object containing program arguments.
+        propagation_file_name (str, optional): Name of the file to load the results from.
+
+    Returns:
+        dict: Dictionary containing the propagation scores, input, and gene index to ID mapping.
+    """
     propagation_results_path = path.join(task.propagation_scores_path, propagation_file_name)
     propagation_result_dict: dict = load_file(propagation_results_path, decompress=True)
 

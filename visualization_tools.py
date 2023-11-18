@@ -12,6 +12,17 @@ from os import path
 
 def sort_y_ticks_by_dir_and_pvalue_of_one_column(enrichment_table, y_ticks, annotation_map, direction,
                                                  dir_column_to_sort_by=0):
+    """
+    Sorts the rows of the enrichment table by direction and p-value.
+    Args:
+        enrichment_table (numpy.ndarray): The enrichment table to sort.
+        y_ticks (list): The y-axis labels corresponding to rows in the enrichment table.
+        annotation_map (numpy.ndarray): Annotations for each cell in the enrichment table.
+        direction (numpy.ndarray): Array indicating the direction of enrichment for each row.
+        dir_column_to_sort_by (int): Index of the column in the direction array to sort by.
+    Returns:
+        tuple: Tuple containing sorted enrichment table, y-ticks, annotation map, and direction array.
+    """
     # 1. sort 0s from 1s in direction table
     sorted_indexes1 = np.argsort(direction[:, dir_column_to_sort_by])
     enrichment_table = enrichment_table[sorted_indexes1, :]
@@ -51,6 +62,16 @@ def sort_y_ticks_by_dir_and_pvalue_of_one_column(enrichment_table, y_ticks, anno
 
 
 def sort_y_ticks_by_dir(enrichment_table, y_ticks, annotation_map, direction):
+    """
+    Sorts the rows of the enrichment table by the overall direction of enrichment.
+    Args:
+        enrichment_table (numpy.ndarray): The enrichment table to sort.
+        y_ticks (list): The y-axis labels corresponding to rows in the enrichment table.
+        annotation_map (numpy.ndarray): Annotations for each cell in the enrichment table.
+        direction (numpy.ndarray): Array indicating the direction of enrichment for each row.
+    Returns:
+        tuple: Tuple containing sorted enrichment table, y-ticks, annotation map, and direction array.
+    """
     # warning NO ADJ_P_MAT
     simplified_dir = []
     for row in direction:
@@ -66,6 +87,15 @@ def sort_y_ticks_by_dir(enrichment_table, y_ticks, annotation_map, direction):
 
 
 def sort_y_ticks(enrichment_table, y_ticks, annotation_map):
+    """
+    Sorts the rows of the enrichment table based on a custom sorting of y-ticks.
+    Args:
+        enrichment_table (numpy.ndarray): The enrichment table to sort.
+        y_ticks (list): The y-axis labels corresponding to rows in the enrichment table.
+        annotation_map (numpy.ndarray): Annotations for each cell in the enrichment table.
+    Returns:
+        tuple: Tuple containing sorted enrichment table, y-ticks, and annotation map.
+    """
     # works (tested reversing the orded)
     # warning NO ADJ_P_MAT
 
@@ -82,6 +112,20 @@ def sort_y_ticks(enrichment_table, y_ticks, annotation_map):
 
 def plot_enrichment_table(enrichment_table, direction, interesting_pathways, save_dir=None, experiment_names=None,
                           title=None, res_type=None, adj_p_value_threshold=0.01):
+    """
+    Plots a heatmap of enrichment analysis results, highlighting significant pathways.
+    Args:
+        enrichment_table (numpy.ndarray): 2D array of enrichment scores for each pathway and experiment.
+        direction (numpy.ndarray): 2D array indicating the direction of enrichment.
+        interesting_pathways (list): List of pathway names corresponding to rows in the enrichment table.
+        save_dir (str, optional): Directory to save the generated plot.
+        experiment_names (list, optional): Names of experiments corresponding to columns in the enrichment table.
+        title (str, optional): Title for the plot.
+        res_type (str, optional): Type of results being plotted, e.g., 'z_score'.
+        adj_p_value_threshold (float, optional): Threshold for adjusted p-value to highlight significant pathways.
+    Returns:
+        None: The function saves the plot to the specified directory.
+    """
 
     # Initialize the plot
     fig, ax = plt.subplots()

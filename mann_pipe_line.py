@@ -39,41 +39,41 @@ def get_fold_change_ranks(prior_data, score_column):
     return {gene: rank for gene, rank in zip(fold_values.keys(), rankdata(list(fold_values.values())))}
 
 
-# def compare_pathway_to_randomized(real_scores, shuffled_scores):
-#     # Ensure that real_scores and shuffled_scores are NumPy arrays of type float
-#     real_scores = np.asarray(real_scores, dtype=float)
-#     shuffled_scores = np.asarray(shuffled_scores, dtype=float)
-#
-#     # Wilcoxon signed-rank test logic
-#     differences = real_scores - shuffled_scores
-#     abs_diff = np.abs(differences)
-#     ranks = rankdata(abs_diff)
-#     signed_ranks = ranks * np.sign(differences)
-#     T = np.sum(signed_ranks)
-#     return T
-#
-#
-# def calculate_empirical_p_values(real_data, pathways, num_simulations=1000):
-#     empirical_p_values = {}
-#
-#     for pathway_name, pathway_genes in pathways.items():
-#         count_negative_T = 0
-#         # Filter the real scores for pathway genes
-#         pathway_real_scores = real_data[real_data['GeneID'].isin(pathway_genes)]['Score'].astype(float)
-#
-#         for i in range(1, num_simulations + 1):
-#             shuffled_score_column = f'Shuffled_Score_{i}'
-#             # Filter the shuffled scores for pathway genes
-#             pathway_shuffled_scores = real_data[real_data['GeneID'].isin(pathway_genes)][shuffled_score_column].astype(
-#                 float)
-#
-#             T = compare_pathway_to_randomized(pathway_real_scores, pathway_shuffled_scores)
-#             if T < 0:
-#                 count_negative_T += 1
-#
-#         empirical_p_values[pathway_name] = (count_negative_T + 1) / (num_simulations + 1)
-#
-#     return empirical_p_values
+def compare_pathway_to_randomized(real_scores, shuffled_scores):
+    # Ensure that real_scores and shuffled_scores are NumPy arrays of type float
+    real_scores = np.asarray(real_scores, dtype=float)
+    shuffled_scores = np.asarray(shuffled_scores, dtype=float)
+
+    # Wilcoxon signed-rank test logic
+    differences = real_scores - shuffled_scores
+    abs_diff = np.abs(differences)
+    ranks = rankdata(abs_diff)
+    signed_ranks = ranks * np.sign(differences)
+    T = np.sum(signed_ranks)
+    return T
+
+
+def calculate_empirical_p_values(real_data, pathways, num_simulations=1000):
+    empirical_p_values = {}
+
+    for pathway_name, pathway_genes in pathways.items():
+        count_negative_T = 0
+        # Filter the real scores for pathway genes
+        pathway_real_scores = real_data[real_data['GeneID'].isin(pathway_genes)]['Score'].astype(float)
+
+        for i in range(1, num_simulations + 1):
+            shuffled_score_column = f'Shuffled_Score_{i}'
+            # Filter the shuffled scores for pathway genes
+            pathway_shuffled_scores = real_data[real_data['GeneID'].isin(pathway_genes)][shuffled_score_column].astype(
+                float)
+
+            T = compare_pathway_to_randomized(pathway_real_scores, pathway_shuffled_scores)
+            if T < 0:
+                count_negative_T += 1
+
+        empirical_p_values[pathway_name] = (count_negative_T + 1) / (num_simulations + 1)
+
+    return empirical_p_values
 
 
 # def calculate_pathway_score(ranks, pathway_genes):
@@ -101,37 +101,37 @@ def get_fold_change_ranks(prior_data, score_column):
 #     return empirical_p_values
 
 
-def paired_sample_t_test(real_scores, shuffled_scores):
-    # Ensure that real_scores and shuffled_scores are NumPy arrays of type float
-    real_scores = np.asarray(real_scores, dtype=float)
-    shuffled_scores = np.asarray(shuffled_scores, dtype=float)
-
-    # Perform the paired sample t-test
-    t_statistic, p_value = ttest_rel(real_scores, shuffled_scores)
-    return t_statistic
-
-
-def calculate_empirical_p_values(real_data, pathways, num_simulations=1000):
-    empirical_p_values = {}
-
-    for pathway_name, pathway_genes in pathways.items():
-        count_negative_T = 0
-        # Filter the real scores for pathway genes
-        pathway_real_scores = real_data[real_data['GeneID'].isin(pathway_genes)]['Score'].astype(float)
-
-        for i in range(1, num_simulations + 1):
-            shuffled_score_column = f'Shuffled_Score_{i}'
-            # Filter the shuffled scores for pathway genes
-            pathway_shuffled_scores = real_data[real_data['GeneID'].isin(pathway_genes)][shuffled_score_column].astype(
-                float)
-
-            T = paired_sample_t_test(pathway_real_scores, pathway_shuffled_scores)
-            if T < 0:
-                count_negative_T += 1
-
-        empirical_p_values[pathway_name] = (count_negative_T + 1) / (num_simulations + 1)
-
-    return empirical_p_values
+# def paired_sample_t_test(real_scores, shuffled_scores):
+#     # Ensure that real_scores and shuffled_scores are NumPy arrays of type float
+#     real_scores = np.asarray(real_scores, dtype=float)
+#     shuffled_scores = np.asarray(shuffled_scores, dtype=float)
+#
+#     # Perform the paired sample t-test
+#     t_statistic, p_value = ttest_rel(real_scores, shuffled_scores)
+#     return t_statistic
+#
+#
+# def calculate_empirical_p_values(real_data, pathways, num_simulations=1000):
+#     empirical_p_values = {}
+#
+#     for pathway_name, pathway_genes in pathways.items():
+#         count_negative_T = 0
+#         # Filter the real scores for pathway genes
+#         pathway_real_scores = real_data[real_data['GeneID'].isin(pathway_genes)]['Score'].astype(float)
+#
+#         for i in range(1, num_simulations + 1):
+#             shuffled_score_column = f'Shuffled_Score_{i}'
+#             # Filter the shuffled scores for pathway genes
+#             pathway_shuffled_scores = real_data[real_data['GeneID'].isin(pathway_genes)][shuffled_score_column].astype(
+#                 float)
+#
+#             T = paired_sample_t_test(pathway_real_scores, pathway_shuffled_scores)
+#             if T < 0:
+#                 count_negative_T += 1
+#
+#         empirical_p_values[pathway_name] = (count_negative_T + 1) / (num_simulations + 1)
+#
+#     return empirical_p_values
 
 
 def load_and_prepare_data(task):
@@ -323,7 +323,7 @@ def perform_propagation(task):
     print("saving propagation score")
     utils.save_propagation_score(propagation_scores=score_gene_scores_inverse, prior_set=prior_data,
                                  propagation_input=propagation_input, genes_idx_to_id=score_genes_idx_to_id,
-                                 task=task, save_dir=task.output_folder, date=task.date)
+                                 task=task, save_dir=task.output_folder)
     perform_enrichment(task, prior_data)
 
 
