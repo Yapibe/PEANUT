@@ -96,7 +96,6 @@ def process_tasks(task_list, network_graph, general_args, genes_by_pathway):
         task_list (List[Task]): List of tasks to be processed.
         network_graph (Graph): Graph representing the network.
         general_args (GeneralArgs): General configuration settings.
-        interesting_pathways (List[str]): List of pathways of interest.
         genes_by_pathway (Dict[str, List[int]]): Dictionary mapping pathways to their gene IDs.
     Returns:
         Set[str]: Set of pathways to be displayed in the analysis.
@@ -142,8 +141,8 @@ def process_tasks(task_list, network_graph, general_args, genes_by_pathway):
                                      id not in genes_by_pathway_filtered[pathway]]
                 result = task.statistic_test(pathway_scores, background_scores)
                 task.results[pathway] = PathwayResults(p_value=result.p_value, direction=result.directionality)
-                # if pathway == "WP_DISRUPTION_OF_POSTSYNAPTIC_SIGNALING_BY_CNV" or pathway == "WP_SYNAPTIC_SIGNALING_PATHWAYS_ASSOCIATED_WITH_AUTISM_SPECTRUM_DISORDER":
-                print("pathway", pathway, "p-value", result.p_value, "direction", result.directionality)
+                if pathway == "WP_DISRUPTION_OF_POSTSYNAPTIC_SIGNALING_BY_CNV" or pathway == "WP_SYNAPTIC_SIGNALING_PATHWAYS_ASSOCIATED_WITH_AUTISM_SPECTRUM_DISORDER":
+                    print("pathway", pathway, "p-value", result.p_value, "direction", result.directionality)
 
     pathways_to_display = np.sort(list(pathways_to_display))
 
@@ -223,9 +222,6 @@ def process_matrices(task_list, pathways_to_display, general_args):
         writer.writerow(['Pathway', 'Task Name', 'P-Value', 'Adjusted P-Value'])
         # Write data
         writer.writerows(csv_rows)
-
-    # Count pathways with adjusted p-value < 0.05
-    count_significant_pathways = np.sum(adj_p_vals_mat < 0.05)
 
     # Filter and adjust matrices
     keep_rows = np.nonzero(np.any(adj_p_vals_mat <= general_args.FDR_threshold, axis=1))[0]
