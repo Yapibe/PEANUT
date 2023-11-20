@@ -31,10 +31,14 @@ def read_prior_set(excel_dir):
         pandas.DataFrame: DataFrame containing the prior data.
     """
     prior_data = pd.read_excel(excel_dir, engine='openpyxl')
+    # Apply data preparation logic
+    prior_data = prior_data[prior_data['GeneID'].apply(lambda x: str(x).isdigit())]
+    prior_data['GeneID'] = prior_data['GeneID'].astype(int)
+    prior_data = prior_data.reset_index(drop=True)
     return prior_data
 
 
-def get_propagation_input(prior_gene_ids, prior_data, input_type, network):
+def get_propagation_input(prior_gene_ids, prior_data, input_type):
     """
     Generates propagation inputs based on specified type and network.
 
@@ -42,43 +46,32 @@ def get_propagation_input(prior_gene_ids, prior_data, input_type, network):
         prior_gene_ids (set): List of gene IDs for the prior set.
         prior_data (pandas.DataFrame): DataFrame containing all experimental data.
         input_type (str): Type of input to generate (e.g., 'ones', 'abs_Score', etc.).
-        network (networkx.Graph): Network graph object.
 
     Returns:
         dict: A dictionary mapping gene IDs to their corresponding input values.
     """
-
+    inputs = dict()
     if input_type == 'ones':
-        inputs = {int(x): 1 for x in prior_gene_ids if x in network.nodes}
+        inputs = {int(x): 1 for x in prior_gene_ids}
     elif input_type is None:
-        inputs = {int(x): 1 for x in prior_gene_ids if x in network.nodes}
+        inputs = {int(x): 1 for x in prior_gene_ids}
     elif input_type == 'abs_Score':
-        inputs = {int(id): np.abs(float(prior_data[prior_data.GeneID == id]['Score'])) for id in prior_gene_ids}
+        for id in prior_gene_ids:
+            try:
+                # Your original code for processing each id
+                inputs[int(id)] = np.abs(float(prior_data[prior_data.GeneID == id]['Score'].values[0]))
+            except TypeError:
+                print(f"Error processing ID: {id}")
+                print(f"Data for this ID: {prior_data[prior_data.GeneID == id]}")
+                # Optionally, you can break or continue based on your needs
+                break
+
     elif input_type == 'Score':
         inputs = {int(id): float(prior_data[prior_data.GeneID == id]['Score'].values[0]) for id in prior_gene_ids}
-    elif input_type == 'Score_all':
-        inputs = {int(id): float(prior_data[prior_data.GeneID == id]['Score'].values[0]) for name, id in prior_gene_ids}
-        mean_input = np.mean([x for x in inputs.values()])
-        for id in network.nodes:
-            if id not in inputs:
-                inputs[id] = mean_input
-
-    elif input_type == 'abs_Score_all':
-        inputs = {int(id): np.abs(float(prior_data[prior_data.GeneID == id]['Score'].values[0]))
-                  for id in prior_gene_ids}
-        mean_input = np.mean([x for x in inputs.values()])
-        for id in network.nodes:
-            if id not in inputs:
-                inputs[id] = mean_input
-    elif input_type == 'ones_all':
-        inputs = dict()
-        for id in network.nodes:
-            if id not in inputs:
-                inputs[id] = 1
     else:
         assert 0, '{} is not a valid input type'.format(input_type)
 
-    inputs = {id: np.round(input_score, 3) for id, input_score in inputs.items() if id in network.nodes}
+    inputs = {id: np.round(input_score, 3) for id, input_score in inputs.items()}
     return inputs
 
 
@@ -100,13 +93,13 @@ def save_file(obj, save_dir=None, compress=True):
     print('File was saved in {}'.format(save_dir))
 
 
-def save_propagation_score(propagation_scores, prior_set, propagation_input, genes_idx_to_id, task, save_dir=None):
+def save_propagation_score(propagation_scores, prior_set, propagation_input, genes_id_to_idx, task, save_dir=None):
     """
     Saves the propagation scores to a file.
 
     Args:
         propagation_scores (dict): The propagation scores to be saved.
-        prior_set (set): The set of prior genes.
+        prior_set (dataframe): The set of prior genes.
         propagation_input (dict): The input used for propagation.
         genes_idx_to_id (dict): Mapping from gene indices to gene IDs.
         task (PropagationTask): The propagation task object containing program arguments.
@@ -122,7 +115,7 @@ def save_propagation_score(propagation_scores, prior_set, propagation_input, gen
 
     save_dict = {
         'args': task, 'prior_set': prior_set, 'propagation_input': propagation_input,
-        'gene_idx_to_id': genes_idx_to_id, 'gene_prop_scores': propagation_scores,
+        'gene_id_to_idx': genes_id_to_idx, 'gene_prop_scores': propagation_scores,
     }
 
     save_file(save_dict, propagation_results_path)

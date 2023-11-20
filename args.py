@@ -4,7 +4,7 @@ from utils import get_root_path
 
 
 class PropagationTask:
-    def __init__(self, experiment_name, alpha=0.1, network_file='H_sapiens.net',
+    def __init__(self, experiment_name, alpha=1, network_file='H_sapiens.net',
                  create_similarity_matrix=False):
         """
         Initializes a task for gene score propagation.
@@ -46,9 +46,6 @@ class PropagationTask:
         self.input_dir = None
         self.similarity_matrix_path = None
         self.output_folder = None
-        # self.propagation_scores_path = None
-        # self.random_networks_dir = None
-        # self.interesting_pathway_file_dir = None
 
         # Initialize derived parameters
         self.get_derived_parameters()
@@ -67,12 +64,9 @@ class PropagationTask:
         self.experiment_file_path = path.join(self.input_dir, self.experiment_file)
         self.output_folder = path.join(self.root_folder, 'Outputs', 'propagation_scores', self.experiment_name)
 
-        # self.random_networks_dir = path.join(self.root_folder, self.random_network_file)
-
 
 class EnrichTask:
-    def __init__(self, name, propagation_file, propagation_folder, statistic_test, target_field,
-                 constrain_to_experiment_genes):
+    def __init__(self, name, propagation_file, propagation_folder, statistic_test, target_field):
         """
         Initializes an enrichment task with specified parameters.
 
@@ -92,7 +86,6 @@ class EnrichTask:
         self.propagation_scores_path = path.join(get_root_path(), propagation_folder)
         self.statistic_test = statistic_test
         self.target_field = target_field
-        self.constrain_to_experiment_genes = constrain_to_experiment_genes
         self.results = dict()
 
 

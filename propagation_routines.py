@@ -135,26 +135,24 @@ def read_sparse_matrix_txt(network, similarity_matrix_path):
     return matrix, genes
 
 
-def propagate_network(propagation_input, matrix, genes):
+def propagate_network(propagation_input, matrix, gene_index):
     """
     Performs network propagation using a given input and similarity matrix.
     Args:
         propagation_input (dict): Mapping of gene IDs to their initial values for propagation.
         matrix (numpy.ndarray or scipy.sparse matrix): Propagation matrix.
-        genes (list): List of genes corresponding to the indices in the matrix.
+        gene_index (dict): Mapping of gene IDs to their indices in the matrix.
     Returns:
         tuple: A tuple containing a dictionary of gene indexes, the array of inverted gene scores,
                and a dictionary of gene indexes to scores.
     """
-    num_genes = len(genes)
-    gene_indexes = dict([(gene, index) for (index, gene) in enumerate(genes)])
 
     time_start = time.time()
-    inverted_gene_scores = propagate_with_inverse([x for x in propagation_input.keys()], propagation_input, matrix,
-                                                  gene_indexes, num_genes)
+    inverted_gene_scores = propagate_with_inverse(list(propagation_input.keys()), propagation_input, matrix,
+                                                  gene_index, len(gene_index))
 
     time_end = time.time()
     print(f"Time to propagate: {time_end - time_start} seconds")
     # return dictionary of gene indexes and inverted gene scores
-    gene_indexes_scores = dict([(gene_indexes[gene], inverted_gene_scores[gene_indexes[gene]]) for gene in propagation_input.keys() if gene in gene_indexes])
-    return gene_indexes, inverted_gene_scores, gene_indexes_scores
+    gene_indexes_scores = dict([(gene_index[gene], inverted_gene_scores[gene_index[gene]]) for gene in propagation_input.keys() if gene in gene_index])
+    return inverted_gene_scores, gene_indexes_scores

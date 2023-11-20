@@ -11,13 +11,13 @@ import pandas as pd
 import csv
 
 
-def run_gsea(task, ranked_genes: Dict[str, float], gene_sets: Dict[str, List[str]]):
+def run_gsea(task, ranked_genes: Dict[int, float], gene_sets: Dict[str, List[int]]):
     """
     Executes Gene Set Enrichment Analysis (GSEA) using the gseapy library.
 
     Args:
         task (Task): The task object containing relevant settings and results.
-        ranked_genes (Dict[str, float]): Dictionary mapping gene names to their ranking scores.
+        ranked_genes (Dict[int, float]): Dictionary mapping gene names to their ranking scores.
         gene_sets (Dict[str, List[str]]): Dictionary where keys are pathway names and values are lists of gene names.
 
     Modifies:
@@ -65,17 +65,13 @@ def get_scores(task):
     Returns:
         Dict[int, float]: Dictionary mapping gene IDs to their corresponding scores.
     """
+    if not isinstance(task, EnrichTask):
+        raise ValueError('Invalid task type')
 
-    if isinstance(task, EnrichTask):
-        result_dict = load_propagation_scores(task, propagation_file_name=task.propagation_file)
-        gene_id_to_idx = {xx: x for x, xx in result_dict['gene_idx_to_id'].items()}
-        scores = result_dict[task.target_field]
-        if task.constrain_to_experiment_genes:
-            gene_id_to_idx = {id: idx for id, idx in gene_id_to_idx.items() if id in result_dict['propagation_input']}
-        scores = {id: scores[idx][0] for id, idx in gene_id_to_idx.items()}
-    else:
-        raise ValueError('Invalid task')
-    return scores
+    result_dict = load_propagation_scores(task, propagation_file_name=task.propagation_file)
+    gene_id_to_idx = {id: idx for id, idx in result_dict['gene_id_to_idx'].items() if
+                      id in result_dict['propagation_input']}
+    return {id: result_dict[task.target_field][idx][0] for id, idx in gene_id_to_idx.items()}
 
 
 def load_network_and_pathways(general_args):
@@ -107,7 +103,6 @@ def process_tasks(task_list, network_graph, general_args, interesting_pathways, 
         Set[str]: Set of pathways to be displayed in the analysis.
     """
     pathways_to_display = set()
-    pathways_with_many_genes = []
 
     # Create a set to hold all genes that are in some pathway and are in the network.
     all_genes_in_filtered_pathways_and_network = set()
@@ -126,20 +121,17 @@ def process_tasks(task_list, network_graph, general_args, interesting_pathways, 
                                             pathway_name]) <= general_args.maximum_gene_per_pathway)]
         # manually add REACTOME_NEUROTRANSMITTER_RECEPTORS_AND_POSTSYNAPTIC_SIGNAL_TRANSMISSION'
         pathways_with_many_genes.append('REACTOME_NEUROTRANSMITTER_RECEPTORS_AND_POSTSYNAPTIC_SIGNAL_TRANSMISSION')
-        pathways_with_many_genes.append('WP_PARKINSONS_DISEASE_PATHWAY')
-        pathways_with_many_genes.append('KEGG_PARKINSONS_DISEASE')
+        # pathways_with_many_genes.append('WP_PARKINSONS_DISEASE_PATHWAY')
+        # pathways_with_many_genes.append('KEGG_PARKINSONS_DISEASE')
 
         # Update all_genes_in_filtered_pathways_and_network
         for pathway in pathways_with_many_genes:
             all_genes_in_filtered_pathways_and_network.update(genes_by_pathway_filtered[pathway])
-
+            pathways_to_display.add(pathway)
         # Intersect with network nodes to refine the set
         all_genes_in_filtered_pathways_and_network &= set(network_graph.nodes)
 
-        for pathway in pathways_with_many_genes:
-            pathways_to_display.add(pathway)
-
-        if general_args.use_gsea:  # Assume you add this flag to general_args or similar
+        if general_args.use_gsea:
             # Replace with how you get your ranked genes
             run_gsea(task, scores, genes_by_pathway)
         else:
@@ -147,11 +139,12 @@ def process_tasks(task_list, network_graph, general_args, interesting_pathways, 
             print('after filtering', len(pathways_with_many_genes))
             for pathway in pathways_with_many_genes:
                 pathway_scores = [scores[id] for id in genes_by_pathway_filtered[pathway]]
-                # background_scores1 = [scores[id] for id in scores.keys() if id not in genes_by_pathway_filtered[pathway]]
                 background_scores = [scores[id] for id in all_genes_in_filtered_pathways_and_network if
                                      id not in genes_by_pathway_filtered[pathway]]
                 result = task.statistic_test(pathway_scores, background_scores)
                 task.results[pathway] = PathwayResults(p_value=result.p_value, direction=result.directionality)
+                # if pathway == "WP_DISRUPTION_OF_POSTSYNAPTIC_SIGNALING_BY_CNV" or pathway == "WP_SYNAPTIC_SIGNALING_PATHWAYS_ASSOCIATED_WITH_AUTISM_SPECTRUM_DISORDER":
+                print("pathway", pathway, "p-value", result.p_value, "direction", result.directionality)
 
     pathways_to_display = np.sort(list(pathways_to_display))
 
@@ -236,7 +229,7 @@ def process_matrices(task_list, pathways_to_display, general_args):
     count_significant_pathways = np.sum(adj_p_vals_mat < 0.05)
 
     # Filter and adjust matrices
-    keep_rows = np.nonzero(np.any(adj_p_vals_mat <= general_args.significant_pathway_threshold, axis=1))[0]
+    keep_rows = np.nonzero(np.any(adj_p_vals_mat <= general_args.FDR_threshold, axis=1))[0]
     pathways_to_display = list(pathways_to_display)  # Convert set to list
     pathways_to_display = [pathways_to_display[x] for x in keep_rows]
     #
@@ -298,16 +291,16 @@ def plot_results(adj_p_vals_mat, directions_mat, row_names, general_args, coll_n
     plot_enrichment_table(res, directions_mat, row_names, fig_out_dir, experiment_names=coll_names_in_heatmap,
                           title=general_args.figure_title + ' {} {}/{}'.format(dataset_type,
                                                                                len(row_names), n_pathways_before),
-                          res_type='-log10(p_val)', adj_p_value_threshold=general_args.significant_pathway_threshold)
+                          res_type='-log10(p_val)', adj_p_value_threshold=general_args.FDR_threshold)
 
 
-def run(task_list, general_args, dataset_type=''):
+def run(task_list, general_arg, dataset_type=''):
     """
     Main function to run the pathway enrichment analysis.
 
     Args:
         task_list (List[Task]): List of tasks to be processed.
-        general_args (args): General configuration settings.
+        general_arg (GeneralArgs): General configuration settings.
         dataset_type (str, optional): Type of the dataset. Defaults to an empty string.
 
     Side Effects:
@@ -317,18 +310,17 @@ def run(task_list, general_args, dataset_type=''):
     Returns:
         None
     """
-    network_graph, interesting_pathways, genes_by_pathway = load_network_and_pathways(general_args)
+    network_graph, interesting_pathways, genes_by_pathway = load_network_and_pathways(general_arg)
 
-    pathways_to_display = (
-        process_tasks(task_list, network_graph, general_args, interesting_pathways, genes_by_pathway))
+    pathways_to_display = (process_tasks(task_list, network_graph, general_arg, interesting_pathways, genes_by_pathway))
 
     # Create matrices for p-values, adjusted p-values, and directions
     adj_p_vals_mat, directions_mat, pathways_to_display, coll_names_in_heatmap = process_matrices(task_list,
                                                                                                   pathways_to_display,
-                                                                                                  general_args)
+                                                                                                  general_arg)
 
     row_names = ['{}'.format(pathway.replace("_", " ")) for pathway in pathways_to_display]
 
     # Plot the results
-    plot_results(adj_p_vals_mat, directions_mat, row_names, general_args, coll_names_in_heatmap, dataset_type,
+    plot_results(adj_p_vals_mat, directions_mat, row_names, general_arg, coll_names_in_heatmap, dataset_type,
                  len(pathways_to_display))
