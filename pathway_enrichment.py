@@ -85,12 +85,11 @@ def load_network_and_pathways(general_args):
     """
     network_graph = read_network(general_args.network_file_path)
     genes_by_pathway = load_pathways_genes(general_args.pathway_members_path)
-    interesting_pathways = list(genes_by_pathway.keys())
 
-    return network_graph, interesting_pathways, genes_by_pathway
+    return network_graph, genes_by_pathway
 
 
-def process_tasks(task_list, network_graph, general_args, interesting_pathways, genes_by_pathway):
+def process_tasks(task_list, network_graph, general_args, genes_by_pathway):
     """
     Processes a list of tasks for pathway enrichment analysis.
     Args:
@@ -110,8 +109,8 @@ def process_tasks(task_list, network_graph, general_args, interesting_pathways, 
     for task in task_list:
         scores = get_scores(task)
         # Filter genes for each pathway, contains only genes that are in the experiment and in the pathway file
-        genes_by_pathway_filtered = {pathway: [id for id in genes_by_pathway[pathway] if id in scores]
-                                     for pathway in interesting_pathways}
+        genes_by_pathway_filtered = {pathway: [id for id in genes if id in scores]
+                                     for pathway, genes in genes_by_pathway.items()}
 
         # keep only pathway with certain amount of genes
         pathways_with_many_genes = [pathway_name for pathway_name in genes_by_pathway_filtered.keys() if
@@ -310,9 +309,9 @@ def run(task_list, general_arg, dataset_type=''):
     Returns:
         None
     """
-    network_graph, interesting_pathways, genes_by_pathway = load_network_and_pathways(general_arg)
+    network_graph, genes_by_pathway = load_network_and_pathways(general_arg)
 
-    pathways_to_display = (process_tasks(task_list, network_graph, general_arg, interesting_pathways, genes_by_pathway))
+    pathways_to_display = (process_tasks(task_list, network_graph, general_arg, genes_by_pathway))
 
     # Create matrices for p-values, adjusted p-values, and directions
     adj_p_vals_mat, directions_mat, pathways_to_display, coll_names_in_heatmap = process_matrices(task_list,
