@@ -126,7 +126,7 @@ enriched_p_vals = get_p_values(prior_data_df)
 
 # get pathway gene sets
 dir_path = path.dirname(path.realpath(__file__))
-genes_by_pathway = load_pathways_genes(path.join(dir_path, 'Data', 'H_sapiens', 'pathways', 'pathway_file'))
+genes_by_pathway = load_pathways_genes(path.join(dir_path, '../Data', 'H_sapiens', 'pathways', 'pathway_file'))
 experiment_gene_set = get_experiment_gene_set(prior_data_df)
 filtered_genes_by_pathway = filter_pathways_genes(genes_by_pathway, experiment_gene_set)
 
