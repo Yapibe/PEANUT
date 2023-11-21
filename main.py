@@ -28,7 +28,6 @@ def perform_propagation(task):
 
     # Intersection with network nodes
     all_genes_ids = set.intersection(set(prior_data.GeneID), set(network.nodes))
-
     print("getting propagation input")
     propagation_input = utils.get_propagation_input(all_genes_ids, prior_data, task.propagation_input_type)
     # print("getting ones input")
@@ -49,19 +48,22 @@ def perform_propagation(task):
     gene_index = dict([(gene, index) for (index, gene) in enumerate(genes)])
     score_gene_scores_inverse, gene_score_dict = propagate_network(propagation_input, matrix, gene_index)
     ones_gene_scores_inverse, ones_gene_score_dict = propagate_network(ones_input, matrix, gene_index)
+    del matrix
 
-    # Identify genes with zero normalization score but non-zero propagation score
-    zero_normalization_genes = np.nonzero(ones_gene_scores_inverse == 0)[0]
-    zero_propagation_genes = np.nonzero(score_gene_scores_inverse == 0)[0]
-    genes_to_delete = list(set(zero_normalization_genes).difference(zero_propagation_genes))
+    # # Identify genes with zero normalization score but non-zero propagation score
+    # zero_normalization_genes = np.nonzero(ones_gene_scores_inverse == 0)[0]
+    # zero_propagation_genes = np.nonzero(score_gene_scores_inverse == 0)[0]
+    # genes_to_delete = list(set(zero_normalization_genes).difference(zero_propagation_genes))
+    #
+    # # Set the normalization score of these genes to 1
+    # ones_gene_scores_inverse[genes_to_delete] = 1
+    #
+    # # Perform the normalization
+    # non_zero_indices = np.nonzero(score_gene_scores_inverse != 0)[0]
+    # score_gene_scores_inverse[non_zero_indices] = score_gene_scores_inverse[non_zero_indices] / np.abs(
+    #     ones_gene_scores_inverse[non_zero_indices])
 
-    # Set the normalization score of these genes to 1
-    ones_gene_scores_inverse[genes_to_delete] = 1
-
-    # Perform the normalization
-    non_zero_indices = np.nonzero(score_gene_scores_inverse != 0)[0]
-    score_gene_scores_inverse[non_zero_indices] = score_gene_scores_inverse[non_zero_indices] / np.abs(
-        ones_gene_scores_inverse[non_zero_indices])
+    print(score_gene_scores_inverse)
 
     # save propagation score
     print("saving propagation score")

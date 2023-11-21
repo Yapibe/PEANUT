@@ -144,9 +144,7 @@ def process_tasks(task_list, network_graph, general_args, genes_by_pathway):
                 if pathway == "WP_DISRUPTION_OF_POSTSYNAPTIC_SIGNALING_BY_CNV" or pathway == "WP_SYNAPTIC_SIGNALING_PATHWAYS_ASSOCIATED_WITH_AUTISM_SPECTRUM_DISORDER":
                     print("pathway", pathway, "p-value", result.p_value, "direction", result.directionality)
 
-    pathways_to_display = np.sort(list(pathways_to_display))
-
-    return pathways_to_display
+    return np.sort(list(pathways_to_display))
 
 
 def process_matrices(task_list, pathways_to_display, general_args):

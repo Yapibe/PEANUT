@@ -51,9 +51,7 @@ def get_propagation_input(prior_gene_ids, prior_data, input_type):
         dict: A dictionary mapping gene IDs to their corresponding input values.
     """
     inputs = dict()
-    if input_type == 'ones':
-        inputs = {int(x): 1 for x in prior_gene_ids}
-    elif input_type is None:
+    if input_type == 'ones' or input_type is None:
         inputs = {int(x): 1 for x in prior_gene_ids}
     elif input_type == 'abs_Score':
         for id in prior_gene_ids:
