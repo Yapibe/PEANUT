@@ -4,7 +4,7 @@ from utils import get_root_path
 
 
 class PropagationTask:
-    def __init__(self, experiment_name, alpha=1, network_file='H_sapiens.net',
+    def __init__(self, experiment_name, alpha=0.1, network_file='H_sapiens.net',
                  create_similarity_matrix=False):
         """
         Initializes a task for gene score propagation.

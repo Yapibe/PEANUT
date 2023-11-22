@@ -146,13 +146,8 @@ def propagate_network(propagation_input, matrix, gene_index):
         tuple: A tuple containing a dictionary of gene indexes, the array of inverted gene scores,
                and a dictionary of gene indexes to scores.
     """
-
-    time_start = time.time()
     inverted_gene_scores = propagate_with_inverse(list(propagation_input.keys()), propagation_input, matrix,
                                                   gene_index, len(gene_index))
-
-    time_end = time.time()
-    print(f"Time to propagate: {time_end - time_start} seconds")
     # return dictionary of gene indexes and inverted gene scores
     gene_indexes_scores = dict([(gene_index[gene], inverted_gene_scores[gene_index[gene]]) for gene in propagation_input.keys() if gene in gene_index])
     return inverted_gene_scores, gene_indexes_scores

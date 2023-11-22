@@ -1,6 +1,6 @@
 from args import PropagationTask, EnrichTask, GeneralArgs, PathwayResults
 from utils import read_network, load_pathways_genes, load_propagation_scores, read_prior_set
-from pathway_enrichment import process_matrices, plot_results
+from pathway_enrichment import load_network_and_pathways, get_scores
 from propagation_routines import propagate_network, generate_similarity_matrix, read_sparse_matrix_txt
 import utils
 from statistic_methods import wilcoxon_rank_sums_test, students_t_test
@@ -34,45 +34,49 @@ def bh_correction(empirical_values):
     return adjusted_values
 
 
-def get_fold_change_ranks(prior_data, score_column):
-    fold_values = {gene: score for gene, score in zip(prior_data['GeneID'], prior_data[score_column])}
-    return {gene: rank for gene, rank in zip(fold_values.keys(), rankdata(list(fold_values.values())))}
-
-
-def compare_pathway_to_randomized(real_scores, shuffled_scores):
-    # Wilcoxon signed-rank test logic
-    differences = np.asarray(real_scores, dtype=float) - np.asarray(shuffled_scores, dtype=float)
-    signed_ranks = rankdata(np.abs(differences)) * np.sign(differences)
-    T = np.sum(signed_ranks)
-    return T
-
-
-def calculate_empirical_p_values(real_data, pathways, num_simulations=1000):
-    empirical_p_values = {}
-
-    for pathway_name, pathway_genes in pathways.items():
-        count_negative_T = 0
-        count_positive_T = 0
-        # Filter the real scores for pathway genes
-        pathway_real_scores = real_data[real_data['GeneID'].isin(pathway_genes)]['Score'].astype(float)
-
-        for i in range(1, num_simulations + 1):
-            shuffled_score_column = f'Shuffled_Score_{i}'
-            # Filter the shuffled scores for pathway genes
-            pathway_shuffled_scores = real_data[real_data['GeneID'].isin(pathway_genes)][shuffled_score_column].astype(
-                float)
-
-            T = compare_pathway_to_randomized(pathway_real_scores, pathway_shuffled_scores)
-            if T < 0:
-                count_negative_T += 1
-            elif T > 0:
-                count_positive_T += 1
-
-        # Choose the smaller count to calculate the empirical p-value and double it for a two-tailed test
-        min_count = min(count_negative_T, count_positive_T)
-        empirical_p_values[pathway_name] = 2 * (min_count + 1) / (num_simulations + 1)
-
-    return empirical_p_values
+# def get_fold_change_ranks(prior_data, score_column):
+#     fold_values = {gene: score for gene, score in zip(prior_data['GeneID'], prior_data[score_column])}
+#     return {gene: rank for gene, rank in zip(fold_values.keys(), rankdata(list(fold_values.values())))}
+#
+#
+# def compare_pathway_to_randomized(real_scores, shuffled_scores):
+#     # Wilcoxon signed-rank test logic
+#     differences = real_scores - shuffled_scores
+#     signed_ranks = rankdata(np.abs(differences)) * np.sign(differences)
+#     return np.sum(signed_ranks)
+#
+#
+# def calculate_empirical_p_values(real_data, pathways, num_simulations=1000):
+#     empirical_p_values = {}
+#
+#     # Convert to float once
+#     real_data_float = real_data.select_dtypes(include=['number']).astype(float)
+#
+#     for pathway_name, pathway_genes in pathways.items():
+#         count_negative_T = 0
+#         count_positive_T = 0
+#
+#         # Filter once outside the loop
+#         pathway_mask = real_data['GeneID'].isin(pathway_genes)
+#         pathway_real_scores = real_data_float[pathway_mask]['Score']
+#         start = time.time()
+#         for i in range(1, num_simulations + 1):
+#             shuffled_score_column = f'Shuffled_Score_{i}'
+#             # Filter the shuffled scores for pathway genes
+#             pathway_shuffled_scores = real_data_float[pathway_mask][shuffled_score_column]
+#
+#             T = compare_pathway_to_randomized(pathway_real_scores, pathway_shuffled_scores)
+#             if T < 0:
+#                 count_negative_T += 1
+#             elif T > 0:
+#                 count_positive_T += 1
+#         end = time.time()
+#         print(f'pathway {pathway_name} took {end - start} seconds')
+#         # Choose the smaller count to calculate the empirical p-value and double it for a two-tailed test
+#         min_count = min(count_negative_T, count_positive_T)
+#         empirical_p_values[pathway_name] = 2 * (min_count + 1) / (num_simulations + 1)
+#
+#     return empirical_p_values
 
 
 # def calculate_pathway_score(ranks, pathway_genes):
@@ -100,47 +104,46 @@ def calculate_empirical_p_values(real_data, pathways, num_simulations=1000):
 #     return empirical_p_values
 
 
-# def paired_sample_t_test(real_scores, shuffled_scores):
-#     # Ensure that real_scores and shuffled_scores are NumPy arrays of type float
-#     real_scores = np.asarray(real_scores, dtype=float)
-#     shuffled_scores = np.asarray(shuffled_scores, dtype=float)
-#
-#     # Perform the paired sample t-test
-#     t_statistic, p_value = ttest_rel(real_scores, shuffled_scores)
-#     return t_statistic
-#
-#
-# def calculate_empirical_p_values(real_data, pathways, num_simulations=1000):
-#     empirical_p_values = {}
-#
-#     for pathway_name, pathway_genes in pathways.items():
-#         count_negative_t = 0
-#         count_positive_t = 0
-#         # Filter the real scores for pathway genes
-#         pathway_real_scores = real_data[real_data['GeneID'].isin(pathway_genes)]['Score'].astype(float)
-#
-#         for i in range(1, num_simulations + 1):
-#             shuffled_score_column = f'Shuffled_Score_{i}'
-#             # Filter the shuffled scores for pathway genes
-#             pathway_shuffled_scores = real_data[real_data['GeneID'].isin(pathway_genes)][shuffled_score_column].astype(
-#                 float)
-#
-#             T = paired_sample_t_test(pathway_real_scores, pathway_shuffled_scores)
-#             if T < 0:
-#                 count_negative_t += 1
-#             elif T > 0:
-#                 count_positive_t += 1
-#
-#         # Choose the smaller count to calculate the empirical p-value and double it for a two-tailed test
-#         min_count = min(count_negative_t, count_positive_t)
-#         empirical_p_values[pathway_name] = 2 * (min_count + 1) / (num_simulations + 1)
-#
-#     return empirical_p_values
+def paired_sample_t_test(real_scores, shuffled_scores):
+    # Ensure that real_scores and shuffled_scores are NumPy arrays of type float
+    real_scores = np.asarray(real_scores, dtype=float)
+    shuffled_scores = np.asarray(shuffled_scores, dtype=float)
+
+    # Perform the paired sample t-test
+    t_statistic, p_value = ttest_rel(real_scores, shuffled_scores)
+    return t_statistic
+
+
+def calculate_empirical_p_values(real_data, pathways, num_simulations=1000):
+    empirical_p_values = {}
+
+    for pathway_name, pathway_genes in pathways.items():
+        count_negative_t = 0
+        count_positive_t = 0
+        # Filter the real scores for pathway genes
+        pathway_real_scores = real_data[real_data['GeneID'].isin(pathway_genes)]['Score'].astype(float)
+
+        for i in range(1, num_simulations + 1):
+            shuffled_score_column = f'Shuffled_Score_{i}'
+            # Filter the shuffled scores for pathway genes
+            pathway_shuffled_scores = real_data[real_data['GeneID'].isin(pathway_genes)][shuffled_score_column].astype(
+                float)
+
+            T = paired_sample_t_test(pathway_real_scores, pathway_shuffled_scores)
+            if T < 0:
+                count_negative_t += 1
+            elif T > 0:
+                count_positive_t += 1
+
+        # Choose the smaller count to calculate the empirical p-value and double it for a two-tailed test
+        min_count = min(count_negative_t, count_positive_t)
+        empirical_p_values[pathway_name] = 2 * (min_count + 1) / (num_simulations + 1)
+
+    return empirical_p_values
 
 
 def load_and_prepare_data(task):
     data = read_prior_set(task.experiment_file_path)
-    # data['Score'] = data['Score'].apply(lambda x: abs(x))
     data = data[data['GeneID'].apply(lambda x: str(x).isdigit())]
     data['GeneID'] = data['GeneID'].astype(int)
     # remove p_values column
@@ -159,11 +162,11 @@ def shuffle_scores(dataframe, shuffle_column, num_shuffles=1000):
 
     # Generate shuffled columns
     for i in range(1, num_shuffles + 1):
-        shuffled_column = dataframe[shuffle_column].sample(frac=1, replace=False).reset_index(drop=True)
-        shuffled_columns[f'Shuffled_Score_{i}'] = shuffled_column.values
+        shuffled_column = dataframe[shuffle_column].sample(frac=1).reset_index(drop=True)
+        shuffled_columns[f'Shuffled_Score_{i}'] = shuffled_column
 
     # Convert the dictionary to a DataFrame
-    shuffled_df = pd.DataFrame(shuffled_columns, index=dataframe.index)
+    shuffled_df = pd.DataFrame(shuffled_columns)
 
     # Concatenate the original dataframe with the new shuffled scores DataFrame
     result_df = pd.concat([dataframe, shuffled_df], axis=1)
@@ -171,26 +174,7 @@ def shuffle_scores(dataframe, shuffle_column, num_shuffles=1000):
     return result_df
 
 
-def get_scores(task):
-    """
-    takes a task, a network graph and a general args object and returns a dictionary of scores
-    :param task: EnrichTask or RawScoreTask
-    :return: dictionary of scores
-    """
-
-    if isinstance(task, EnrichTask):
-        result_dict = load_propagation_scores(task, propagation_file_name=task.propagation_file)
-        gene_id_to_idx = {xx: x for x, xx in result_dict['gene_idx_to_id'].items()}
-        scores = result_dict[task.target_field]
-        if task.constrain_to_experiment_genes:
-            gene_id_to_idx = {id: idx for id, idx in gene_id_to_idx.items() if id in result_dict['propagation_input']}
-        scores = {id: scores[idx][0] for id, idx in gene_id_to_idx.items()}
-    else:
-        raise ValueError('Invalid task')
-    return scores
-
-
-def process_tasks(task_list, network_graph, general_args, interesting_pathways, genes_by_pathway):
+def process_tasks(task_list, network_graph, general_args, genes_by_pathway):
     pathways_to_display = set()
     significant_pathways_with_genes = {}
 
@@ -200,8 +184,8 @@ def process_tasks(task_list, network_graph, general_args, interesting_pathways, 
     for task in task_list:
         scores = get_scores(task)
         # Filter genes for each pathway, contains only genes that are in the experiment and in the pathway file
-        genes_by_pathway_filtered = {pathway: [id for id in genes_by_pathway[pathway] if id in scores]
-                                     for pathway in interesting_pathways}
+        genes_by_pathway_filtered = {pathway: [id for id in genes if id in scores]
+                                     for pathway, genes in genes_by_pathway.items()}
 
         # keep only pathway with certain amount of genes
         pathways_with_many_genes = [pathway_name for pathway_name in genes_by_pathway_filtered.keys() if
@@ -211,18 +195,15 @@ def process_tasks(task_list, network_graph, general_args, interesting_pathways, 
                                             pathway_name]) <= general_args.maximum_gene_per_pathway)]
         # manually add REACTOME_NEUROTRANSMITTER_RECEPTORS_AND_POSTSYNAPTIC_SIGNAL_TRANSMISSION'
         pathways_with_many_genes.append('REACTOME_NEUROTRANSMITTER_RECEPTORS_AND_POSTSYNAPTIC_SIGNAL_TRANSMISSION')
-        pathways_with_many_genes.append('WP_PARKINSONS_DISEASE_PATHWAY')
-        pathways_with_many_genes.append('KEGG_PARKINSONS_DISEASE')
+        # pathways_with_many_genes.append('WP_PARKINSONS_DISEASE_PATHWAY')
+        # pathways_with_many_genes.append('KEGG_PARKINSONS_DISEASE')
 
         # Update all_genes_in_filtered_pathways_and_network
         for pathway in pathways_with_many_genes:
             all_genes_in_filtered_pathways_and_network.update(genes_by_pathway_filtered[pathway])
-
+            pathways_to_display.add(pathway)
         # Intersect with network nodes to refine the set
         all_genes_in_filtered_pathways_and_network &= set(network_graph.nodes)
-
-        for pathway in pathways_with_many_genes:
-            pathways_to_display.add(pathway)
 
         # Perform statistical tests
         print('after filtering', len(pathways_to_display))
@@ -234,20 +215,9 @@ def process_tasks(task_list, network_graph, general_args, interesting_pathways, 
             print(f'nominal: {pathway}: {result.p_value}')
             if result.p_value < general_args.FDR_threshold:
                 task.results[pathway] = PathwayResults(p_value=result.p_value, direction=result.directionality)
-                significant_pathways_with_genes[pathway] = genes_by_pathway_filtered[
-                    pathway]  # Store the genes for significant pathways
+                significant_pathways_with_genes[pathway] = genes_by_pathway_filtered[pathway]
 
-    pathways_to_display = np.sort(list(pathways_to_display))
-
-    return pathways_to_display, significant_pathways_with_genes
-
-
-def load_network_and_pathways(general_args):
-    network_graph = read_network(general_args.network_file_path)
-    genes_by_pathway = load_pathways_genes(general_args.pathway_members_path)
-    interesting_pathways = list(genes_by_pathway.keys())
-
-    return network_graph, interesting_pathways, genes_by_pathway
+    return np.sort(list(pathways_to_display)), significant_pathways_with_genes
 
 
 def run(task_list, general_args):
@@ -257,41 +227,40 @@ def run(task_list, general_args):
     :param general_args: general args object
     :return: None
     """
-    network_graph, interesting_pathways, genes_by_pathway = load_network_and_pathways(general_args)
+    network_graph, genes_by_pathway = load_network_and_pathways(general_args)
 
     pathways_to_display, genes_by_pathway_filtered = (process_tasks(task_list, network_graph, general_args,
-                                                                    interesting_pathways,
                                                                     genes_by_pathway))
 
-    # task2 = EnrichTask(name='pipeline', propagation_file='TvN_Score_0.1_19_11_2023__17_01_11',
-    #                    propagation_folder=f'Outputs\\propagation_scores\\pipeline',
-    #                    statistic_test=wilcoxon_rank_sums_test,
-    #                    target_field='gene_prop_scores', constrain_to_experiment_genes=True)
+    # task2 = EnrichTask(name='TvN', propagation_file='TvN_Score_0.1_20_11_2023__16_43_14',
+    #                    propagation_folder=f'Outputs\\propagation_scores\\TvN',
+    #                    statistic_test=wilcoxon_rank_sums_test, target_field='gene_prop_scores')
     #
     # prop_scores = get_scores(task2)
-    prior_data = load_and_prepare_data(task)
-    # Create a copy of prior_data to avoid SettingWithCopyWarning
-    prior_data = prior_data.copy()
-    all_genes_ids = set.intersection(set(prior_data.GeneID), set(network_graph.nodes))
-    prior_data = prior_data[prior_data['GeneID'].isin(all_genes_ids)]
-
+    prior_data = load_and_prepare_data(prop_task)
+    # # Create a copy of prior_data to avoid SettingWithCopyWarning
+    # prior_data = prior_data.copy()
+    # all_genes_ids = set.intersection(set(prior_data.GeneID), set(network_graph.nodes))
+    # prior_data = prior_data[prior_data['GeneID'].isin(all_genes_ids)]
+    #
     # # Update 'Score' column with propagation scores
     # prior_data.loc[:, 'Score'] = prior_data['GeneID'].apply(lambda x: prop_scores[x])
 
     # Shuffle the scores and add to the DataFrame
     updated_prior_data = shuffle_scores(prior_data, 'Score')
-
     empirical_p_values = calculate_empirical_p_values(updated_prior_data, genes_by_pathway_filtered)
+    for pathway, pval in empirical_p_values.items():
+        if pval <= 0.05:
+            print(f'{pathway}: {pval}')
     # send to bh correction
-    corrected_p_values = bh_correction(empirical_p_values)
+    # corrected_p_values = bh_correction(empirical_p_values)
     # filter by FDR 0.05
     # corrected_p_values = {pathway: p_val for pathway, p_val in corrected_p_values.items() if
     #                       p_val < general_args.FDR_threshold}
-    # print
-    print(f'number of pathways: {len(corrected_p_values)}')
-    print('significant pathways:')
-    for pathway in corrected_p_values:
-        print(f'{pathway}: {empirical_p_values[pathway]}')
+    # print(f'number of pathways: {len(corrected_p_values)}')
+    # print('significant pathways:')
+    # for pathway in corrected_p_values:
+    #     print(f'{pathway}: {empirical_p_values[pathway]}')
 
 
 def perform_enrichment():
@@ -300,18 +269,17 @@ def perform_enrichment():
     tasks = []
     # propagation_scores_file = '{}_{}_{}_{}'.format(task.experiment_name, task.propagation_input_type,
     #                                                task.alpha, task.date)
-    task1 = EnrichTask(name='pipeline', propagation_file='TvN_Score_1_19_11_2023__16_58_43',
-                       propagation_folder=f'Outputs\\propagation_scores\\pipeline',
-                       statistic_test=wilcoxon_rank_sums_test,
-                       target_field='gene_prop_scores', constrain_to_experiment_genes=True)
+    task1 = EnrichTask(name='TvN', propagation_file='TvN_Score_1_20_11_2023__16_20_09',
+                       propagation_folder=f'Outputs\\propagation_scores\\TvN',
+                       statistic_test=wilcoxon_rank_sums_test, target_field='gene_prop_scores')
 
     FDR_threshold = 0.05
 
-    figure_name = task.experiment_name + '-alpha' + str(
-        task.alpha) + '-Threshold' + str(FDR_threshold) + '.pdf'
+    figure_name = prop_task.experiment_name + '-alpha' + str(
+        prop_task.alpha) + '-Threshold' + str(FDR_threshold) + '.pdf'
 
-    general_args = GeneralArgs(task.network_file_path, genes_names_path=task.genes_names_file_path,
-                               pathway_members_path=task.pathway_file_dir, FDR_threshold=FDR_threshold,
+    general_args = GeneralArgs(prop_task.network_file_path, genes_names_path=prop_task.genes_names_file_path,
+                               pathway_members_path=prop_task.pathway_file_dir, FDR_threshold=FDR_threshold,
                                figure_name=figure_name)
 
     tasks += [task1]
@@ -321,7 +289,7 @@ def perform_enrichment():
 
 if __name__ == '__main__':
     start = time.time()
-    task = PropagationTask(experiment_name='pipeline_ttest', create_similarity_matrix=False)
+    prop_task = PropagationTask(experiment_name='pipeline_ttest', create_similarity_matrix=False)
     perform_enrichment()
     end = time.time()
     print("Time elapsed: {} seconds".format(end - start))
