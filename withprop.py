@@ -39,44 +39,44 @@ def bh_correction(empirical_values):
 #     return {gene: rank for gene, rank in zip(fold_values.keys(), rankdata(list(fold_values.values())))}
 #
 #
-def compare_pathway_to_randomized(real_scores, shuffled_scores):
-    # Wilcoxon signed-rank test logic
-    differences = real_scores - shuffled_scores
-    signed_ranks = rankdata(np.abs(differences)) * np.sign(differences)
-    return np.sum(signed_ranks)
-
-
-def calculate_empirical_p_values(real_data, pathways, num_simulations=1000):
-    empirical_p_values = {}
-
-    # Convert to float once
-    real_data_float = real_data.select_dtypes(include=['number']).astype(float)
-
-    for pathway_name, pathway_genes in pathways.items():
-        count_negative_T = 0
-        count_positive_T = 0
-
-        # Filter once outside the loop
-        pathway_mask = real_data['GeneID'].isin(pathway_genes)
-        pathway_real_scores = real_data_float[pathway_mask]['Score']
-        start = time.time()
-        for i in range(1, num_simulations + 1):
-            shuffled_score_column = f'Shuffled_Score_{i}'
-            # Filter the shuffled scores for pathway genes
-            pathway_shuffled_scores = real_data_float[pathway_mask][shuffled_score_column]
-
-            T = compare_pathway_to_randomized(pathway_real_scores, pathway_shuffled_scores)
-            if T < 0:
-                count_negative_T += 1
-            elif T > 0:
-                count_positive_T += 1
-        end = time.time()
-        print(f'pathway {pathway_name} took {end - start} seconds')
-        # Choose the smaller count to calculate the empirical p-value and double it for a two-tailed test
-        min_count = min(count_negative_T, count_positive_T)
-        empirical_p_values[pathway_name] = 2 * (min_count + 1) / (num_simulations + 1)
-
-    return empirical_p_values
+# def compare_pathway_to_randomized(real_scores, shuffled_scores):
+#     # Wilcoxon signed-rank test logic
+#     differences = real_scores - shuffled_scores
+#     signed_ranks = rankdata(np.abs(differences)) * np.sign(differences)
+#     return np.sum(signed_ranks)
+#
+#
+# def calculate_empirical_p_values(real_data, pathways, num_simulations=1000):
+#     empirical_p_values = {}
+#
+#     # Convert to float once
+#     real_data_float = real_data.select_dtypes(include=['number']).astype(float)
+#
+#     for pathway_name, pathway_genes in pathways.items():
+#         count_negative_T = 0
+#         count_positive_T = 0
+#
+#         # Filter once outside the loop
+#         pathway_mask = real_data['GeneID'].isin(pathway_genes)
+#         pathway_real_scores = real_data_float[pathway_mask]['Score']
+#         start = time.time()
+#         for i in range(1, num_simulations + 1):
+#             shuffled_score_column = f'Shuffled_Score_{i}'
+#             # Filter the shuffled scores for pathway genes
+#             pathway_shuffled_scores = real_data_float[pathway_mask][shuffled_score_column]
+#
+#             T = compare_pathway_to_randomized(pathway_real_scores, pathway_shuffled_scores)
+#             if T < 0:
+#                 count_negative_T += 1
+#             elif T > 0:
+#                 count_positive_T += 1
+#         end = time.time()
+#         print(f'pathway {pathway_name} took {end - start} seconds')
+#         # Choose the smaller count to calculate the empirical p-value and double it for a two-tailed test
+#         min_count = min(count_negative_T, count_positive_T)
+#         empirical_p_values[pathway_name] = 2 * (min_count + 1) / (num_simulations + 1)
+#
+#     return empirical_p_values
 
 
 # def calculate_pathway_score(ranks, pathway_genes):
@@ -104,42 +104,42 @@ def calculate_empirical_p_values(real_data, pathways, num_simulations=1000):
 #     return empirical_p_values
 
 
-# def paired_sample_t_test(real_scores, shuffled_scores):
-#     # Ensure that real_scores and shuffled_scores are NumPy arrays of type float
-#     real_scores = np.asarray(real_scores, dtype=float)
-#     shuffled_scores = np.asarray(shuffled_scores, dtype=float)
-#
-#     # Perform the paired sample t-test
-#     t_statistic, p_value = ttest_rel(real_scores, shuffled_scores)
-#     return t_statistic
-#
-#
-# def calculate_empirical_p_values(real_data, pathways, num_simulations=1000):
-#     empirical_p_values = {}
-#
-#     for pathway_name, pathway_genes in pathways.items():
-#         count_negative_t = 0
-#         count_positive_t = 0
-#         # Filter the real scores for pathway genes
-#         pathway_real_scores = real_data[real_data['GeneID'].isin(pathway_genes)]['Score'].astype(float)
-#
-#         for i in range(1, num_simulations + 1):
-#             shuffled_score_column = f'Shuffled_Score_{i}'
-#             # Filter the shuffled scores for pathway genes
-#             pathway_shuffled_scores = real_data[real_data['GeneID'].isin(pathway_genes)][shuffled_score_column].astype(
-#                 float)
-#
-#             T = paired_sample_t_test(pathway_real_scores, pathway_shuffled_scores)
-#             if T < 0:
-#                 count_negative_t += 1
-#             elif T > 0:
-#                 count_positive_t += 1
-#
-#         # Choose the smaller count to calculate the empirical p-value and double it for a two-tailed test
-#         min_count = min(count_negative_t, count_positive_t)
-#         empirical_p_values[pathway_name] = 2 * (min_count + 1) / (num_simulations + 1)
-#
-#     return empirical_p_values
+def paired_sample_t_test(real_scores, shuffled_scores):
+    # Ensure that real_scores and shuffled_scores are NumPy arrays of type float
+    real_scores = np.asarray(real_scores, dtype=float)
+    shuffled_scores = np.asarray(shuffled_scores, dtype=float)
+
+    # Perform the paired sample t-test
+    t_statistic, p_value = ttest_rel(real_scores, shuffled_scores)
+    return t_statistic
+
+
+def calculate_empirical_p_values(real_data, pathways, num_simulations=1000):
+    empirical_p_values = {}
+
+    for pathway_name, pathway_genes in pathways.items():
+        count_negative_t = 0
+        count_positive_t = 0
+        # Filter the real scores for pathway genes
+        pathway_real_scores = real_data[real_data['GeneID'].isin(pathway_genes)]['Score'].astype(float)
+
+        for i in range(1, num_simulations + 1):
+            shuffled_score_column = f'Shuffled_Score_{i}'
+            # Filter the shuffled scores for pathway genes
+            pathway_shuffled_scores = real_data[real_data['GeneID'].isin(pathway_genes)][shuffled_score_column].astype(
+                float)
+
+            T = paired_sample_t_test(pathway_real_scores, pathway_shuffled_scores)
+            if T < 0:
+                count_negative_t += 1
+            elif T > 0:
+                count_positive_t += 1
+
+        # Choose the smaller count to calculate the empirical p-value and double it for a two-tailed test
+        min_count = min(count_negative_t, count_positive_t)
+        empirical_p_values[pathway_name] = 2 * (min_count + 1) / (num_simulations + 1)
+
+    return empirical_p_values
 
 
 def load_and_prepare_data(task):

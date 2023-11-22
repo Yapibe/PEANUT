@@ -166,7 +166,7 @@ def load_and_prepare_data(task):
     return data
 
 
-def shuffle_scores(dataframe, shuffle_column, num_shuffles=1000):
+def shuffle_scores(dataframe, shuffle_column, num_shuffles=10000):
     if shuffle_column not in dataframe.columns:
         raise ValueError(f"Column '{shuffle_column}' not found in the DataFrame")
 
@@ -239,36 +239,43 @@ def run(task_list, general_args):
     :param general_args: general args object
     :return: None
     """
+    # Stage 1 - Load the network and pathways and get nominal p values
     network_graph, genes_by_pathway = load_network_and_pathways(general_args)
 
     pathways_to_display, genes_by_pathway_filtered = (process_tasks(task_list, network_graph, general_args,
                                                                     genes_by_pathway))
-    # prior_data = load_and_prepare_data(task)
-    # # Shuffle the scores and add to the DataFrame
-    # updated_prior_data = shuffle_scores(prior_data, 'Score')
-    # all_genes_ids = set.intersection(set(updated_prior_data.GeneID), set(network_graph.nodes))
-    # # Read or create similarity matrix
-    # matrix, genes = read_sparse_matrix_txt(network_graph, task.similarity_matrix_path)
-    # column_scores = {}
-    # # Iterate over shuffled columns
-    # for column in updated_prior_data.columns:
-    #     if column != 'GeneID' and column != 'Human_Name':
-    #         # Create sub dataframe of GeneID and current column
-    #         column_data = updated_prior_data[['GeneID', column]]
-    #         # Perform propagation
-    #         column_scores[column] = perform_propagation(column_data, all_genes_ids, matrix, genes)
-    # del matrix
-    # # turn column_scores to dataframe and add gene name
-    # column_scores_df = pd.DataFrame.from_dict(column_scores)
-    # column_scores_df['Human_Name'] = updated_prior_data['Human_Name']
-    # column_scores_df['GeneID'] = updated_prior_data['GeneID']
-    # # change order of columns
-    # column_scores_df = column_scores_df[
-    #     ['GeneID', 'Human_Name'] + [col for col in column_scores_df.columns if col not in ['GeneID', 'Human_Name']]]
-    # # save to csv
-    # column_scores_df.to_csv(f'Outputs\\propagation_scores\\{task.experiment_name}_trial_and_error.csv', index=False)
-    #load dataframe from csv
-    column_scores_df = pd.read_csv(f'Outputs\\propagation_scores\\{task.experiment_name}_trial_and_error.csv')
+    # Stage 2 - Calculate empirical p values
+    print("uploding data")
+    prior_data = load_and_prepare_data(task)
+    # Shuffle the scores and add to the DataFrame
+    print("shuffling scores")
+    updated_prior_data = shuffle_scores(prior_data, 'Score')
+    all_genes_ids = set.intersection(set(updated_prior_data.GeneID), set(network_graph.nodes))
+    # Read or create similarity matrix
+    print("reading similarity matrix")
+    matrix, genes = read_sparse_matrix_txt(network_graph, task.similarity_matrix_path)
+    column_scores = {}
+    # Iterate over shuffled columns
+    print("propagating")
+    for column in updated_prior_data.columns:
+        if column != 'GeneID' and column != 'Human_Name':
+            # Create sub dataframe of GeneID and current column
+            column_data = updated_prior_data[['GeneID', column]]
+            # Perform propagation
+            column_scores[column] = perform_propagation(column_data, all_genes_ids, matrix, genes)
+    del matrix
+    # turn column_scores to dataframe and add gene name
+    column_scores_df = pd.DataFrame.from_dict(column_scores)
+    column_scores_df['Human_Name'] = updated_prior_data['Human_Name']
+    column_scores_df['GeneID'] = updated_prior_data['GeneID']
+    # change order of columns
+    column_scores_df = column_scores_df[
+        ['GeneID', 'Human_Name'] + [col for col in column_scores_df.columns if col not in ['GeneID', 'Human_Name']]]
+    # save to csv
+    column_scores_df.to_csv(f'Outputs\\propagation_scores\\{task.experiment_name}_10,000.csv', index=False)
+    # #load dataframe from csv
+    # column_scores_df = pd.read_csv(f'Outputs\\propagation_scores\\{task.experiment_name}_trial_and_error.csv')
+    print("calculating empirical p values")
     empirical_p_values = calculate_empirical_p_values(column_scores_df, genes_by_pathway_filtered)
     # save empirical p values to csv
     pd.DataFrame.from_dict(empirical_p_values, orient='index').to_csv(
