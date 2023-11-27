@@ -1,6 +1,5 @@
 from args import PropagationTask, PathwayResults
 import utils
-from pathway_enrichment import load_pathways_genes
 from visualization_tools import plot_enrichment_table
 from os import path
 from scipy.stats import hypergeom
@@ -19,7 +18,9 @@ def filter_pathways_genes(genes_by_pathway, gene_set):
     filtered_pathways = {}
     for pathway, genes in genes_by_pathway.items():
         filtered_genes = [gene for gene in genes if gene in gene_set]
-        if 10 <= len(filtered_genes) <= 60:
+        if pathway == 'REACTOME_NEUROTRANSMITTER_RECEPTORS_AND_POSTSYNAPTIC_SIGNAL_TRANSMISSION':
+            filtered_pathways[pathway] = genes
+        elif 10 <= len(filtered_genes) <= 60:
             filtered_pathways[pathway] = filtered_genes
     return filtered_pathways
 
@@ -55,18 +56,18 @@ def binomial_coefficient(n, k):
 
 def hypergeometric_pmf(K, k, N, n):
     """Calculate the probability mass function for the hypergeometric distribution."""
-    # # Number of ways to choose k successes from K possible successes
-    # success_ways = binomial_coefficient(K, k)
-    # # Number of ways to choose n-k failures from N-K possible failures
-    # failure_ways = binomial_coefficient(N - K, n - k)
-    # # Total number of ways to choose n draws out of N possible draws
-    # total_ways = binomial_coefficient(N, n)
-    #
-    # # Probability calculation
-    # probability = success_ways * failure_ways / total_ways
+    # Number of ways to choose k successes from K possible successes
+    success_ways = binomial_coefficient(K, k)
+    # Number of ways to choose n-k failures from N-K possible failures
+    failure_ways = binomial_coefficient(N - K, n - k)
+    # Total number of ways to choose n draws out of N possible draws
+    total_ways = binomial_coefficient(N, n)
 
-    # use scipy.stats.hypergeom
-    probability = hypergeom.pmf(k, N, K, n)
+    # Probability calculation
+    probability = success_ways * failure_ways / total_ways
+
+    # # use scipy.stats.hypergeom
+    # probability = hypergeom.pmf(k, N, K, n)
     return probability
 
 
@@ -90,7 +91,7 @@ def hypergeom_bh_correction(p_values_dict):
     return adj_p_values_dict
 
 
-def get_p_values(prior_data, threshold=Decimal('0.01')):
+def get_p_values(prior_data, threshold=Decimal('0.05')):
     """
     Get p-values for genes and filter based on the threshold.
 
@@ -118,17 +119,15 @@ def get_p_values(prior_data, threshold=Decimal('0.01')):
 # create a propagation task
 task = PropagationTask(experiment_name='hyper', create_similarity_matrix=False)
 prior_data_df = utils.read_prior_set(task.experiment_file_path)
-prior_data_df = prior_data_df[prior_data_df['GeneID'].apply(lambda x: str(x).isdigit())]
-prior_data_df['GeneID'] = prior_data_df['GeneID'].astype(int)
-prior_data_df = prior_data_df.reset_index(drop=True)
 # get the p-values
 enriched_p_vals = get_p_values(prior_data_df)
 
 # get pathway gene sets
 dir_path = path.dirname(path.realpath(__file__))
-genes_by_pathway = load_pathways_genes(path.join(dir_path, '../Data', 'H_sapiens', 'pathways', 'pathway_file'))
+genes_by_pathway = utils.load_pathways_genes(path.join(dir_path, '../Data', 'H_sapiens', 'pathways', 'pathway_file'))
 experiment_gene_set = get_experiment_gene_set(prior_data_df)
 filtered_genes_by_pathway = filter_pathways_genes(genes_by_pathway, experiment_gene_set)
+
 
 # Total number of genes in the background
 M = len(prior_data_df['GeneID'])
@@ -150,21 +149,30 @@ for pathway_name, pathway_genes in filtered_genes_by_pathway.items():
     # pathway_pvals[pathway_name] = pval
     task.results[pathway_name] = PathwayResults(p_value=pval, direction=direction)
 
-# Perform the Benjamini-Hochberg correction
-adj_pvals = hypergeom_bh_correction({k: v.p_value for k, v in task.results.items()})
+count_pathways = 0
+# Print all pathways with less than 0.05 p value
+for pathway_name, result in task.results.items():
+    if result.p_value < 0.05/1783:
+        print(f'{pathway_name}: {result.p_value}')
+        count_pathways += 1
 
-# keep only the pathways with adjusted p-values below 0.01
-adj_pvals = {k: v for k, v in adj_pvals.items() if v <= 0.01}
+print(f'Number of pathways with p-value < 0.05: {count_pathways}')
 
-# add the adjusted p-values to the results
-for pathway_name, adj_pval in adj_pvals.items():
-    task.results[pathway_name].adj_p_value = adj_pval
+# # Perform the Benjamini-Hochberg correction
+# adj_pvals = hypergeom_bh_correction({k: v.p_value for k, v in task.results.items()})
 
-# Filter PathwayResults based on adjusted p-values
-filtered_results = {k: task.results[k] for k in adj_pvals.keys()}
+# # keep only the pathways with adjusted p-values below 0.01
+# adj_pvals = {k: v for k, v in adj_pvals.items() if v <= 0.01}
 
-# Create matrices
-adj_p_vals_mat, directions_mat = create_matrices(filtered_results)
+# # add the adjusted p-values to the results
+# for pathway_name, adj_pval in adj_pvals.items():
+#     task.results[pathway_name].adj_p_value = adj_pval
+
+# # Filter PathwayResults based on adjusted p-values
+# filtered_results = {k: task.results[k] for k in adj_pvals.keys()}
+
+# # Create matrices
+# adj_p_vals_mat, directions_mat = create_matrices(filtered_results)
 
 specific_pathways = [
     "REACTOME_PRESYNAPTIC_DEPOLARIZATION_AND_CALCIUM_CHANNEL_OPENING",
@@ -204,33 +212,36 @@ specific_pathways = [
     "WP_NEUROINFLAMMATION"
 ]  # List of specific pathways
 
-for pathway in specific_pathways:
-    if pathway in adj_pvals:
-        print(f'{pathway}: {adj_pvals[pathway]}')
+
+
+
+# for pathway in specific_pathways:
+#     if pathway in adj_pvals:
+#         print(f'{pathway}: {adj_pvals[pathway]}')
 
 # Assuming genes_by_pathway is a dictionary mapping pathway names to lists of gene IDs
 # And adj_pvals is a dictionary mapping pathway names to adjusted p-values
 
-# Get dict of genes and their names from the priordata[Human_Name]
-genes_names = {int(gene_id): gene_name for gene_id, gene_name in zip(prior_data_df['GeneID'], prior_data_df['Human_Name'])}
+# # Get dict of genes and their names from the priordata[Human_Name]
+# genes_names = {int(gene_id): gene_name for gene_id, gene_name in zip(prior_data_df['GeneID'], prior_data_df['Human_Name'])}
 
-# Save the results to a file
-with open('hypergeom_TvN.txt', 'w') as f:
-    for pathway, pval in adj_pvals.items():
-        # Retrieve gene names for the pathway and ensure they are strings
-        gene_names_in_pathway = [str(genes_names[gene_id]) for gene_id in filtered_genes_by_pathway[pathway] if gene_id in genes_names]
+# # Save the results to a file
+# with open('hypergeom_TvN.txt', 'w') as f:
+#     for pathway, pval in adj_pvals.items():
+#         # Retrieve gene names for the pathway and ensure they are strings
+#         gene_names_in_pathway = [str(genes_names[gene_id]) for gene_id in filtered_genes_by_pathway[pathway] if gene_id in genes_names]
+#
+#         # Filter out any non-string values (like NaNs) and join the names
+#         gene_names_str = ', '.join([name for name in gene_names_in_pathway if isinstance(name, str)])
+#
+#         # Write pathway, p-value, and gene names to the file
+#         f.write(f'{pathway}: {pval}\nPath Genes: {gene_names_str}\n\n')
 
-        # Filter out any non-string values (like NaNs) and join the names
-        gene_names_str = ', '.join([name for name in gene_names_in_pathway if isinstance(name, str)])
 
-        # Write pathway, p-value, and gene names to the file
-        f.write(f'{pathway}: {pval}\nPath Genes: {gene_names_str}\n\n')
-
-
-# Set a small value to represent the minimum p-value
-min_p_val = np.finfo(adj_p_vals_mat.dtype).tiny
-# Replace 0 with the minimum p-value
-adj_p_vals_mat_no_zeros = np.where(adj_p_vals_mat == 0, min_p_val, adj_p_vals_mat)
+# # Set a small value to represent the minimum p-value
+# min_p_val = np.finfo(adj_p_vals_mat.dtype).tiny
+# # Replace 0 with the minimum p-value
+# adj_p_vals_mat_no_zeros = np.where(adj_p_vals_mat == 0, min_p_val, adj_p_vals_mat)
 
 # # Calculate -log10, avoiding log10(0) which gives inf
 # res = -np.log10(adj_p_vals_mat_no_zeros)

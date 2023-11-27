@@ -1,5 +1,7 @@
 import numpy as np
 from scipy.stats import ranksums, rankdata, ttest_ind
+from scipy.stats import ttest_rel
+from tqdm import tqdm
 
 
 class StatResults:
@@ -84,3 +86,64 @@ def bh_correction(p_values):
     p_vals_ordered = np.minimum(adj_p_vals_by_rank, np.minimum.accumulate(adj_p_vals_by_rank[::-1])[::-1])
     adj_p_vals = p_vals_ordered[p_vals_rank]
     return adj_p_vals
+
+
+def calculate_empirical_p_values(real_data, pathways, test_function, num_simulations=1000):
+    empirical_p_values = {}
+
+    # Wrap the pathways iteration with tqdm for progress tracking
+    for pathway_name, pathway_genes in tqdm(pathways.items(), desc='Processing Pathways'):
+        if pathway_name == "WP_DISRUPTION_OF_POSTSYNAPTIC_SIGNALING_BY_CNV" or pathway_name == "WP_SYNAPTIC_SIGNALING_PATHWAYS_ASSOCIATED_WITH_AUTISM_SPECTRUM_DISORDER":
+            print("synaptic pathway")
+        count_negative_t, count_positive_t = 0, 0
+        pathway_mask = real_data['GeneID'].isin(pathway_genes)
+        pathway_real_scores = real_data[pathway_mask]['Score']
+
+        for i in range(1, num_simulations + 1):
+            shuffled_score_column = f'Shuffled_Score_{i}'
+            pathway_shuffled_scores = real_data[pathway_mask][shuffled_score_column]
+            T = test_function(pathway_real_scores, pathway_shuffled_scores)
+            count_negative_t += (T < 0)
+            count_positive_t += (T > 0)
+
+        min_count = min(count_negative_t, count_positive_t)
+        empirical_p_values[pathway_name] = 2 * (min_count + 1) / (num_simulations + 1)
+
+    return empirical_p_values
+
+
+# Wilcoxon signed-rank test function
+def wilcoxon_test(real_scores, shuffled_scores):
+    # Wilcoxon signed-rank test logic
+    differences = real_scores - shuffled_scores
+    signed_ranks = rankdata(np.abs(differences)) * np.sign(differences)
+    return np.sum(signed_ranks)
+
+
+# Paired sample t-test function
+def t_test(real_scores, shuffled_scores):
+    t_statistic, _ = paired_sample_t_test(real_scores, shuffled_scores)
+    return t_statistic
+
+
+def paired_sample_t_test(real_scores, shuffled_scores):
+    # Ensure that real_scores and shuffled_scores are NumPy arrays of type float
+    real_scores = np.asarray(real_scores, dtype=float)
+    shuffled_scores = np.asarray(shuffled_scores, dtype=float)
+
+    # Perform the paired sample t-test
+    t_statistic, p_value = ttest_rel(real_scores, shuffled_scores)
+    return t_statistic
+
+
+def sign_test(real_scores, shuffled_scores):
+    differences = real_scores - shuffled_scores
+    positive_count = np.sum(differences > 0)
+    negative_count = np.sum(differences < 0)
+
+    if positive_count > negative_count:
+        return 1  # Indicate majority of differences are positive
+    elif negative_count > positive_count:
+        return -1  # Indicate majority of differences are negative
+    else:
+        return 0  # Equal number of positive and negative differences, or all zeros

@@ -2,6 +2,8 @@ import scipy as sp
 import scipy.sparse
 import scipy.linalg
 import numpy as np
+import pandas as pd
+from tqdm import tqdm
 from args import PropagationTask
 import networkx as nx
 import os
@@ -50,7 +52,7 @@ def propagate_with_inverse(seeds, propagation_input, inverse_matrix, gene_indexe
     Returns:
         numpy.ndarray: Array containing the final propagated values for each gene.
     """
-    F_0 = np.zeros(num_genes)
+    F_0 = np.zeros((num_genes, 1))
     for seed in seeds:
         F_0[gene_indexes[seed]] = propagation_input[seed]
     # change F_0 to a 2D array
@@ -71,6 +73,7 @@ def generate_similarity_matrix(network, similarity_matrix_path, alpha):
         tuple: A tuple containing the inverse of the similarity matrix and the list of genes.
     """
     genes = sorted(network.nodes())
+    gene_index = dict([(gene, index) for (index, gene) in enumerate(genes)])
 
     if not sp.sparse.issparse(network):
         matrix = nx.to_scipy_sparse_matrix(network, genes, weight=2)
@@ -111,7 +114,7 @@ def generate_similarity_matrix(network, similarity_matrix_path, alpha):
 
     end = time.time()
     print(f"Time elapsed: {end - start} seconds")
-    return matrix_inverse, genes
+    return matrix_inverse, gene_index
 
 
 def read_sparse_matrix_txt(network, similarity_matrix_path):
@@ -124,6 +127,7 @@ def read_sparse_matrix_txt(network, similarity_matrix_path):
         tuple: A tuple containing the sparse matrix and the list of genes.
     """
     genes = sorted(network.nodes())
+    gene_index = dict([(gene, index) for (index, gene) in enumerate(genes)])
     if not os.path.exists(similarity_matrix_path):
         raise FileNotFoundError(f"The specified file {similarity_matrix_path} does not exist.")
 
@@ -132,7 +136,7 @@ def read_sparse_matrix_txt(network, similarity_matrix_path):
     matrix = sp.sparse.load_npz(similarity_matrix_path)
     end = time.time()
     print(f"Time elapsed: {end - start} seconds")
-    return matrix, genes
+    return matrix, gene_index
 
 
 def propagate_network(propagation_input, matrix, gene_index):
@@ -149,5 +153,61 @@ def propagate_network(propagation_input, matrix, gene_index):
     inverted_gene_scores = propagate_with_inverse(list(propagation_input.keys()), propagation_input, matrix,
                                                   gene_index, len(gene_index))
     # return dictionary of gene indexes and inverted gene scores
-    gene_indexes_scores = dict([(gene_index[gene], inverted_gene_scores[gene_index[gene]]) for gene in propagation_input.keys() if gene in gene_index])
+    gene_indexes_scores = dict([(gene_index[gene], inverted_gene_scores[gene_index[gene]])
+                                for gene in propagation_input.keys() if gene in gene_index])
     return inverted_gene_scores, gene_indexes_scores
+
+
+def column_propagation(column_data, matrix, gene_index):
+    """
+    Optimized function for column-wise network propagation.
+
+    Args:
+        column_data (pd.DataFrame): DataFrame containing 'GeneID' and the score column.
+        matrix (numpy.ndarray or scipy.sparse matrix): Propagation matrix.
+        gene_index (dict): Mapping of gene IDs to their indices in the matrix.
+
+    Returns:
+        np.ndarray: Array of propagated scores.
+    """
+    # Assuming 'GeneID' is the first column and the score is the second
+    score_column = column_data.columns[1]
+
+    # Directly work with Pandas series
+    gene_id_to_score = column_data.set_index('GeneID')[score_column].to_dict()
+
+    # Propagate network scores
+    score_gene_scores_inverse, gene_score_dict = propagate_network(gene_id_to_score, matrix, gene_index)
+
+    return score_gene_scores_inverse.flatten()
+
+
+def generate_propagation_scores(task1, updated_prior_data, network_graph, num_shuffles):
+    if task1.create_similarity_matrix:
+        print("generating similarity matrix")
+        matrix, network_gene_index = generate_similarity_matrix(network_graph, task1.similarity_matrix_path, task1.alpha)
+    else:
+        print("reading similarity matrix")
+        matrix, network_gene_index = read_sparse_matrix_txt(network_graph, task1.similarity_matrix_path)
+        print("uploaded similarity matrix")
+    column_scores = {}
+
+    # Iterate over shuffled columns with progress bar
+    print("propagating")
+    for column in tqdm(updated_prior_data.columns, desc="Propagating columns"):
+        if column != 'GeneID':
+            # Create sub dataframe of GeneID and current column
+            column_data = updated_prior_data[['GeneID', column]]
+            # Perform propagation
+            column_scores[column] = column_propagation(column_data, matrix, network_gene_index)
+    del matrix
+
+    # Convert column scores to dataframe and process
+    column_scores_df = pd.DataFrame.from_dict(column_scores)
+    column_scores_df['GeneID'] = updated_prior_data['GeneID']
+    column_scores_df = column_scores_df[['GeneID'] + [col for col in column_scores_df.columns if col != 'GeneID']]
+
+    # save to csv
+    column_scores_df.to_csv(f'Outputs\\propagation_matrix\\alpha:{task1.alpha}_{num_shuffles}.csv', index=False)
+    return column_scores_df
+

@@ -4,7 +4,7 @@ from utils import get_root_path
 
 
 class PropagationTask:
-    def __init__(self, experiment_name, alpha=0.1, network_file='H_sapiens.net',
+    def __init__(self, experiment_name, alpha=0.11, network_file='H_sapiens.net',
                  create_similarity_matrix=False):
         """
         Initializes a task for gene score propagation.
@@ -23,7 +23,7 @@ class PropagationTask:
 
         # General Parameters
         self.experiment_name = experiment_name
-        self.experiment_file = 'scores_T_v_N.xlsx'
+        self.experiment_file = 'roded_file.xlsx'
         self.root_folder = path.dirname(path.realpath(__file__))
         self.data_file = 'Data'
         self.network_file = network_file
@@ -66,7 +66,8 @@ class PropagationTask:
 
 
 class EnrichTask:
-    def __init__(self, name, propagation_file, propagation_folder, statistic_test, target_field):
+    def __init__(self, name, propagation_file, propagation_folder, statistic_test, target_field, alpha=0.1,
+                 create_propagation_matrix=False, create_scores=True):
         """
         Initializes an enrichment task with specified parameters.
 
@@ -87,7 +88,14 @@ class EnrichTask:
         self.statistic_test = statistic_test
         self.target_field = target_field
         self.results = dict()
-
+        self.alpha = alpha
+        self.create_scores = create_scores
+        self.create_similarity_matrix = create_propagation_matrix
+        self.root_folder = path.dirname(path.realpath(__file__))
+        self.data_file = 'Data'
+        self.data_dir = path.join(self.root_folder, self.data_file)
+        self.similarity_matrix_path = path.join(self.data_dir, 'H_sapiens', 'matrix',
+                                                f'similarity_matrix_{self.alpha}.npz')
 
 class RawScoreTask:
     def __init__(self, name, experiment_file_path, score_file_path, sheet_name, statistic_test, propagation_input_type,
@@ -118,7 +126,7 @@ class RawScoreTask:
 
 
 class GeneralArgs:
-    def __init__(self, network_path, genes_names_path, pathway_members_path, FDR_threshold=0.1,
+    def __init__(self, network_path, genes_names_path, pathway_members_path, FDR_threshold=0.05,
                  output_folder_name=None, figure_name=None, figure_title='Pathway Enrichment '):
         """
         Contains general arguments and settings for pathway enrichment analysis

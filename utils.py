@@ -1,10 +1,59 @@
 import pandas as pd
+from tqdm import tqdm
 import networkx as nx
 import numpy as np
 import os
 from os import path
 import pickle
 import zlib
+import args
+
+
+def save_filtered_pathways_to_tsv(pathways_with_many_genes, genes_by_pathway, output_file_path):
+    """
+    Saves the filtered pathways with their gene counts and gene IDs to a TSV file.
+
+    Args:
+        pathways_with_many_genes (list): List of pathway names that passed filtering.
+        genes_by_pathway (dict): Original dictionary mapping pathways to their gene IDs.
+        output_file_path (str): Path to save the TSV file.
+
+    Returns:
+        None
+    """
+    with open(output_file_path, 'w') as file:
+        for pathway in pathways_with_many_genes:
+            genes = genes_by_pathway.get(pathway, [])
+            gene_count = len(genes)
+            line = f"{pathway}\t{gene_count}\t{' '.join(map(str, genes))}\n"
+            file.write(line)
+    print(f"Filtered pathways saved to {output_file_path}")
+
+
+def filter_network_by_prior_data(network_filename, prior_data):
+    """
+    Filters a network to only include nodes present in the prior_data DataFrame.
+
+    Args:
+        network_filename (str): Path to the network file.
+        prior_data (pd.DataFrame): DataFrame containing gene information.
+
+    Returns:
+        networkx.Graph: A filtered graph object.
+    """
+    # Read the network
+    network = read_network(network_filename)
+
+    # Get the set of gene IDs from prior_data
+    gene_ids_in_prior_data = set(prior_data['GeneID'])
+
+    # Filter the network
+    filtered_network = network.copy()
+    for node in network.nodes:
+        if node not in gene_ids_in_prior_data:
+            filtered_network.remove_node(node)
+
+    return filtered_network
 
 
 # noinspection PyTypeChecker
@@ -24,17 +73,26 @@ def read_network(network_filename):
 
 def read_prior_set(excel_dir):
     """
-    Reads prior data set from an Excel file.
+    Reads prior data set from an Excel file and applies preprocessing.
     Args:
         excel_dir (str): Path to the Excel file containing the prior data.
     Returns:
-        pandas.DataFrame: DataFrame containing the prior data.
+        pandas.DataFrame: DataFrame containing the preprocessed prior data.
     """
     prior_data = pd.read_excel(excel_dir, engine='openpyxl')
-    # Apply data preparation logic
+
+    # Drop duplicate GeneID values
+    prior_data = prior_data.drop_duplicates(subset='GeneID')
+
+    # Filter out GeneIDs that are not purely numeric (to exclude concatenated IDs)
     prior_data = prior_data[prior_data['GeneID'].apply(lambda x: str(x).isdigit())]
+
+    # Convert GeneID to integer
     prior_data['GeneID'] = prior_data['GeneID'].astype(int)
+
+    # Reset the DataFrame index
     prior_data = prior_data.reset_index(drop=True)
+
     return prior_data
 
 
@@ -96,10 +154,10 @@ def save_propagation_score(propagation_scores, prior_set, propagation_input, gen
     Saves the propagation scores to a file.
 
     Args:
-        propagation_scores (dict): The propagation scores to be saved.
+        propagation_scores (ndarray): The propagation scores.
         prior_set (dataframe): The set of prior genes.
         propagation_input (dict): The input used for propagation.
-        genes_idx_to_id (dict): Mapping from gene indices to gene IDs.
+        genes_id_to_idx (dict): Mapping from gene indices to gene IDs.
         task (PropagationTask): The propagation task object containing program arguments.
         save_dir (str, optional): Directory to save the results.
 
@@ -155,7 +213,7 @@ def load_file(load_dir, decompress=True):
         decompress (bool, optional): Whether to decompress the file.
 
     Returns:
-        object: The object loaded from the file.
+        file (dict): The object loaded from the file.
     """
     with open(load_dir, 'rb') as f:
         file = pickle.load(f)
@@ -179,6 +237,97 @@ def load_propagation_scores(task, propagation_file_name=None):
         dict: Dictionary containing the propagation scores, input, and gene index to ID mapping.
     """
     propagation_results_path = path.join(task.propagation_scores_path, propagation_file_name)
+    propagation_results_path = propagation_results_path.replace("\\", "/")  # Replace backslashes
+
     propagation_result_dict: dict = load_file(propagation_results_path, decompress=True)
 
     return propagation_result_dict
+
+
+def shuffle_scores(dataframe, shuffle_column, num_shuffles=10):
+    if shuffle_column not in dataframe.columns:
+        raise ValueError(f"Column '{shuffle_column}' not found in the DataFrame")
+
+    # Dictionary to store all shuffled columns
+    shuffled_columns = {}
+
+    # Generate shuffled columns with progress tracking
+    for i in tqdm(range(1, num_shuffles + 1), desc='Shuffling Scores'):
+        shuffled_column = dataframe[shuffle_column].sample(frac=1).reset_index(drop=True)
+        shuffled_columns[f'Shuffled_Score_{i}'] = shuffled_column
+
+    # Convert the dictionary to a DataFrame
+    shuffled_df = pd.DataFrame(shuffled_columns)
+
+    # Concatenate the original dataframe with the new shuffled scores DataFrame
+    result_df = pd.concat([dataframe, shuffled_df], axis=1)
+
+    return result_df
+
+
+def load_network_and_pathways(general_args, task):
+    """
+    Loads the network graph and pathways based on the provided configuration.
+    Args:
+        general_args (GeneralArgs): Object containing general configuration settings.
+    Returns:
+        tuple: A tuple containing the network graph, a list of interesting pathways, and a dictionary mapping
+               pathways to their genes.
+    """
+    network_graph = read_network(general_args.network_file_path)
+    genes_by_pathway = load_pathways_genes(general_args.pathway_members_path)
+    scores, prior_set, input_dict = get_scores(task)
+
+    return network_graph, genes_by_pathway, scores, prior_set, input_dict
+
+
+def get_scores(task):
+    """
+    Retrieves gene scores and additional relevant data based on the given task configuration.
+
+    This function processes a specified task to load propagation scores and other necessary information
+    from the results. It handles the extraction and mapping of gene IDs to their respective scores and
+    filters the necessary columns from the prior data.
+
+    Args:
+        task (EnrichTask or RawScoreTask): Task object specifying the type of analysis and associated parameters.
+                                           The task must be an instance of EnrichTask or RawScoreTask to be valid.
+
+    Raises:
+        ValueError: If the task type is not an instance of EnrichTask, indicating an unsupported or invalid task type.
+
+    Returns:
+        Tuple[Dict[int, float], pd.DataFrame, Dict[int, float]]:
+            - A dictionary mapping gene IDs to their corresponding scores based on the task's target field.
+            - A pandas DataFrame of the prior data, with specific columns ('Human_Name', 'P-value') removed.
+            - A dictionary representing the propagation input, mapping gene IDs to their initial input scores.
+
+    Note:
+        The function assumes the presence of 'Human_Name' and 'P-value' columns in the prior data, which are removed
+        in the process. It also relies on the task object to specify the propagation file and target field for score extraction.
+    """
+    if not isinstance(task, args.EnrichTask):
+        raise ValueError('Invalid task type')
+
+    result_dict = load_propagation_scores(task, propagation_file_name=task.propagation_file)
+    gene_id_to_idx = {id: idx for id, idx in result_dict['gene_id_to_idx'].items() if
+                      id in result_dict['propagation_input']}
+    # upload prior data from xlsx file
+    prior_data = result_dict['prior_set'].copy()
+    # remove Human_Name and P-value columns
+    prior_data = prior_data.drop(columns=['Human_Name', 'P-value'])
+    input_dict = result_dict['propagation_input']
+    return {id: result_dict[task.target_field][idx][0] for id, idx in gene_id_to_idx.items()}, prior_data, input_dict
+
+
+def load_and_prepare_data(task):
+    data = read_prior_set(task.experiment_file_path)
+    # abs score
+    data['Score'] = data['Score'].apply(lambda x: abs(x))
+    data = data[data['GeneID'].apply(lambda x: str(x).isdigit())]
+    data['GeneID'] = data['GeneID'].astype(int)
+    # remove p_values column
+    data = data.drop(columns=['P-value'])
+    data = data.reset_index(drop=True)
+
+    return data
