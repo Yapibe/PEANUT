@@ -21,21 +21,11 @@ def process_tasks(task, general_args, genes_by_pathway, all_experiment_genes_sco
     """
     significant_pathways_with_genes = {}
 
-    # Filter genes for each pathway
+    # Filter genes for each pathway, only includes genes that are in the experiment and in the pathway file
     genes_by_pathway_filtered = {
         pathway: [gene_id for gene_id in genes if gene_id in all_experiment_genes_scores]
         for pathway, genes in genes_by_pathway.items()
     }
-
-    # Print the gene count for 'KEGG_SYSTEMIC_LUPUS_ERYTHEMATOSUS' before filtering
-    if 'KEGG_SYSTEMIC_LUPUS_ERYTHEMATOSUS' in genes_by_pathway:
-        print(
-            f"Before filtering, '{'KEGG_SYSTEMIC_LUPUS_ERYTHEMATOSUS'}' has {len(genes_by_pathway['KEGG_SYSTEMIC_LUPUS_ERYTHEMATOSUS'])} genes.")
-
-    # Print the gene count after filtering but before applying gene count criteria
-    if 'KEGG_SYSTEMIC_LUPUS_ERYTHEMATOSUS' in genes_by_pathway_filtered:
-        print(
-            f"After filtering (but before applying gene count criteria), '{'KEGG_SYSTEMIC_LUPUS_ERYTHEMATOSUS'}' has {len(genes_by_pathway_filtered['KEGG_SYSTEMIC_LUPUS_ERYTHEMATOSUS'])} genes.")
 
     # Filter pathways based on gene count criteria
     pathways_with_many_genes = [
@@ -43,16 +33,8 @@ def process_tasks(task, general_args, genes_by_pathway, all_experiment_genes_sco
         if general_args.minimum_gene_per_pathway <= len(genes) <= general_args.maximum_gene_per_pathway
     ]
 
-    # Print the gene count after applying all criteria
-    if 'KEGG_SYSTEMIC_LUPUS_ERYTHEMATOSUS' in pathways_with_many_genes:
-        print(
-            f"After all criteria, '{'KEGG_SYSTEMIC_LUPUS_ERYTHEMATOSUS'}' is included with {len(genes_by_pathway_filtered['KEGG_SYSTEMIC_LUPUS_ERYTHEMATOSUS'])} genes.")
-
     # Manually add a specific pathway
     pathways_with_many_genes.append('REACTOME_NEUROTRANSMITTER_RECEPTORS_AND_POSTSYNAPTIC_SIGNAL_TRANSMISSION')
-    # check if pathway KEGG_SYSTEMIC_LUPUS_ERYTHEMATOSUS is in pathways_with_many_genes
-    if 'KEGG_SYSTEMIC_LUPUS_ERYTHEMATOSUS' in pathways_with_many_genes:
-        print("KEGG_SYSTEMIC_LUPUS_ERYTHEMATOSUS included")
 
     output_file_path = path.join(general_args.output_path, f'{task.name}_filtered_pathways.tsv')
     save_filtered_pathways_to_tsv(pathways_with_many_genes, genes_by_pathway_filtered, output_file_path)
@@ -62,7 +44,6 @@ def process_tasks(task, general_args, genes_by_pathway, all_experiment_genes_sco
     # Perform statistical tests
     for pathway in pathways_with_many_genes:
         pathway_scores = [all_experiment_genes_scores[gene_id] for gene_id in genes_by_pathway_filtered[pathway]]
-
         # Background scores from all genes in the experiment, excluding those in the current pathway
         background_genes = set(all_experiment_genes_scores.keys()) - set(genes_by_pathway_filtered[pathway])
         background_scores = [all_experiment_genes_scores[gene_id] for gene_id in background_genes]
