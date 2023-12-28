@@ -4,7 +4,7 @@ from utils import get_root_path
 
 
 class PropagationTask:
-    def __init__(self, experiment_name, alpha=0.11, network_file='H_sapiens.net',
+    def __init__(self, experiment_name, alpha=1, network_file='H_sapiens.net',
                  create_similarity_matrix=False):
         """
         Initializes a task for gene score propagation.
@@ -23,7 +23,7 @@ class PropagationTask:
 
         # General Parameters
         self.experiment_name = experiment_name
-        self.experiment_file = 'roded_file.xlsx'
+        self.experiment_file = 'Inputs/experiments_data/roded_M.xlsx'
         self.root_folder = path.dirname(path.realpath(__file__))
         self.data_file = 'Data'
         self.network_file = network_file

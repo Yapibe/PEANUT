@@ -1,6 +1,5 @@
 import numpy as np
-from scipy.stats import ranksums, rankdata, ttest_ind
-from scipy.stats import ttest_rel
+from scipy.stats import ranksums, rankdata, ttest_ind, ks_2samp, ttest_rel
 from tqdm import tqdm
 
 
@@ -147,3 +146,28 @@ def sign_test(real_scores, shuffled_scores):
         return -1  # Indicate majority of differences are negative
     else:
         return 0  # Equal number of positive and negative differences, or all zeros
+
+
+def kolmogorov_smirnov_test(experiment_scores, control_scores, alternative='two-sided') -> StatResults:
+    """
+    Performs the Kolmogorov-Smirnov test on two sets of scores.
+
+    Args:
+        experiment_scores (array_like): Array of scores from the experiment group.
+        control_scores (array_like): Array of scores from the control group.
+        alternative (str, optional): Defines the alternative hypothesis. Possible values are 'two-sided', 'less', or 'greater'.
+
+    Returns:
+        StatResults: Object containing the p-value, directionality, and name of the test.
+    """
+    ks_stat, p_value = ks_2samp(experiment_scores, control_scores, alternative=alternative)
+
+    # Determine directionality
+    if np.mean(experiment_scores) > np.mean(control_scores):
+        direction = 'greater'
+    elif np.mean(experiment_scores) < np.mean(control_scores):
+        direction = 'less'
+    else:
+        direction = 'not significant'
+
+    return StatResults(p_value=p_value, directionality=direction, name="Kolmogorov-Smirnov Test")

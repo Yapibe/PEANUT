@@ -1,7 +1,7 @@
 from propagation_routines import generate_propagation_scores
 from args import PathwayResults
-from statistic_methods import wilcoxon_test, calculate_empirical_p_values, paired_sample_t_test, sign_test
-from utils import shuffle_scores, load_network_and_pathways, save_filtered_pathways_to_tsv
+from statistic_methods import wilcoxon_test, calculate_empirical_p_values, sign_test, kolmogorov_smirnov_test
+from utils import shuffle_scores, load_network_and_pathways
 from typing import List, Dict
 import pandas as pd
 import csv
@@ -36,15 +36,13 @@ def process_tasks(task, general_args, genes_by_pathway, all_experiment_genes_sco
     # Manually add a specific pathway
     pathways_with_many_genes.append('REACTOME_NEUROTRANSMITTER_RECEPTORS_AND_POSTSYNAPTIC_SIGNAL_TRANSMISSION')
 
-    output_file_path = path.join(general_args.output_path, f'{task.name}_filtered_pathways.tsv')
-    save_filtered_pathways_to_tsv(pathways_with_many_genes, genes_by_pathway_filtered, output_file_path)
     # Perform statistical tests
     print('After filtering:', len(pathways_with_many_genes))
 
     # Perform statistical tests
+    print('After filtering:', len(pathways_with_many_genes))
     for pathway in pathways_with_many_genes:
         pathway_scores = [all_experiment_genes_scores[gene_id] for gene_id in genes_by_pathway_filtered[pathway]]
-        # Background scores from all genes in the experiment, excluding those in the current pathway
         background_genes = set(all_experiment_genes_scores.keys()) - set(genes_by_pathway_filtered[pathway])
         background_scores = [all_experiment_genes_scores[gene_id] for gene_id in background_genes]
         result = task.statistic_test(pathway_scores, background_scores)
@@ -74,6 +72,16 @@ def run(task1, general_args, num_shuffles=1000):
 
     # Stage 1 - calculate nominal p-values and directions
     significant_pathways_with_genes = (process_tasks(task1, general_args, genes_by_pathway, scores))
+    specific_pathways = [
+        "WP_DISRUPTION_OF_POSTSYNAPTIC_SIGNALING_BY_CNV",
+        "WP_HIPPOCAMPAL_SYNAPTOGENESIS_AND_NEUROGENESIS",
+        "WP_SYNAPTIC_SIGNALING_PATHWAYS_ASSOCIATED_WITH_AUTISM_SPECTRUM_DISORDER",
+        "REACTOME_NEUROTRANSMITTER_RECEPTORS_AND_POSTSYNAPTIC_SIGNAL_TRANSMISSION"
+    ]
+    #print the p-values of specific pathways
+    for pathway in specific_pathways:
+        if pathway in task1.results:
+            print(f'{pathway}: {task1.results[pathway].p_value}')
 
     if task1.alpha == 1:
         # Stage 2 - shuffle scores
@@ -115,7 +123,7 @@ def run(task1, general_args, num_shuffles=1000):
     # get path
     main_dir = path.dirname(path.realpath(__file__))
     empirical_p_values_path = path.join(main_dir, 'Outputs', 'empirical_p_values',
-                                        f'empirical_p_values_{task1.alpha}_{num_shuffles}.csv')
+                                        f'empirical_p_values_ks.csv')
     try:
         with open(empirical_p_values_path, 'w', newline='') as f:
             writer = csv.writer(f)

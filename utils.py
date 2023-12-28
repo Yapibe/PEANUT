@@ -82,11 +82,15 @@ def read_prior_set(excel_dir):
     prior_data = pd.read_excel(excel_dir, engine='openpyxl')
 
     # Drop duplicate GeneID values
+    # print all duplicates
+    print(prior_data[prior_data.duplicated(subset=['GeneID'])])
     prior_data = prior_data.drop_duplicates(subset='GeneID')
-
+    # remove any row with no value in Score column
+    prior_data = prior_data[prior_data['Score'].notna()]
+    # remove any row with "?" in Score column
+    prior_data = prior_data[prior_data['Score'] != '?']
     # Filter out GeneIDs that are not purely numeric (to exclude concatenated IDs)
     prior_data = prior_data[prior_data['GeneID'].apply(lambda x: str(x).isdigit())]
-
     # Convert GeneID to integer
     prior_data['GeneID'] = prior_data['GeneID'].astype(int)
 
