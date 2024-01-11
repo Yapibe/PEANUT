@@ -1,26 +1,17 @@
 from propagation_routines import generate_propagation_scores
 from args import PathwayResults
-from statistic_methods import wilcoxon_test, calculate_empirical_p_values, sign_test, kolmogorov_smirnov_test
+from statistic_methods import calculate_empirical_p_values, sign_test, bh_correction, wilcoxon_rank_sums_test, jaccard_index
 from utils import shuffle_scores, load_network_and_pathways
-from typing import List, Dict
-import pandas as pd
+import numpy as np
 import csv
 from os import path
 
 
-def process_tasks(task, general_args, genes_by_pathway, all_experiment_genes_scores):
-    """
-    Processes a list of tasks for pathway enrichment analysis.
-    Args:
-        task (Task): tasks to be processed.
-        general_args (GeneralArgs): General configuration settings.
-        genes_by_pathway (Dict[str, List[int]]): Dictionary mapping pathways to their gene IDs.
-        all_experiment_genes_scores (Dict[int, float]): Dictionary mapping all gene IDs in the experiment to their score
-    Returns:
-        Set[str]: Set of genes by pathway to be included in the analysis.
-    """
+def perform_statist(task, general_args, genes_by_pathway, all_experiment_genes_scores):
     significant_pathways_with_genes = {}
-
+    ks_p_values = []
+    pathway_names = []
+    mw_p_values = []
     # Filter genes for each pathway, only includes genes that are in the experiment and in the pathway file
     genes_by_pathway_filtered = {
         pathway: [gene_id for gene_id in genes if gene_id in all_experiment_genes_scores]
@@ -33,12 +24,6 @@ def process_tasks(task, general_args, genes_by_pathway, all_experiment_genes_sco
         if general_args.minimum_gene_per_pathway <= len(genes) <= general_args.maximum_gene_per_pathway
     ]
 
-    # Manually add a specific pathway
-    pathways_with_many_genes.append('REACTOME_NEUROTRANSMITTER_RECEPTORS_AND_POSTSYNAPTIC_SIGNAL_TRANSMISSION')
-
-    # Perform statistical tests
-    print('After filtering:', len(pathways_with_many_genes))
-
     # Perform statistical tests
     print('After filtering:', len(pathways_with_many_genes))
     for pathway in pathways_with_many_genes:
@@ -46,9 +31,55 @@ def process_tasks(task, general_args, genes_by_pathway, all_experiment_genes_sco
         background_genes = set(all_experiment_genes_scores.keys()) - set(genes_by_pathway_filtered[pathway])
         background_scores = [all_experiment_genes_scores[gene_id] for gene_id in background_genes]
         result = task.statistic_test(pathway_scores, background_scores)
-        if result.p_value < general_args.FDR_threshold:
-            task.results[pathway] = PathwayResults(p_value=result.p_value, direction=result.directionality)
+
+        task.results[pathway] = PathwayResults(p_value=result.p_value, direction=result.directionality)
+        ks_p_values.append(result.p_value)
+        pathway_names.append(pathway)
+
+    # Apply BH correction
+    adjusted_p_values = bh_correction(np.array(ks_p_values))
+
+    # Filter significant pathways based on adjusted p-values
+    for i, pathway in enumerate(pathway_names):
+        if adjusted_p_values[i] < 0.05:  # Using a significance threshold of 0.05
             significant_pathways_with_genes[pathway] = genes_by_pathway_filtered[pathway]
+
+    specific_pathways = [
+        "WP_DISRUPTION_OF_POSTSYNAPTIC_SIGNALING_BY_CNV",
+        "WP_HIPPOCAMPAL_SYNAPTOGENESIS_AND_NEUROGENESIS",
+        "WP_SYNAPTIC_SIGNALING_PATHWAYS_ASSOCIATED_WITH_AUTISM_SPECTRUM_DISORDER",
+        "REACTOME_NEUROTRANSMITTER_RECEPTORS_AND_POSTSYNAPTIC_SIGNAL_TRANSMISSION"
+    ]
+    # print the p-values of specific pathways
+    for pathway in specific_pathways:
+        if pathway in task.results:
+            print(f'{pathway}: {task.results[pathway].p_value}')
+
+    # Mann-Whitney U test and FDR
+    for pathway in pathways_with_many_genes:
+        pathway_scores = [all_experiment_genes_scores[gene_id] for gene_id in genes_by_pathway_filtered[pathway]]
+        background_genes = set(all_experiment_genes_scores.keys()) - set(genes_by_pathway_filtered[pathway])
+        background_scores = [all_experiment_genes_scores[gene_id] for gene_id in background_genes]
+
+        # Perform Mann-Whitney U Test
+        u_stat, mw_pval =  wilcoxon_rank_sums_test(pathway_scores, background_scores, alternative='two-sided')
+        mw_p_values.append(mw_pval)
+        pathway_names.append(pathway)
+
+    # Apply BH correction to Mann-Whitney p-values
+    adjusted_mw_p_values = bh_correction(np.array(mw_p_values))
+
+    # Filter significant pathways based on adjusted Mann-Whitney p-values
+    for i, pathway in enumerate(pathway_names):
+        if adjusted_mw_p_values[i] < 0.05:  # Using a significance threshold of 0.05
+            significant_pathways_with_genes[pathway] = genes_by_pathway_filtered[pathway]
+
+    # Filter pathways based on adjusted p-values and Jaccard index
+    filtered_pathways = {}
+    JAC_THRESHOLD = 0.05  # Set your Jaccard threshold
+    for i, pathway_i in enumerate(pathway_names):
+        if adjusted_mw_p_values[i] > 0.05:
+            continue
 
     return significant_pathways_with_genes
 
@@ -68,56 +99,19 @@ def run(task1, general_args, num_shuffles=1000):
         None
     """
     print("uploding data")
-    network_graph, genes_by_pathway, scores, prior_data, input_dict = load_network_and_pathways(general_args, task1)
+    genes_by_pathway, scores = load_network_and_pathways(task1)
 
     # Stage 1 - calculate nominal p-values and directions
-    significant_pathways_with_genes = (process_tasks(task1, general_args, genes_by_pathway, scores))
-    specific_pathways = [
-        "WP_DISRUPTION_OF_POSTSYNAPTIC_SIGNALING_BY_CNV",
-        "WP_HIPPOCAMPAL_SYNAPTOGENESIS_AND_NEUROGENESIS",
-        "WP_SYNAPTIC_SIGNALING_PATHWAYS_ASSOCIATED_WITH_AUTISM_SPECTRUM_DISORDER",
-        "REACTOME_NEUROTRANSMITTER_RECEPTORS_AND_POSTSYNAPTIC_SIGNAL_TRANSMISSION"
-    ]
-    #print the p-values of specific pathways
-    for pathway in specific_pathways:
-        if pathway in task1.results:
-            print(f'{pathway}: {task1.results[pathway].p_value}')
+    significant_pathways_with_genes = perform_statist(task1, general_args, genes_by_pathway, scores)
 
-    if task1.alpha == 1:
-        # Stage 2 - shuffle scores
-        print("shuffling scores")
-        updated_prior_data = shuffle_scores(prior_data, 'Score', num_shuffles=num_shuffles)
-        # Skip propagation step and directly calculate empirical p-values
-        print("Calculating empirical p-values")
-        updated_prior_data_float = updated_prior_data.select_dtypes(include=['number']).astype(float)
-        empirical_p_values = calculate_empirical_p_values(updated_prior_data_float, significant_pathways_with_genes,
+
+
+    print("shuffling scores")
+    updated_prior_data = shuffle_scores(scores, 'Score', num_shuffles=num_shuffles)
+    print("Calculating empirical p-values")
+    updated_prior_data_float = updated_prior_data.select_dtypes(include=['number']).astype(float)
+    empirical_p_values = calculate_empirical_p_values(updated_prior_data_float, significant_pathways_with_genes,
                                                           sign_test, num_simulations=num_shuffles)
-    else:
-        if task1.create_scores:
-            # Stage 2 - shuffle scores
-            print("shuffling scores")
-            # Step 1: Get all unique gene IDs from the network graph
-            all_network_genes = set(network_graph.nodes)
-
-            # Step 2: Find intersected genes and calculate mean score
-            intersected_genes = set.intersection(set(prior_data.GeneID), all_network_genes)
-            mean_score = prior_data[prior_data.GeneID.isin(intersected_genes)].Score.mean()
-            # Step 3: Create new DataFrame for propagation
-            propagation_data = pd.DataFrame({'GeneID': list(all_network_genes)})
-            propagation_data = propagation_data.merge(prior_data[['GeneID', 'Score']], on='GeneID', how='left')
-            propagation_data['Score'].fillna(mean_score, inplace=True)
-            # Step 4: Shuffle scores for propagation analysis
-            updated_prior_data = shuffle_scores(propagation_data, 'Score', num_shuffles=num_shuffles)
-            # Perform propagation for other alpha values
-
-            column_scores_df = generate_propagation_scores(task1, updated_prior_data, network_graph, num_shuffles)
-        else:
-            # load dataframe from csv
-            column_scores_df = pd.read_csv(f'Outputs\\propagation_matrix\\alpha:{task1.alpha}_{num_shuffles}.csv')
-
-        # Stage 3 - calculate empirical p-values
-        print("calculating empirical p values")
-        empirical_p_values = calculate_empirical_p_values(column_scores_df, significant_pathways_with_genes, wilcoxon_test)
 
     # save empirical p values to csv
     # get path

@@ -7,7 +7,7 @@ from os import path
 import pickle
 import zlib
 import args
-
+import openpyxl
 
 def save_filtered_pathways_to_tsv(pathways_with_many_genes, genes_by_pathway, output_file_path):
     """
@@ -201,9 +201,36 @@ def load_pathways_genes(pathways_dir):
     Returns:
         dict: A dictionary mapping pathway names to lists of genes in each pathway.
     """
+    # with open(pathways_dir, 'r') as f:
+    #     lines = [str.upper(x.strip()).split('\t') for x in f]
+    # pathways = {x[0]: [int(y) for y in x[2:]] for x in lines}
+    #
+    # return pathways
+
+    pathways = {}
     with open(pathways_dir, 'r') as f:
-        lines = [str.upper(x.strip()).split('\t') for x in f]
-    pathways = {x[0]: [int(y) for y in x[2:]] for x in lines}
+        for line in f:
+            parts = line.strip().upper().split('\t')  # Split each line into parts
+            if len(parts) < 3:  # If there are not enough parts for name, size, and genes
+                continue
+
+            pathway_name = parts[0]  # The pathway name is the first part
+            try:
+                pathway_size = int(parts[1])  # The pathway size is the second part
+            except ValueError:
+                continue  # Skip this line if the size is not an integer
+
+            # Further split the gene part by spaces and then take the number of genes specified by pathway_size
+            genes = parts[2]  # The third part is the space-separated list of gene IDs
+            gene_list = genes.split()  # Split the genes by spaces
+
+            # Convert each gene to an integer
+            try:
+                genes = [int(gene) for gene in gene_list[:pathway_size]]
+            except ValueError:
+                continue  # Skip this line if any gene is not an integer
+
+            pathways[pathway_name] = genes  # Add the pathway and its genes to the dictionary
 
     return pathways
 
@@ -269,60 +296,43 @@ def shuffle_scores(dataframe, shuffle_column, num_shuffles=10):
     return result_df
 
 
-def load_network_and_pathways(general_args, task):
+def load_network_and_pathways(task):
     """
     Loads the network graph and pathways based on the provided configuration.
-    Args:
-        general_args (GeneralArgs): Object containing general configuration settings.
     Returns:
         tuple: A tuple containing the network graph, a list of interesting pathways, and a dictionary mapping
                pathways to their genes.
     """
-    network_graph = read_network(general_args.network_file_path)
-    genes_by_pathway = load_pathways_genes(general_args.pathway_members_path)
-    scores, prior_set, input_dict = get_scores(task)
+    # network_graph = read_network(general_args.network_file_path)
+    genes_by_pathway = load_pathways_genes(task.pathway_file_dir)
+    scores = get_scores(task)
 
-    return network_graph, genes_by_pathway, scores, prior_set, input_dict
+    return genes_by_pathway, scores
 
 
 def get_scores(task):
-    """
-    Retrieves gene scores and additional relevant data based on the given task configuration.
+    # Path to the file containing the raw scores (adjust as necessary)
+    raw_scores_file_path = task.experiment_file_path
 
-    This function processes a specified task to load propagation scores and other necessary information
-    from the results. It handles the extraction and mapping of gene IDs to their respective scores and
-    filters the necessary columns from the prior data.
+    try:
+        # Load raw data from the file
+        raw_data = pd.read_excel(raw_scores_file_path)
 
-    Args:
-        task (EnrichTask or RawScoreTask): Task object specifying the type of analysis and associated parameters.
-                                           The task must be an instance of EnrichTask or RawScoreTask to be valid.
+        # Perform necessary preprocessing on raw_data
+        # For instance, sorting, filtering, or extracting specific columns
+        # Assuming 'GeneID' and 'Score' are columns in the raw data
+        sorted_raw_data = raw_data.sort_values(by='GeneID').reset_index(drop=True)
 
-    Raises:
-        ValueError: If the task type is not an instance of EnrichTask, indicating an unsupported or invalid task type.
+        # Create a dictionary for gene_id_to_score
+        scores_dict = {gene_id: score for gene_id, score in zip(sorted_raw_data['GeneID'], sorted_raw_data['Score'])}
+        return scores_dict
 
-    Returns:
-        Tuple[Dict[int, float], pd.DataFrame, Dict[int, float]]:
-            - A dictionary mapping gene IDs to their corresponding scores based on the task's target field.
-            - A pandas DataFrame of the prior data, with specific columns ('Human_Name', 'P-value') removed.
-            - A dictionary representing the propagation input, mapping gene IDs to their initial input scores.
-
-    Note:
-        The function assumes the presence of 'Human_Name' and 'P-value' columns in the prior data, which are removed
-        in the process. It also relies on the task object to specify the propagation file and target field for score extraction.
-    """
-    if not isinstance(task, args.EnrichTask):
-        raise ValueError('Invalid task type')
-
-    result_dict = load_propagation_scores(task, propagation_file_name=task.propagation_file)
-    gene_id_to_idx = {id: idx for id, idx in result_dict['gene_id_to_idx'].items() if
-                      id in result_dict['propagation_input']}
-    # upload prior data from xlsx file
-    prior_data = result_dict['prior_set'].copy()
-    # remove Human_Name and P-value columns
-    prior_data = prior_data.drop(columns=['Human_Name', 'P-value'])
-    input_dict = result_dict['propagation_input']
-    return {id: result_dict[task.target_field][idx][0] for id, idx in gene_id_to_idx.items()}, prior_data, input_dict
-
+    except FileNotFoundError:
+        print(f"File not found: {raw_scores_file_path}")
+        return pd.DataFrame(), {}
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return pd.DataFrame(), {}
 
 def load_and_prepare_data(task):
     data = read_prior_set(task.experiment_file_path)
