@@ -1,11 +1,13 @@
 import pandas as pd
 
 
-def load_and_filter_cortical(file_path):
-    """
-    Load the CorticalOrganoid file, filter out 'lncRNA', and remove the 'gene_biotype' column.
-    """
+def load_and_filter_data(file_path):
     df = pd.read_excel(file_path)
+    # Load the datasheet file, in column 'gene_biotype' only keep rows with value: 'protein_coding'
+    df = df[df['gene_biotype'] == 'protein_coding']
+    # remove column 'gene_biotype'
+    df.drop(columns=['gene_biotype'], inplace=True)
+
     return df
 
 
@@ -59,12 +61,13 @@ def handle_duplicates(df):
 
 
 # Usage
-file_path_cortical = '../Inputs/experiments_data/iPSC_filtered.xlsx'
-file_path_idmap = '../Inputs/experiments_data/Copy_of_idmap.xlsx'
+data_file_path = '../Inputs/experiments_data/Parkinson/Parkinson_t_v_n_500nm_v_t.xlsx'
+file_path_idmap = '../Data/H_sapiens/gene_names/ID_to_Name_Map.xlsx'
 
-df_cortical = load_and_filter_cortical(file_path_cortical)
+data_file = load_and_filter_data(data_file_path)
+
 df_idmap = load_idmap(file_path_idmap)
-df_joined = join_dataframes(df_cortical, df_idmap)
+df_joined = join_dataframes(data_file, df_idmap)
 df_final = handle_duplicates(df_joined)
 
 # Save the final DataFrame
