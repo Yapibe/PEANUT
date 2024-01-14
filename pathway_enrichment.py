@@ -84,7 +84,7 @@ def perform_statist(task, general_args, genes_by_pathway, all_experiment_genes_s
     return significant_pathways_with_genes
 
 
-def run(task1, general_args, num_shuffles=1000):
+def run(task1, general_args):
     """
     Main function to run the pathway enrichment analysis.
 
