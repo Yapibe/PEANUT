@@ -160,7 +160,7 @@ def kolmogorov_smirnov_test(experiment_scores, control_scores, alternative='two-
     Returns:
         StatResults: Object containing the p-value, directionality, and name of the test.
     """
-    ks_stat, p_value = ks_2samp(experiment_scores, control_scores, alternative=alternative)
+    ks_stats, p_value = ks_2samp(experiment_scores, control_scores, alternative=alternative)
 
 
     # Convert lists to numpy arrays and sort
