@@ -113,10 +113,10 @@ def perform_enrichment(prop_task):
     alpha = 0.2
     if run_propagation_flag:
 
-        propagation_scores_file = '{}_{}_{}_{}'.format(prop_task.experiment_name, prop_task.propagation_input_type,
+        propagation_scores_file = '{}_{}_{}_{}'.format(prop_task.test_name, prop_task.propagation_input_type,
                                                        prop_task.alpha, prop_task.date)
-        task1 = EnrichTask(name=prop_task.experiment_name, propagation_file=propagation_scores_file,
-                           propagation_folder=f'Outputs\\propagation_scores\\{prop_task.experiment_name}',
+        task1 = EnrichTask(name=prop_task.test_name, propagation_file=propagation_scores_file,
+                           propagation_folder=f'Outputs\\propagation_scores\\{prop_task.test_name}',
                            statistic_test=kolmogorov_smirnov_test, target_field='gene_prop_scores', alpha=alpha,
                            create_propagation_matrix=False, create_scores=True)
     else:

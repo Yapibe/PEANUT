@@ -168,7 +168,7 @@ def save_propagation_score(propagation_scores, prior_set, propagation_input, gen
     Returns:
         dict: A dictionary containing the saved data.
     """
-    file_name = f"{task.experiment_name}_{task.propagation_input_type}_{task.alpha}_{task.date}"
+    file_name = f"{task.test_name}_{task.propagation_input_type}_{task.alpha}_{task.date}"
     save_dir = save_dir or task.propagation_scores_path
     os.makedirs(save_dir, exist_ok=True)
     propagation_results_path = path.join(save_dir, file_name)
