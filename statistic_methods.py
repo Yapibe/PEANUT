@@ -33,7 +33,7 @@ def wilcoxon_rank_sums_test(experiment_scores, elements_scores, alternative='two
     """
     wilcoxon_rank_sums_test.name = 'Wilcoxon_rank_sums_test'
     p_vals = ranksums(experiment_scores, elements_scores, alternative=alternative).pvalue
-    direction = np.mean(experiment_scores) > np.mean(elements_scores)
+    direction = np.mean(experiment_scores) > 0
     return StatResults(p_value=p_vals, directionality=direction, name=wilcoxon_rank_sums_test.name)
 
 
