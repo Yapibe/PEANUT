@@ -66,8 +66,8 @@ class PropagationTask:
 
 
 class EnrichTask:
-    def __init__(self, name, propagation_file, propagation_folder, statistic_test, target_field, alpha=0.1,
-                 create_propagation_matrix=False, create_scores=True):
+    def __init__(self, name, statistic_test, target_field, alpha=0.1,
+                 create_propagation_matrix=False, create_scores=True, propagation_file=None, propagation_folder=None):
         """
         Initializes an enrichment task with specified parameters.
 
@@ -97,32 +97,48 @@ class EnrichTask:
         self.similarity_matrix_path = path.join(self.data_dir, 'H_sapiens', 'matrix',
                                                 f'similarity_matrix_{self.alpha}.npz')
 
-class RawScoreTask:
-    def __init__(self, name, experiment_file_path, score_file_path, sheet_name, statistic_test, propagation_input_type,
-                 constrain_to_network_genes=True):
+class NewEnrichTask:
+    def __init__(self, experiment_name, statistic_test):
         """
-        Initializes a task for processing raw scores from an experiment
-        This class is used for setting up tasks that involve working with raw experimental scores, including
-        applying statistical tests and managing score files
+        Initializes an enrichment task with specified parameters.
+
+        This class configures an enrichment analysis task, including setting file paths and statistical tests
         Parameters:
-        - name (str): Name of the task.
-        - experiment_file_path (str): Path to the experiment data file.
-        - score_file_path (str): Path to the file containing scores.
-        - sheet_name (str): Name of the sheet in the score file.
-        - statistic_test (function): Statistical test to be applied to the scores.
-        - propagation_input_type (str): Type of input used for propagation.
-        - constrain_to_network_genes (bool): Whether to constrain the analysis to genes in the network
+        - experiment_name (str): Name of the experiment.
+        - statistic_test (function): Statistical test function to use for enrichment analysis.
+        - network_file (str): Name of the file containing the network data. (optional if needed)
         Attributes:
-        - Configuration for processing and analyzing raw scores from experiments.
+        - Paths and parameters for running enrichment analysis.
         """
-        self.name = name
-        self.score_file_path = score_file_path
-        self.sheet_name = sheet_name
+        self.experiment_name = experiment_name
+        self.species = 'H_sapiens'
         self.statistic_test = statistic_test
-        self.propagation_input_type = propagation_input_type
-        self.constrain_to_experiment = constrain_to_network_genes
         self.results = dict()
-        self.experiment_file_path = experiment_file_path
+        self.root_folder = path.dirname(path.realpath(__file__))
+        self.data_file = 'Data'
+        # self.network_file = network_file  # optional if needed
+        self.genes_names_file = 'H_sapiens.gene_info'  # optional if needed
+        self.date = datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
+        self.pathway_file = 'pathways'
+
+        # Derived Parameters (Initial placeholders)
+        self.data_dir = path.join(self.root_folder, self.data_file)
+        self.genes_names_file_path = path.join(self.data_dir, self.species, 'genes_names', self.genes_names_file)  # optional if needed
+        self.pathway_file_dir = path.join(self.data_dir, self.species, 'pathways', self.pathway_file)
+        # self.network_file_path = path.join(self.data_dir, 'H_sapiens', 'network', self.network_file)  # optional if needed
+        self.input_dir = None
+        self.output_folder = None
+
+        # Initialize derived parameters
+        self.get_derived_parameters()
+
+    def get_derived_parameters(self):
+        """
+        Set derived parameters based on the initial parameters.
+        """
+        self.input_dir = path.join(self.root_folder, 'Inputs', 'experiments_data')
+        self.experiment_file_path = path.join(self.input_dir, f'{self.experiment_name}.xlsx')
+        self.output_folder = path.join(self.root_folder, 'Outputs', 'enrichment_scores', self.experiment_name)
 
 
 class GeneralArgs:
@@ -142,8 +158,8 @@ class GeneralArgs:
         Attributes:
         - Configurations like minimum and maximum genes per pathway, FDR threshold, and paths for output and figures.
         """
-        self.minimum_gene_per_pathway = 10
-        self.maximum_gene_per_pathway = 60
+        self.minimum_gene_per_pathway = 20
+        self.maximum_gene_per_pathway = 200
         self.network_file_path = network_path
         self.genes_names_file_path = genes_names_path
         self.pathway_databases = ['_']
@@ -154,6 +170,19 @@ class GeneralArgs:
         self.output_path = path.join(get_root_path(), 'Outputs', output_folder_name)
         self.figure_name = figure_name if figure_name is not None else 'figure'
         self.pathway_members_path = pathway_members_path
+        self.figure_title = figure_title
+        self.use_gsea = False
+
+
+class NewGeneralArgs:
+    def __init__(self, FDR_threshold=0.05, output_folder_name=None, figure_name=None, figure_title='Pathway Enrichment'):
+        self.minimum_gene_per_pathway = 20
+        self.maximum_gene_per_pathway = 60
+        self.FDR_threshold = FDR_threshold
+        if output_folder_name is None:
+            output_folder_name = 'Enrichment_maps'
+        self.output_path = path.join(get_root_path(), 'Outputs', output_folder_name)
+        self.figure_name = figure_name if figure_name is not None else 'figure'
         self.figure_title = figure_title
         self.use_gsea = False
 

@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.stats import ranksums, rankdata, ttest_ind, ks_2samp, ttest_rel
 from tqdm import tqdm
+from math import sqrt, fabs
 
 
 class StatResults:
@@ -9,14 +10,12 @@ class StatResults:
     Attributes:
         p_value (float): The p-value of the test.
         directionality (bool): Indicates the direction of the difference (True if experiment > elements).
-        z_score (float): The z-score from the test (if applicable).
         name (str): Name of the statistical test.
     """
 
-    def __init__(self, p_value=None, directionality=None, z_score=None, name=None):
+    def __init__(self, p_value=None, directionality=None, name=None):
         self.p_value = p_value
         self.directionality = directionality
-        self.z_score = z_score
         self.name = name
 
 
@@ -34,8 +33,30 @@ def wilcoxon_rank_sums_test(experiment_scores, elements_scores, alternative='two
     """
     wilcoxon_rank_sums_test.name = 'Wilcoxon_rank_sums_test'
     p_vals = ranksums(experiment_scores, elements_scores, alternative=alternative).pvalue
-    direction = np.mean(experiment_scores) > np.mean(elements_scores)
+    direction = np.mean(experiment_scores) > 0
     return StatResults(p_value=p_vals, directionality=direction, name=wilcoxon_rank_sums_test.name)
+
+
+# Wilcoxon signed-rank test function
+def wilcoxon_test(real_scores, shuffled_scores):
+    # Wilcoxon signed-rank test logic
+    differences = real_scores - shuffled_scores
+    signed_ranks = rankdata(np.abs(differences)) * np.sign(differences)
+    return np.sum(signed_ranks)
+
+
+def sign_test(real_scores, shuffled_scores):
+    differences = real_scores - shuffled_scores
+    positive_count = np.sum(differences > 0)
+    negative_count = np.sum(differences < 0)
+
+    if positive_count > negative_count:
+        return 1  # Indicate majority of differences are positive
+    elif negative_count > positive_count:
+        return -1  # Indicate majority of differences are negative
+    else:
+        return 0  # Equal number of positive and negative differences, or all zeros
+
 
 
 def students_t_test(experiment_scores, elements_scores):
@@ -111,14 +132,6 @@ def calculate_empirical_p_values(real_data, pathways, test_function, num_simulat
     return empirical_p_values
 
 
-# Wilcoxon signed-rank test function
-def wilcoxon_test(real_scores, shuffled_scores):
-    # Wilcoxon signed-rank test logic
-    differences = real_scores - shuffled_scores
-    signed_ranks = rankdata(np.abs(differences)) * np.sign(differences)
-    return np.sum(signed_ranks)
-
-
 # Paired sample t-test function
 def t_test(real_scores, shuffled_scores):
     t_statistic, _ = paired_sample_t_test(real_scores, shuffled_scores)
@@ -135,19 +148,6 @@ def paired_sample_t_test(real_scores, shuffled_scores):
     return t_statistic
 
 
-def sign_test(real_scores, shuffled_scores):
-    differences = real_scores - shuffled_scores
-    positive_count = np.sum(differences > 0)
-    negative_count = np.sum(differences < 0)
-
-    if positive_count > negative_count:
-        return 1  # Indicate majority of differences are positive
-    elif negative_count > positive_count:
-        return -1  # Indicate majority of differences are negative
-    else:
-        return 0  # Equal number of positive and negative differences, or all zeros
-
-
 def kolmogorov_smirnov_test(experiment_scores, control_scores, alternative='two-sided') -> StatResults:
     """
     Performs the Kolmogorov-Smirnov test on two sets of scores.
@@ -160,7 +160,29 @@ def kolmogorov_smirnov_test(experiment_scores, control_scores, alternative='two-
     Returns:
         StatResults: Object containing the p-value, directionality, and name of the test.
     """
-    ks_stat, p_value = ks_2samp(experiment_scores, control_scores, alternative=alternative)
+    ks_stats, p_value = ks_2samp(experiment_scores, control_scores, alternative=alternative)
+
+
+    # Convert lists to numpy arrays and sort
+    experiment_scores = np.sort(experiment_scores)
+    control_scores = np.sort(control_scores)
+
+    # Initialize variables
+    en1 = len(experiment_scores)
+    en2 = len(control_scores)
+
+
+    # Calculate empirical cumulative distribution functions for both sets
+    data_all = np.concatenate([experiment_scores, control_scores])
+    cdf_experiment = np.searchsorted(experiment_scores, data_all, side='right') / en1
+    cdf_control = np.searchsorted(control_scores, data_all, side='right') / en2
+
+    # Find the maximum distance
+    D = np.max(np.abs(cdf_experiment - cdf_control))
+
+    # Calculate the KS statistic
+    en = np.sqrt(en1 * en2 / (en1 + en2))
+    p_value = ks((en + 0.12 + 0.11 / en) * D)
 
     # Determine directionality
     if np.mean(experiment_scores) > np.mean(control_scores):
@@ -171,3 +193,35 @@ def kolmogorov_smirnov_test(experiment_scores, control_scores, alternative='two-
         direction = 'not significant'
 
     return StatResults(p_value=p_value, directionality=direction, name="Kolmogorov-Smirnov Test")
+
+
+
+
+def ks(alam):
+    EPS1 = 1e-6  # Convergence criterion based on the term's absolute value
+    EPS2 = 1e-10  # Convergence criterion based on the sum's relative value
+    a2 = -2.0 * alam**2  # Squared and negated lambda for exponential calculation
+    fac = 2.0
+    sum = 0.0
+    termbf = 0.0
+
+    # Iteratively calculate the KS probability
+    for j in range(1, 101):
+        term = fac * np.exp(a2 * j**2)  # Calculate term of the series
+        sum += term  # Add to sum
+
+        # Check for convergence
+        if np.abs(term) <= EPS1 * termbf or np.abs(term) <= EPS2 * sum:
+            return sum
+
+        fac = -fac  # Alternate the sign
+        termbf = np.abs(term)  # Update term before flag
+
+    # Return 1.0 if the series does not converge in 100 terms
+    return 1.0
+
+
+def jaccard_index(set1, set2):
+    intersection = len(set1.intersection(set2))
+    union = len(set1.union(set2))
+    return intersection / union
