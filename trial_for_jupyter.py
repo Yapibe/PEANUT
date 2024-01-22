@@ -36,7 +36,7 @@ def load_pathways_genes():
 
 def get_scores():
     # Path to the file containing the raw scores (adjust as necessary)
-    raw_scores_file_path = experiment_file_path
+    raw_scores_file_path = path.join(input_dir, f'{test_name}.xlsx')
 
     try:
         # Load raw data from the file
@@ -75,6 +75,8 @@ def bh_correction(p_values):
 
 
 def perform_statist():
+    scores = get_scores()
+
     significant_pathways_with_genes = {}
     ks_p_values = []
     pathway_names = []
@@ -105,7 +107,7 @@ def perform_statist():
 
         result = statistic_test(pathway_scores, background_scores)
         results[pathway] = result
-        ks_p_values.append(result[0])
+        ks_p_values.append(result)
         pathway_names.append(pathway)
 
     # Apply BH correction
@@ -115,12 +117,12 @@ def perform_statist():
     for i, pathway in enumerate(pathway_names):
         if adjusted_p_values[i] < 0.05:  # Using a significance threshold of 0.05
             significant_pathways_with_genes[pathway] = (
-            genes_by_pathway_filtered[pathway], adjusted_p_values[i], results[pathway][1]
+            genes_by_pathway_filtered[pathway], adjusted_p_values[i], results[pathway]
             )
 
-    return significant_pathways_with_genes
+    return significant_pathways_with_genes, scores
 
-def perform_statist_mann_whitney(pathways_with_many_genes):
+def perform_statist_mann_whitney(pathways_with_many_genes, scores):
     mw_p_values = []
     significant_pathways_with_genes = {}
 
@@ -191,15 +193,7 @@ def kolmogorov_smirnov_test(experiment_scores, control_scores):
     en = np.sqrt(en1 * en2 / (en1 + en2))
     p_value = ks((en + 0.12 + 0.11 / en) * D)
 
-    # Determine directionality
-    if np.mean(experiment_scores) > 0:
-        direction = 'greater'
-    elif np.mean(experiment_scores) < 0:
-        direction = 'less'
-    else:
-        direction = 'not significant'
-
-    return p_value, direction
+    return p_value
 
 
 def ks(alam):
@@ -232,14 +226,6 @@ def wilcoxon_rank_sums_test(experiment_scores, elements_scores, alternative='two
 
 
 def print_enriched_pathways_to_file(filtered_pathways, output_folder, threshold=0.05):
-    """
-    Writes the enriched pathways that pass a specified p-value threshold to a file.
-
-    Args:
-        filtered_pathways (dict): Dictionary containing pathways and their details.
-        output_folder (str): Directory where the output file will be saved.
-        threshold (float): P-value threshold for filtering significant pathways.
-    """
     output_file_path = path.join(output_folder, f'{test_name}.txt')
     significant_count = 0
 
@@ -285,7 +271,14 @@ def process_experiment(condition_file, experiment_file, pathways_file):
         if not filtered_genes.empty:
             enriched_pathway_genes[pathway] = filtered_genes.set_index('GeneID')[['Human_Name', 'Score']].to_dict(
                 orient='index')
-            pathway_mean_scores[pathway] = filtered_genes['Score'].mean()
+            # # create array of genes with score >=1.5 or <=-1.5
+            # filtered_genes_by_score = filtered_genes[(filtered_genes['Score'] >= 1.5) | (filtered_genes['Score'] <= -1.5)]
+            filtered_genes_by_score = filtered_genes[(filtered_genes['P-value(TvN)'] <= 0.05)]
+            if not filtered_genes_by_score.empty:
+                pathway_mean_scores[pathway] = filtered_genes_by_score['Score'].mean()
+            else:
+                pathway_mean_scores[pathway] = 0
+
 
     return scores_dict, enriched_pathway_genes, pathway_mean_scores
 
@@ -308,15 +301,7 @@ def bold_keywords(text, keywords):
 
 
 def print_pathway_information(condition, scores_dict, pathway_genes_dict, pathway_trends, output_dir, experiment_name):
-    """
-    :param condition:
-    :param scores_dict:
-    :param pathway_genes_dict:
-    :param pathway_trends:
-    :param output_dir:
-    :param experiment_name:
-    :return:
-    """
+
     file_path = path.join(output_dir, 'Text', f'{experiment_name}.txt')
     with open(file_path, 'a') as file:
         file.write(f"Condition: {condition}\n------------------------\n")
@@ -345,7 +330,7 @@ def plot_pathways_mean_scores(pathway_mean_scores_data, scores_dict, output_dir,
     total_pathways = set()
     for condition in conditions:
         total_pathways.update(scores_dict[condition].keys())
-    total_pathways = list(total_pathways)
+    total_pathways = sorted(list(total_pathways))  # Sort pathways alphabetically
     num_pathways = len(total_pathways)
 
     bar_width = 0.8 / num_conditions
@@ -375,7 +360,7 @@ def plot_pathways_mean_scores(pathway_mean_scores_data, scores_dict, output_dir,
     plt.subplots_adjust(bottom=0.4)  # Adjust for layout
 
     # Define the output file path
-    output_file_path = path.join(output_dir,"Plots", f'{experiment_name}.pdf')
+    output_file_path = path.join(output_dir, "Plots", f'{experiment_name}_pathway_scores.pdf')
 
     # Save the plot to the specified directory
     plt.savefig(output_file_path, format='pdf', bbox_inches='tight')
@@ -398,7 +383,6 @@ output_path = '/mnt/c/Users/pickh/PycharmProjects/Yair_propagation/Outputs'
 figure_name = 'figure'
 figure_title = 'Pathway Enrichment'
 Experiment_name = 'Parkinson'
-test_name = "roded_T_v_N"
 species = 'H_sapiens'
 data_file = 'Data'
 genes_names_file = 'H_sapiens.gene_info'  # optional if needed
@@ -408,24 +392,21 @@ data_dir = path.join(root_path, data_file)
 genes_names_file_path = path.join(data_dir, species, 'genes_names', genes_names_file)
 pathway_file_dir = path.join(data_dir, species, 'pathways', pathway_file)
 input_dir = path.join(root_path, 'Inputs', 'experiments_data', Experiment_name)
-experiment_file_path = path.join(input_dir, f'{test_name}.xlsx')
 output_folder = path.join(root_path, 'Outputs', 'Temp')
 statistic_test = kolmogorov_smirnov_test
-results = dict()
 genes_by_pathway = load_pathways_genes()
-scores = get_scores()
 
-
+test_name = "roded_T_v_N"
 print("running enrichment")
-significant_pathways_with_genes = perform_statist()
-filtered_pathways = perform_statist_mann_whitney(significant_pathways_with_genes)
+significant_pathways_with_genes, scores = perform_statist()
+filtered_pathways = perform_statist_mann_whitney(significant_pathways_with_genes, scores)
 print("finished enrichment")
 print_enriched_pathways_to_file(filtered_pathways, output_folder, FDR_threshold)
 
 test_name = "roded_500nm"
 print("running enrichment")
-significant_pathways_with_genes = perform_statist()
-filtered_pathways = perform_statist_mann_whitney(significant_pathways_with_genes)
+significant_pathways_with_genes, scores = perform_statist()
+filtered_pathways = perform_statist_mann_whitney(significant_pathways_with_genes, scores)
 print("finished enrichment")
 print_enriched_pathways_to_file(filtered_pathways, output_folder, FDR_threshold)
 
