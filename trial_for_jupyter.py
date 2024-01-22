@@ -1,9 +1,10 @@
 import pandas as pd
 import numpy as np
-from os import path, listdir
+from os import path, listdir, makedirs
 from datetime import datetime
 from scipy.stats import rankdata, ranksums, ks_2samp
 import matplotlib.pyplot as plt
+import shutil
 
 def load_pathways_genes():
     pathways = {}
@@ -269,11 +270,11 @@ def process_experiment(condition_file, experiment_file, pathways_file):
     for pathway, genes in pathways.items():
         filtered_genes = experiment_data_filtered[experiment_data_filtered['GeneID'].isin(genes)]
         if not filtered_genes.empty:
-            enriched_pathway_genes[pathway] = filtered_genes.set_index('GeneID')[['Human_Name', 'Score']].to_dict(
+            enriched_pathway_genes[pathway] = filtered_genes.set_index('GeneID')[['Symbol', 'Score']].to_dict(
                 orient='index')
             # # create array of genes with score >=1.5 or <=-1.5
             # filtered_genes_by_score = filtered_genes[(filtered_genes['Score'] >= 1.5) | (filtered_genes['Score'] <= -1.5)]
-            filtered_genes_by_score = filtered_genes[(filtered_genes['P-value(TvN)'] <= 0.05)]
+            filtered_genes_by_score = filtered_genes[(filtered_genes['P-value'] <= 0.05)]
             if not filtered_genes_by_score.empty:
                 pathway_mean_scores[pathway] = filtered_genes_by_score['Score'].mean()
             else:
@@ -286,10 +287,13 @@ def process_experiment(condition_file, experiment_file, pathways_file):
 def calculate_trend(pathway_mean_scores):
     """Calculates the trend (up or down) of each pathway based on its mean score."""
     trends = {}
-    for pathway, mean_score in pathway_mean_scores.items():
-        trend = "Up" if mean_score > 0 else "Down"
+    for pathway, mean_scores in pathway_mean_scores.items():
+        # Calculate the overall mean score for the pathway across all conditions
+        overall_mean_score = np.mean(mean_scores)
+        trend = "Up" if overall_mean_score > 0 else "Down"
         trends[pathway] = trend
     return trends
+
 
 
 def bold_keywords(text, keywords):
@@ -311,9 +315,28 @@ def print_pathway_information(condition, scores_dict, pathway_genes_dict, pathwa
 
             for gene_id, details in pathway_genes_dict.get(pathway, {}).items():
                 if details['Score'] > 1 or details['Score'] < -1:
-                    file.write(f"{details['Human_Name']} (ID: {gene_id}), Score: {details['Score']}\n")
+                    file.write(f"{details['Symbol']} (ID: {gene_id}), Score: {details['Score']}\n")
 
             file.write("\n")
+
+
+def print_aggregated_pathway_information(aggregated_pathway_data, output_dir, experiment_name):
+    file_path = path.join(output_dir, 'Text', f'{experiment_name}_aggregated.txt')
+
+    with open(file_path, 'w') as file:
+        for pathway, condition_data in aggregated_pathway_data.items():
+            file.write(f"Pathway: {pathway}\n")
+
+            for condition, details in condition_data.items():
+                file.write(f"Condition: {condition}\n")
+                file.write(f"Trend: {details['trend']}\n")
+                file.write("Genes:\n")
+                for gene_id, gene_info in details['genes'].items():
+                    score = gene_info.get('Score', 0)
+                    if score > 1 or score < -1:
+                        symbol = gene_info.get('Symbol', 'N/A')
+                        file.write(f"  Gene ID: {gene_id}, Symbol: {symbol}, Score: {score}\n")
+                file.write("\n")
 
 
 def plot_pathways_mean_scores(pathway_mean_scores_data, scores_dict, output_dir, experiment_name):
@@ -392,18 +415,22 @@ data_dir = path.join(root_path, data_file)
 genes_names_file_path = path.join(data_dir, species, 'genes_names', genes_names_file)
 pathway_file_dir = path.join(data_dir, species, 'pathways', pathway_file)
 input_dir = path.join(root_path, 'Inputs', 'experiments_data', Experiment_name)
+
 output_folder = path.join(root_path, 'Outputs', 'Temp')
+if not path.exists(output_folder):
+    makedirs(output_folder)
+
 statistic_test = kolmogorov_smirnov_test
 genes_by_pathway = load_pathways_genes()
 
-test_name = "roded_T_v_N"
+test_name = "T_v_N"
 print("running enrichment")
 significant_pathways_with_genes, scores = perform_statist()
 filtered_pathways = perform_statist_mann_whitney(significant_pathways_with_genes, scores)
 print("finished enrichment")
 print_enriched_pathways_to_file(filtered_pathways, output_folder, FDR_threshold)
 
-test_name = "roded_500nm"
+test_name = "500nm_v_T"
 print("running enrichment")
 significant_pathways_with_genes, scores = perform_statist()
 filtered_pathways = perform_statist_mann_whitney(significant_pathways_with_genes, scores)
@@ -413,20 +440,34 @@ print_enriched_pathways_to_file(filtered_pathways, output_folder, FDR_threshold)
 
 condition_files = [path.join(output_folder, file) for file in listdir(output_folder)]
 
-test_file_paths = [f'{input_dir}/roded_500nm.xlsx', f'{input_dir}/roded_T_v_N.xlsx']
+test_file_paths = [f'{input_dir}/500nm_v_T.xlsx', f'{input_dir}/T_v_N.xlsx']
 all_enriched_genes = {}
 all_mean_scores = {}
 
+aggregated_pathway_data = {}
+
 for condition_file, experiment_file in zip(condition_files, test_file_paths):
-    scores_dict, pathway_genes_dict, pathway_mean_scores = process_experiment(condition_file, experiment_file, pathway_file_dir)
+    scores_dict, pathway_genes_dict, pathway_mean_scores = process_experiment(condition_file, experiment_file,
+                                                                              pathway_file_dir)
     pathway_trends = calculate_trend(pathway_mean_scores)
 
-    print_pathway_information(condition_file, scores_dict, pathway_genes_dict, pathway_trends, output_path, Experiment_name)
+    for pathway, p_value in scores_dict.items():
+        if pathway not in aggregated_pathway_data:
+            aggregated_pathway_data[pathway] = {}
+        condition_name = condition_file.split('/')[-1].split('.')[0]
+
+        aggregated_pathway_data[pathway][condition_name] = {
+            'trend': pathway_trends.get(pathway, "N/A"),
+            'genes': pathway_genes_dict.get(pathway, {})
+        }
+print_aggregated_pathway_information(aggregated_pathway_data, output_path, Experiment_name)
 
     all_enriched_genes[condition_file] = scores_dict
     all_mean_scores[condition_file] = pathway_mean_scores
 
 plot_pathways_mean_scores(all_mean_scores, all_enriched_genes, output_path, Experiment_name)
+if path.exists(output_folder):
+        shutil.rmtree(output_folder)
 
 
 
