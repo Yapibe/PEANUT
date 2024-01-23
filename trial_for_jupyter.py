@@ -339,42 +339,36 @@ def print_aggregated_pathway_information(aggregated_pathway_data, output_dir, ex
                 file.write("\n")
 
 
-def plot_pathways_mean_scores(pathway_mean_scores_data, scores_dict, output_dir, experiment_name):
+def plot_pathways_mean_scores(aggregated_pathway_data_by_condition, output_dir, experiment_name):
     """Plots mean scores of pathways across experiments in a grouped bar chart."""
-    data_df = pd.DataFrame(pathway_mean_scores_data)
+    # Prepare data for plotting
+    plot_data = {}
+    for condition, pathways in aggregated_pathway_data_by_condition.items():
+        for condition, p_value in pathways.items():
+            if condition not in plot_data:
+                plot_data[condition] = {}
+            gene_scores = [gene_info['Score'] for gene_info in p_value['genes'].values() if 'Score' in gene_info]
+            plot_data[condition][condition] = np.mean(gene_scores) if gene_scores else 0
+
+    # Convert to DataFrame
+    data_df = pd.DataFrame(plot_data)
 
     # Increase the figure size significantly
     plt.figure(figsize=(60, 20))  # Adjust the size as needed
     ax = plt.subplot(111)
 
-    conditions = list(pathway_mean_scores_data.keys())
-    num_conditions = len(conditions)
-
-    total_pathways = set()
-    for condition in conditions:
-        total_pathways.update(scores_dict[condition].keys())
-    total_pathways = sorted(list(total_pathways))  # Sort pathways alphabetically
-    num_pathways = len(total_pathways)
-
+    pathways = list(plot_data.keys())
+    total_pathways = data_df.index
+    num_conditions = len(pathways)
     bar_width = 0.8 / num_conditions
-    positions = list(range(num_pathways))
+    positions = np.arange(len(total_pathways))
 
-    for i, condition in enumerate(conditions):
-        mean_scores = data_df[condition].reindex(total_pathways)
-        ax.bar([p + bar_width * i for p in positions], mean_scores, width=bar_width, label=condition)
+    for i, condition in enumerate(pathways):
+        mean_scores = data_df[condition].values
+        ax.bar(positions + bar_width * i, mean_scores, width=bar_width, label=condition)
 
-    ax.set_xticks([p + bar_width * (num_conditions / 2) - bar_width / 2 for p in positions])
-
-    # Removing underscores and applying bold formatting
-    keywords = ['NEURO', 'SYNAP']
-    formatted_pathways = [pathway.replace('_', ' ') for pathway in total_pathways]
-    ax.set_xticklabels(formatted_pathways, rotation=90, fontsize=14)  # Increase fontsize for readability
-
-    # Apply bold formatting based on keywords
-    for label, pathway in zip(ax.get_xticklabels(), total_pathways):
-        if any(keyword in pathway.upper() for keyword in keywords):
-            label.set_weight('bold')
-
+    ax.set_xticks(positions + bar_width * (num_conditions / 2) - bar_width / 2)
+    ax.set_xticklabels(total_pathways, rotation=90, fontsize=14)
     ax.set_xlabel('Pathways', fontsize=16)
     ax.set_ylabel('Mean Scores', fontsize=16)
     ax.set_title('Pathway Mean Scores Across Different Conditions', fontsize=20)
@@ -382,12 +376,10 @@ def plot_pathways_mean_scores(pathway_mean_scores_data, scores_dict, output_dir,
 
     plt.subplots_adjust(bottom=0.4)  # Adjust for layout
 
-    # Define the output file path
-    output_file_path = path.join(output_dir, "Plots", f'{experiment_name}_pathway_scores.pdf')
-
-    # Save the plot to the specified directory
+    output_file_path = path.join(output_dir, f"{experiment_name}_pathway_scores.pdf")
     plt.savefig(output_file_path, format='pdf', bbox_inches='tight')
     plt.show()
+
 
 
 
@@ -441,11 +433,12 @@ print_enriched_pathways_to_file(filtered_pathways, output_folder, FDR_threshold)
 condition_files = [path.join(output_folder, file) for file in listdir(output_folder)]
 
 test_file_paths = [f'{input_dir}/500nm_v_T.xlsx', f'{input_dir}/T_v_N.xlsx']
+# Initialize dictionaries to store aggregated data
 all_enriched_genes = {}
 all_mean_scores = {}
-
 aggregated_pathway_data = {}
 
+# Processing and aggregating data
 for condition_file, experiment_file in zip(condition_files, test_file_paths):
     scores_dict, pathway_genes_dict, pathway_mean_scores = process_experiment(condition_file, experiment_file,
                                                                               pathway_file_dir)
@@ -454,20 +447,24 @@ for condition_file, experiment_file in zip(condition_files, test_file_paths):
     for pathway, p_value in scores_dict.items():
         if pathway not in aggregated_pathway_data:
             aggregated_pathway_data[pathway] = {}
-        condition_name = condition_file.split('/')[-1].split('.')[0]
 
+        condition_name = path.basename(condition_file).split('.')[0]
         aggregated_pathway_data[pathway][condition_name] = {
             'trend': pathway_trends.get(pathway, "N/A"),
             'genes': pathway_genes_dict.get(pathway, {})
         }
-print_aggregated_pathway_information(aggregated_pathway_data, output_path, Experiment_name)
 
     all_enriched_genes[condition_file] = scores_dict
     all_mean_scores[condition_file] = pathway_mean_scores
 
-plot_pathways_mean_scores(all_mean_scores, all_enriched_genes, output_path, Experiment_name)
-if path.exists(output_folder):
-        shutil.rmtree(output_folder)
+# Print aggregated pathway information
+print_aggregated_pathway_information(aggregated_pathway_data, output_path, Experiment_name)
 
+# Plot the mean scores
+plot_pathways_mean_scores(all_mean_scores, output_path, Experiment_name)
+
+# Clean up the output folder if it exists
+if path.exists(output_folder):
+    shutil.rmtree(output_folder)
 
 
