@@ -48,7 +48,7 @@ def perform_propagation(prop_task):
 
         save_propagation_score(propagation_scores=gene_scores, prior_set=sorted_prior_data,
                                propagation_input=propagation_input, genes_id_to_idx=experiment_gene_index,
-                               task=prop_task, save_dir=prop_task.output_folder)
+                               task=prop_task, save_dir=prop_task.temp_output_folder)
 
         return
 
@@ -93,7 +93,7 @@ def perform_propagation(prop_task):
     # save propagation score
     print("saving propagation score")
     save_propagation_score(propagation_scores=propagation_score, prior_set=prior_data, propagation_input=propagation_input,
-                           genes_id_to_idx=network_gene_index, task=prop_task, save_dir=prop_task.output_folder)
+                           genes_id_to_idx=network_gene_index, task=prop_task, save_dir=prop_task.temp_output_folder)
 
 
 def perform_enrichment(prop_task):

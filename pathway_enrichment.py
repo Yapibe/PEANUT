@@ -21,7 +21,7 @@ def perform_statist(task, general_args, genes_by_pathway, all_experiment_genes_s
     # Filter pathways based on gene count criteria
     pathways_with_many_genes = [
         pathway for pathway, genes in genes_by_pathway_filtered.items()
-        if general_args.minimum_gene_per_pathway <= len(genes) <= general_args.maximum_gene_per_pathway
+        if general_args.MIN_GENE_PER_PATHWAY <= len(genes) <= general_args.MAX_GENE_PER_PATHWAY
     ]
 
     # Perform statistical tests
