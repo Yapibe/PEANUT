@@ -109,8 +109,6 @@ def perform_statist(test_name):
     n = len(enriched_p_vals)
 
     for pathway_name, pathway_genes in pathways_with_many_genes.items():
-        if pathway_name == 'KEGG_GLYCEROLIPID_METABOLISM':
-            print('here')
         # Number of genes in the pathway
         N = len(pathway_genes)
 
@@ -132,9 +130,13 @@ def perform_statist(test_name):
 
 
     # Perform statistical tests
-    for pathway, genes in pathways_with_many_genes.items():
-        pathway_scores = [scores[gene_id] for gene_id in genes]
-        background_scores = [scores[gene_id] for gene_id in scores_keys - genes]
+    for pathway, genes in significant_pathways_with_genes.items():
+        if pathway=='KEGG_PATHOGENIC_ESCHERICHIA_COLI_INFECTION':
+            print('here')
+        pathway_scores = [scores['Score'][gene_id] for gene_id in genes[0] if gene_id in scores['Score']]
+        background_genes = set(scores['Score'].keys()) - set(genes[0])
+        background_scores = [scores['Score'][gene_id] for gene_id in background_genes]
+
         ks_p_values.append(kolmogorov_smirnov_test(pathway_scores, background_scores))
 
     # Apply BH correction
