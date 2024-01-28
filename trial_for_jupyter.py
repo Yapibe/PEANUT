@@ -4,6 +4,7 @@ from os import path, listdir, makedirs
 from scipy.stats import rankdata, ranksums
 import matplotlib.pyplot as plt
 import shutil
+from scipy.stats import hypergeom
 
 
 MIN_GENE_PER_PATHWAY = 20
@@ -48,12 +49,12 @@ def get_scores(test_name):
 
     try:
         # Load raw data from the file
-        raw_data = pd.read_csv(raw_scores_file_path, usecols=['GeneID', 'Score'])
+        raw_data = pd.read_csv(raw_scores_file_path, usecols=['GeneID', 'Score', 'P-value'])
         # Assuming 'GeneID' and 'Score' are columns in the raw data
         raw_data.sort_values(by='GeneID', inplace=True)
 
         # Create a dictionary for gene_id_to_score using vectorized operations
-        scores_dict = raw_data.set_index('GeneID')['Score'].to_dict()
+        scores_dict = raw_data.set_index('GeneID')[['Score', 'P-value']].to_dict()
         return scores_dict
 
     except FileNotFoundError:
@@ -62,6 +63,18 @@ def get_scores(test_name):
     except Exception as e:
         print(f"An error occurred: {e}")
         return pd.DataFrame(), {}
+
+
+def hypergeometric_sf(x, M, N, n):
+    """Calculate the probability mass function for the hypergeometric distribution.
+    :param x: the number of successes in the sample
+    :param M: the total number of objects
+    :param N: the total number of Type I objects
+    :param n: the number of sampled objects
+    :return: the probability mass function for the hypergeometric distribution"""
+    # use scipy.stats.hypergeom
+    probability = hypergeom.sf(x-1, M, N, n)
+    return probability
 
 
 def bh_correction(p_values):
@@ -81,15 +94,42 @@ def bh_correction(p_values):
 
 def perform_statist(test_name):
     scores = get_scores(test_name)
+    enriched_p_vals = {gene_id: p_value for gene_id, p_value in scores['P-value'].items() if p_value < 0.05}
+    scores_keys = set(scores['Score'].keys())
+    pathways_with_many_genes = {pathway: set(genes).intersection(scores_keys)
+                                for pathway, genes in genes_by_pathway.items()
+                                if MIN_GENE_PER_PATHWAY <= len(
+            set(genes).intersection(scores_keys)) <= MAX_GENE_PER_PATHWAY}
 
-    scores_keys = set(scores.keys())
-    filtered_genes_by_pathway = {pathway: set(genes).intersection(scores_keys)
-                                 for pathway, genes in genes_by_pathway.items()}
-
-    pathways_with_many_genes = {pathway: genes for pathway, genes in filtered_genes_by_pathway.items()
-                                if MIN_GENE_PER_PATHWAY <= len(genes) <= MAX_GENE_PER_PATHWAY}
-
+    hypergeom_p_values = []
     ks_p_values = []
+
+    # Total number of objects (M) is the total number of genes
+    M = len(scores_keys)
+    n = len(enriched_p_vals)
+
+    for pathway_name, pathway_genes in pathways_with_many_genes.items():
+        if pathway_name == 'KEGG_GLYCEROLIPID_METABOLISM':
+            print('here')
+        # Number of genes in the pathway
+        N = len(pathway_genes)
+
+        # Number of enriched genes in the pathway, i.e. the intersection of the pathway and the enriched genes
+        x = len(set(pathway_genes).intersection(set(enriched_p_vals.keys())))
+        if x < 5:
+            pval = 1
+        else:
+            # Calculate the hypergeometric p-value
+            pval = hypergeometric_sf(x, M, N, n)
+        hypergeom_p_values.append(pval)
+
+    significant_pathways_with_genes = {
+        pathway: (pathways_with_many_genes[pathway], hypergeom_p_values[i])
+        for i, pathway in enumerate(pathways_with_many_genes)
+        if hypergeom_p_values[i] < 0.05
+    }
+
+
 
     # Perform statistical tests
     for pathway, genes in pathways_with_many_genes.items():
