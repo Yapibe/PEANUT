@@ -407,25 +407,25 @@ def plot_pathways_mean_scores(output_dir, experiment_name):
     plt.show()
 
 genes_by_pathway = load_pathways_genes()
-# test_list = ['T_v_N', '500nm_v_T']
-# for test_name in test_list:
-#     print(f"running enrichment on {test_name}")
-#     significant_pathways_with_genes, scores = perform_statist(test_name)
-#     filtered_pathways = perform_statist_mann_whitney(significant_pathways_with_genes, scores)
-#     print_enriched_pathways_to_file(filtered_pathways, temp_output_folder, FDR_THRESHOLD)
+test_list = ['T_v_N', '500nm_v_T']
+for test_name in test_list:
+    print(f"running enrichment on {test_name}")
+    significant_pathways_with_genes, scores = perform_statist(test_name)
+    filtered_pathways = perform_statist_mann_whitney(significant_pathways_with_genes, scores)
+    print_enriched_pathways_to_file(filtered_pathways, temp_output_folder, FDR_THRESHOLD)
 
 print("finished enrichment")
 test_file_paths = [f'{input_dir}/T_v_N.csv', f'{input_dir}/500nm_v_T.csv', f'{input_dir}/10um_v_T.csv']
 import os
-# # Extract the test names from the file paths to match them with condition files
-# test_names = [os.path.splitext(os.path.basename(path))[0] for path in test_file_paths]
-#
-#
-# # Get the list of condition files
-# condition_files_unsorted = [os.path.join(temp_output_folder, file) for file in os.listdir(temp_output_folder)]
-#
-# # Sort condition_files based on the order of test_names
-# condition_files = sorted(condition_files_unsorted, key=lambda x: test_names.index(os.path.splitext(os.path.basename(x))[0]))
+# Extract the test names from the file paths to match them with condition files
+test_names = [os.path.splitext(os.path.basename(path))[0] for path in test_file_paths]
+
+
+# Get the list of condition files
+condition_files_unsorted = [os.path.join(temp_output_folder, file) for file in os.listdir(temp_output_folder)]
+
+# Sort condition_files based on the order of test_names
+condition_files = sorted(condition_files_unsorted, key=lambda x: test_names.index(os.path.splitext(os.path.basename(x))[0]))
 condition_files = ['Outputs/Temp/TvN', 'Outputs/Temp/500vT', 'Outputs/Temp/10vT']
 # Initialize dictionaries to store aggregated data
 
@@ -446,8 +446,8 @@ print_aggregated_pathway_information(output_path, Experiment_name)
 # Plot the mean scores
 plot_pathways_mean_scores(output_path, Experiment_name)
 
-# # Clean up the output folder if it exists
-# if path.exists(temp_output_folder):
-#     shutil.rmtree(temp_output_folder)
+# Clean up the output folder if it exists
+if path.exists(temp_output_folder):
+    shutil.rmtree(temp_output_folder)
 
 
