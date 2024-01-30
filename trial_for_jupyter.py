@@ -94,73 +94,65 @@ def bh_correction(p_values):
 
 def perform_statist(test_name):
     scores = get_scores(test_name)
-    enriched_p_vals = {gene_id: p_value for gene_id, p_value in scores['P-value'].items() if p_value < 0.05}
+    significant_p_vals = {gene_id: p_value for gene_id, p_value in scores['P-value'].items() if p_value < 0.05}
     scores_keys = set(scores['Score'].keys())
-    pathways_with_many_genes = {pathway: set(genes).intersection(scores_keys)
-                                for pathway, genes in genes_by_pathway.items()
-                                if MIN_GENE_PER_PATHWAY <= len(
-            set(genes).intersection(scores_keys)) <= MAX_GENE_PER_PATHWAY}
 
-    hypergeom_p_values = []
-    ks_p_values = []
-
-    # Total number of objects (M) is the total number of genes
-    M = len(scores_keys)
-    n = len(enriched_p_vals)
-
-    for pathway_name, pathway_genes in pathways_with_many_genes.items():
-        # Number of genes in the pathway
-        N = len(pathway_genes)
-
-        # Number of enriched genes in the pathway, i.e. the intersection of the pathway and the enriched genes
-        x = len(set(pathway_genes).intersection(set(enriched_p_vals.keys())))
-        if x < 5:
-            pval = 1
-        else:
-            # Calculate the hypergeometric p-value
-            pval = hypergeometric_sf(x, M, N, n)
-        hypergeom_p_values.append(pval)
-
-    significant_pathways_with_genes = {
-        pathway: (pathways_with_many_genes[pathway], hypergeom_p_values[i])
-        for i, pathway in enumerate(pathways_with_many_genes)
-        if hypergeom_p_values[i] < 0.05
+    pathways_with_many_genes = {
+        pathway: set(genes).intersection(scores_keys)
+        for pathway, genes in genes_by_pathway.items()
+        if MIN_GENE_PER_PATHWAY <= len(set(genes).intersection(scores_keys)) <= MAX_GENE_PER_PATHWAY
     }
 
+    M = len(scores_keys)  # Total number of genes
+    n = len(significant_p_vals)  # Number of enriched genes
 
+    hypergeom_p_values = []
+    pathway_names = []
 
-    # Perform statistical tests
-    for pathway, genes in significant_pathways_with_genes.items():
-        if pathway=='KEGG_PATHOGENIC_ESCHERICHIA_COLI_INFECTION':
-            print('here')
-        pathway_scores = [scores['Score'][gene_id] for gene_id in genes[0] if gene_id in scores['Score']]
-        background_genes = set(scores['Score'].keys()) - set(genes[0])
+    for pathway_name, pathway_genes in pathways_with_many_genes.items():
+        N = len(pathway_genes)  # Number of genes in the pathway
+        x = len(set(pathway_genes).intersection(set(significant_p_vals.keys())))  # Number of enriched genes in the pathway
+        pval = hypergeometric_sf(x, M, N, n) if x >= 5 else 1
+        hypergeom_p_values.append(pval)
+        pathway_names.append(pathway_name)
+
+    # Filter pathways based on hypergeometric p-values
+    significant_pathways = [
+        pathway for i, pathway in enumerate(pathway_names) if hypergeom_p_values[i] < 0.05
+    ]
+
+    ks_p_values = []
+    for pathway in significant_pathways:
+        genes = pathways_with_many_genes[pathway]
+        pathway_scores = [scores['Score'][gene_id] for gene_id in genes if gene_id in scores['Score']]
+        background_genes = scores_keys - genes
         background_scores = [scores['Score'][gene_id] for gene_id in background_genes]
-
         ks_p_values.append(kolmogorov_smirnov_test(pathway_scores, background_scores))
 
-    # Apply BH correction
+    # Apply BH correction to KS p-values
     adjusted_p_values = bh_correction(np.array(ks_p_values))
 
-    significant_pathways_with_genes = {
+    # Filter significant pathways based on adjusted KS p-values
+    ks_significant_pathways_with_genes = {
         pathway: (pathways_with_many_genes[pathway], adjusted_p_values[i])
-        for i, pathway in enumerate(pathways_with_many_genes)
+        for i, pathway in enumerate(significant_pathways)
         if adjusted_p_values[i] < 0.05
     }
 
-    return significant_pathways_with_genes, scores
+    return ks_significant_pathways_with_genes, scores
+
 
 def perform_statist_mann_whitney(passed_ks_pathway_dict, scores):
     mw_p_values = []
     significant_pathways_with_genes = {}
 
-    scores_keys = set(scores.keys())
+    scores_keys = set(scores['Score'].keys())
 
     # Mann-Whitney U test and FDR
     for pathway, genes_info in passed_ks_pathway_dict.items():
         pathway_genes = set(genes_info[0])
-        pathway_scores = [scores[gene_id] for gene_id in pathway_genes]
-        background_scores = [scores[gene_id] for gene_id in scores_keys - pathway_genes]
+        pathway_scores = [scores['Score'][gene_id] for gene_id in pathway_genes]
+        background_scores = [scores['Score'][gene_id] for gene_id in scores_keys - pathway_genes]
 
         # Perform Mann-Whitney U Test
         mw_pval = wilcoxon_rank_sums_test(pathway_scores, background_scores)
@@ -278,45 +270,74 @@ def read_pathways(file_name):
         return {line.split()[0]: [int(gene) for gene in line.split()[2:]] for line in file}
 
 
-def process_experiment(condition_file, experiment_file, pathways_file):
+def process_condition(condition_file, experiment_file, pathways_file):
     """Processes an experiment and returns scores, enriched pathway genes, and mean scores."""
     enriched_pathway_dict = read_scores(condition_file)
     condition_data_df = pd.read_csv(experiment_file)
     experiment_data_filtered_df = condition_data_df[condition_data_df['Score'] != 0]
-
-    pathways = read_pathways(pathways_file)
+    condition_name = path.basename(condition_file).split('.')[-1]
+    homo_sapien_pathway_dict = read_pathways(pathways_file)
     enriched_pathway_genes = {}
-    pathway_mean_scores = {}
 
-    for pathway in enriched_pathway_dict.keys():
-        pathway_genes = pathways[pathway]
+    for pathway in all_pathways:
+        all_pathways[pathway][condition_name] = {}
+        pathway_genes = homo_sapien_pathway_dict[pathway]
         filtered_genes = experiment_data_filtered_df[experiment_data_filtered_df['GeneID'].isin(pathway_genes)]
-        if not filtered_genes.empty:
-            enriched_pathway_genes[pathway] = filtered_genes.set_index('GeneID')[
-                ['Symbol', 'Score', 'P-value']].to_dict(
-                orient='index')
-            # # create array of genes with score >=1.5 or <=-1.5
-            # filtered_genes_by_score = filtered_genes[(filtered_genes['Score'] >= 1.5) | (filtered_genes['Score'] <= -1.5)]
-            # Filter genes by P-value threshold and calculate mean score
-            filtered_genes_by_p_value = filtered_genes[filtered_genes['P-value'] <= 0.05]
-            if not filtered_genes_by_p_value.empty:
-                pathway_mean_scores[pathway] = filtered_genes_by_p_value['Score'].mean()
-            else:
-                pathway_mean_scores[pathway] = 0
+        enriched_pathway_genes[pathway] = filtered_genes.set_index('GeneID')[['Symbol', 'Score', 'P-value']].to_dict(
+            orient='index')
+        significant_genes = {gene_id: gene_details for gene_id, gene_details in
+                             enriched_pathway_genes[pathway].items() if
+                             gene_details['P-value'] <= P_VALUE_THRESHOLD}
+        mean_score = np.mean(
+            [gene_details['Score'] for gene_details in significant_genes.values()]) if significant_genes else 0
+        all_pathways[pathway][condition_name]['Mean'] = mean_score
+        # Assign significant genes to the pathway in all_pathways
+        all_pathways[pathway][condition_name]['significant_genes'] = significant_genes
+        if pathway in enriched_pathway_dict.keys():
+            all_pathways[pathway][condition_name]['P-value'] = enriched_pathway_dict[pathway]
+            all_pathways[pathway][condition_name]['Trend'] = "Up*" if mean_score > 0 else "Down*"
+        else:
+            all_pathways[pathway][condition_name]['P-value'] = 1
+            # Filter genes based on p-value threshold
+            all_pathways[pathway][condition_name]['Trend'] = "Up" if mean_score > 0 else "Down"
 
-    return enriched_pathway_dict, enriched_pathway_genes, pathway_mean_scores
 
 
-def calculate_trend(pathway_mean_scores):
-    """Calculates the trend (up or down) of each pathway based on its mean score."""
-    trends = {}
-    for pathway, mean_scores in pathway_mean_scores.items():
-        # Calculate the overall mean score for the pathway across all conditions
-        overall_mean_score = np.mean(mean_scores)
-        trend = "Up" if overall_mean_score > 0 else "Down"
-        trends[pathway] = trend
-    return trends
+def print_aggregated_pathway_information(output_dir, experiment_name):
+    file_path = os.path.join(output_dir, 'Text', f'{experiment_name}_aggregated.txt')
 
+    # Create a list of (pathway, best_p_value) tuples
+    pathways_p_values = []
+    for pathway, conditions in all_pathways.items():
+        best_p_value = min(condition_data['P-value'] for condition_data in conditions.values())
+        pathways_p_values.append((pathway, best_p_value))
+
+    # Sort pathways by best p-value
+    pathways_sorted = sorted(pathways_p_values, key=lambda x: x[1])
+
+    with open(file_path, 'w') as file:
+        for pathway, best_p_value in pathways_sorted:
+            file.write(f"Pathway: {pathway} {best_p_value}\n")
+
+            # Aggregate and write trends for all conditions
+            trends = [f"{condition_name}: {all_pathways[pathway][condition_name]['Trend']}" for condition_name in
+                      all_pathways[pathway]]
+            file.write(f"Trends: {', '.join(trends)}\n")
+
+            # Aggregate and write significant genes across all conditions
+            file.write("Significant Genes:\n")
+            gene_scores_across_conditions = {}
+            for condition_name, condition_data in all_pathways[pathway].items():
+                for gene_id, gene_info in condition_data.get('significant_genes', {}).items():
+                    if gene_id not in gene_scores_across_conditions:
+                        gene_scores_across_conditions[gene_id] = {'Symbol': gene_info['Symbol'], 'Scores': []}
+                    gene_scores_across_conditions[gene_id]['Scores'].append(gene_info['Score'])
+
+            for gene_id, gene_data in gene_scores_across_conditions.items():
+                scores_str = ', '.join(map(str, gene_data['Scores']))
+                file.write(f"    {gene_data['Symbol']}: {scores_str}\n")
+
+            file.write("\n")
 
 
 def bold_keywords(text, keywords):
@@ -327,53 +348,63 @@ def bold_keywords(text, keywords):
     return text
 
 
-def print_aggregated_pathway_information(aggregated_data, output_dir, experiment_name):
-    file_path = path.join(output_dir, 'Text', f'{experiment_name}_aggregated.txt')
-    with open(file_path, 'w') as file:
-        for pathway, details in aggregated_data.items():
-            file.write(f"Pathway: {pathway}\n")
-            file.write(f"Trends: {', '.join(details['trends'])}\n")
-            file.write("Significant Genes:\n")
-            for gene_id, gene_info in details['significant_genes'].items():
-                file.write(f"    Symbol: {gene_info['Symbol']}, Score: {gene_info['Score']}\n")
-            file.write("\n")
+def plot_pathways_mean_scores(output_dir, experiment_name):
+    """Plots mean scores of pathways across experiments in a horizontal bar chart."""
 
+    mean_scores_data = {}
+    p_values_data = {}
+    for pathway, conditions in all_pathways.items():
+        for condition_name, condition_data in conditions.items():
+            mean_scores_data.setdefault(condition_name, {})[pathway] = condition_data.get('Mean', 0)
+            p_values_data.setdefault(condition_name, {})[pathway] = condition_data.get('P-value', 1)
 
-
-def plot_pathways_mean_scores(all_mean_scores, output_dir, experiment_name):
-    """Plots mean scores of pathways across experiments in a grouped bar chart."""
-
-    data_df = pd.DataFrame(all_mean_scores)
+    data_df = pd.DataFrame(mean_scores_data)
+    p_values_df = pd.DataFrame(p_values_data)
 
     # Increase the figure size significantly
-    plt.figure(figsize=(60, 20))  # Adjust the size as needed
+    plt.figure(figsize=(20, 60))  # Adjust the size as needed
     ax = plt.subplot(111)
 
-    conditions = list(all_mean_scores.keys())
+    conditions = list(mean_scores_data.keys())
     total_pathways = data_df.index
     num_conditions = len(conditions)
-    bar_width = 0.8 / num_conditions
+    bar_height = 0.8 / num_conditions
     positions = np.arange(len(total_pathways))
+
+    # Assign colors to each condition
+    colors = plt.cm.get_cmap('viridis', num_conditions)
+
+    # Define keywords for bold formatting
+    keywords = ['NEURO', 'SYNAP']
 
     for i, condition in enumerate(conditions):
         mean_scores = data_df[condition].values
-        ax.bar(positions + bar_width * i, mean_scores, width=bar_width, label=condition)
+        p_values = p_values_df[condition].values
 
-    ax.set_xticks(positions + bar_width * (num_conditions / 2) - bar_width / 2)
-    ax.set_xticklabels(total_pathways, rotation=90, fontsize=14)
-    ax.set_xlabel('Pathways', fontsize=16)
-    ax.set_ylabel('Mean Scores', fontsize=16)
+        # Plot bars with different styles based on p-value significance
+        for j, (score, p_value) in enumerate(zip(mean_scores, p_values)):
+            bar_style = {"color": "white", "edgecolor": colors(i), "hatch": "//"} if p_value > P_VALUE_THRESHOLD else {"color": colors(i)}
+            ax.barh(positions[j] + bar_height * i, score, height=bar_height, **bar_style)
+
+    ax.set_yticks(positions + bar_height * (num_conditions / 2) - bar_height / 2)
+    formatted_pathways = [pathway.replace('_', ' ') for pathway in total_pathways]
+    ax.set_yticklabels(formatted_pathways, fontsize=12)
+
+    for i, label in enumerate(ax.get_yticklabels()):
+        if any(keyword in label.get_text().upper() for keyword in keywords):
+            label.set_fontweight('bold')
+
+    ax.set_ylabel('Pathways', fontsize=16)
+    ax.set_xlabel('Mean Scores', fontsize=16)
     ax.set_title('Pathway Mean Scores Across Different Conditions', fontsize=20)
-    ax.legend(prop={'size': 14})
 
-    plt.subplots_adjust(bottom=0.4)  # Adjust for layout
+    # Create custom legends
+    plt.legend([plt.Rectangle((0,0),1,1, color=colors(i)) for i in range(num_conditions)], conditions, prop={'size': 14})
 
-    output_file_path = path.join(output_dir, f"{experiment_name}_pathway_scores.pdf")
-    file_path = path.join(output_dir, 'Plots', f'{experiment_name}_plot.txt')
+    plt.subplots_adjust(left=0.4)  # Adjust for layout
+    output_file_path = os.path.join(output_dir, 'Plots', f"{experiment_name}_pathway_scores.pdf")
     plt.savefig(output_file_path, format='pdf', bbox_inches='tight')
     plt.show()
-
-
 
 genes_by_pathway = load_pathways_genes()
 test_list = ['T_v_N', '500nm_v_T']
@@ -384,47 +415,36 @@ for test_name in test_list:
     print_enriched_pathways_to_file(filtered_pathways, temp_output_folder, FDR_THRESHOLD)
 
 print("finished enrichment")
-test_file_paths = [f'{input_dir}/T_v_N.csv', f'{input_dir}/500nm_v_T.csv']
+test_file_paths = [f'{input_dir}/T_v_N.csv', f'{input_dir}/500nm_v_T.csv', f'{input_dir}/10um_v_T.csv']
 import os
 # Extract the test names from the file paths to match them with condition files
 test_names = [os.path.splitext(os.path.basename(path))[0] for path in test_file_paths]
+
 
 # Get the list of condition files
 condition_files_unsorted = [os.path.join(temp_output_folder, file) for file in os.listdir(temp_output_folder)]
 
 # Sort condition_files based on the order of test_names
 condition_files = sorted(condition_files_unsorted, key=lambda x: test_names.index(os.path.splitext(os.path.basename(x))[0]))
-
+condition_files = ['Outputs/Temp/TvN', 'Outputs/Temp/500vT', 'Outputs/Temp/10vT']
 # Initialize dictionaries to store aggregated data
-all_enriched_genes = {}
-all_mean_scores = {}
-aggregated_pathway_data = {}
 
+all_pathways = {}
+for condition_file in condition_files:
+    enriched_pathway_dict = read_scores(condition_file)
+    condition_name = path.basename(condition_file).split('.')[-1]
+    for pathway in enriched_pathway_dict.keys():
+        if pathway not in all_pathways:
+            all_pathways[pathway] = {}
 # Processing and aggregating data
 for condition_file, experiment_file in zip(condition_files, test_file_paths):
-    scores_dict, pathway_genes_dict, pathway_mean_scores = process_experiment(condition_file, experiment_file, pathway_file_dir)
-    pathway_trends = calculate_trend(pathway_mean_scores)
-
-    for pathway, p_value in scores_dict.items():
-        if pathway not in aggregated_pathway_data:
-            aggregated_pathway_data[pathway] = {'trends': [], 'significant_genes': {}}
-
-        condition_name = path.basename(condition_file).split('.')[0]
-        aggregated_pathway_data[pathway]['trends'].append(f"{condition_name}: {pathway_trends.get(pathway, 'N/A')}")
-
-        # Aggregate significant genes across conditions
-        for gene_id, gene_details in pathway_genes_dict.get(pathway, {}).items():
-            if gene_details['P-value'] <= P_VALUE_THRESHOLD:  # Check if the gene is significant
-                if gene_id not in aggregated_pathway_data[pathway]['significant_genes']:
-                    aggregated_pathway_data[pathway]['significant_genes'][gene_id] = gene_details
-    all_enriched_genes[condition_file] = scores_dict
-    all_mean_scores[condition_file] = pathway_mean_scores
+    process_condition(condition_file, experiment_file, pathway_file_dir)
 
 # Print aggregated pathway information
-print_aggregated_pathway_information(aggregated_pathway_data, output_path, Experiment_name)
+print_aggregated_pathway_information(output_path, Experiment_name)
 
 # Plot the mean scores
-plot_pathways_mean_scores(all_mean_scores, output_path, Experiment_name)
+plot_pathways_mean_scores(output_path, Experiment_name)
 
 # Clean up the output folder if it exists
 if path.exists(temp_output_folder):
