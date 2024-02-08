@@ -27,7 +27,7 @@ pathway_file_dir = path.join(data_dir, species, 'pathways', pathway_file)
 temp_output_folder = path.join(root_path, 'Outputs', 'Temp')
 # Ensure output directories exist
 makedirs(temp_output_folder, exist_ok=True)
-
+filtered_genes = set()
 def load_pathways_genes():
     pathways = {}
     with open(pathway_file_dir, 'r') as f:
@@ -102,6 +102,10 @@ def perform_statist(test_name):
         for pathway, genes in genes_by_pathway.items()
         if MIN_GENE_PER_PATHWAY <= len(set(genes).intersection(scores_keys)) <= MAX_GENE_PER_PATHWAY
     }
+
+    for pathway, genes in pathways_with_many_genes.items():
+        filtered_genes.update(genes)
+
 
     M = len(scores_keys)  # Total number of genes
     n = len(significant_p_vals)  # Number of enriched genes
