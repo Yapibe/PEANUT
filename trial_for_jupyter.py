@@ -4,7 +4,7 @@ from os import path, listdir, makedirs
 from scipy.stats import rankdata, ranksums
 import matplotlib.pyplot as plt
 import shutil
-from scipy.stats import hypergeom
+from scipy.stats import hypergeom, norm
 
 
 MIN_GENE_PER_PATHWAY = 20
@@ -247,6 +247,43 @@ def ks(alam):
 def wilcoxon_rank_sums_test(experiment_scores, elements_scores, alternative='two-sided'):
     p_vals = ranksums(experiment_scores, elements_scores, alternative=alternative).pvalue
     return p_vals
+
+
+def compute_mw_python(experiment_scores, control_scores):
+    # Combine the two arrays and sort them
+    combined_scores = np.concatenate([experiment_scores, control_scores])
+    # Compute ranks
+    ranks = np.argsort(np.argsort(combined_scores)) + 1
+
+    # Split ranks back into experiment and control groups
+    experiment_ranks = ranks[:len(experiment_scores)]
+    control_ranks = ranks[len(experiment_scores):]
+
+    # Calculate the rank sums for the experiment and control groups
+    R1 = np.sum(experiment_ranks)
+    R2 = np.sum(control_ranks)
+
+    # Number of observations in each group
+    n = len(experiment_scores) + len(control_scores)
+    size = len(experiment_scores)
+
+    # Calculate the rank sum for the group under consideration (experiment group)
+    val = R1
+    val2 = size * (n - size) - (R1 - size * (size + 1) / 2)
+
+    # Use the smaller of the two values for further calculations
+    val = min(val, val2)
+
+    # Calculate the Z-score
+    z = (val - size * (n - size) / 2)
+    std = np.sqrt(size * (n - size) * (n + 1) / 12)
+    z /= std
+
+    # Compute the p-value
+    p_value = 2 * norm.cdf(-np.abs(z))
+
+    return val, p_value
+
 
 
 def print_enriched_pathways_to_file(filtered_pathways, output_folder, threshold=0.05):
