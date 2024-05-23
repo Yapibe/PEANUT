@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
-from os import path, listdir, makedirs
-from scipy.stats import rankdata, ranksums
+import os
+from scipy.stats import rankdata
+from statsmodels.stats.multitest import multipletests
 import matplotlib.pyplot as plt
 import shutil
 from scipy.stats import hypergeom, norm
@@ -18,7 +19,7 @@ P_VALUE_THRESHOLD = 0.05  # P-value threshold for statistical significance
 root_path = '/mnt/c/Users/pickh/PycharmProjects/Yair_propagation'
 
 # Directory for storing output files
-output_path = path.join(root_path, 'Outputs')
+output_path = os.path.join(root_path, 'Outputs')
 
 # Configuration for the experiment
 Experiment_name = 'Parkinson'  # Name of the experiment, used for labeling outputs
@@ -28,16 +29,16 @@ genes_info_filename = 'H_sapiens.gene_info'  # File containing gene information
 pathway_filename = 'pathways'  # File containing pathway data
 
 # Constructing paths for data directories
-data_dir = path.join(root_path, data_folder_name)
-input_dir = path.join(root_path, 'Inputs', 'experiments_data', Experiment_name)
+data_dir = os.path.join(root_path, data_folder_name)
+input_dir = os.path.join(root_path, 'Inputs', 'experiments_data', Experiment_name)
 
 # Full paths to the genes and pathways files
-genes_info_file_path = path.join(data_dir, species, 'genes_names', genes_info_filename)
-pathway_file_dir = path.join(data_dir, species, 'pathways', pathway_filename)
+genes_info_file_path = os.path.join(data_dir, species, 'genes_names', genes_info_filename)
+pathway_file_dir = os.path.join(data_dir, species, 'pathways', pathway_filename)
 
-temp_output_folder = path.join(root_path, 'Outputs', 'Temp')
+temp_output_folder = os.path.join(root_path, 'Outputs', 'Temp')
 # Ensure output directories exist
-makedirs(temp_output_folder, exist_ok=True)
+os.makedirs(temp_output_folder, exist_ok=True)
 filtered_genes = set()
 def load_pathways_genes():
     """
@@ -75,7 +76,7 @@ def get_scores(test_name):
     tuple: A tuple containing a dictionary of scores and a dictionary of P-values, both indexed by 'GeneID'.
     """
     # Construct the file path for the raw scores
-    raw_scores_file_path = path.join(input_dir, f'{test_name}.csv')
+    raw_scores_file_path = os.path.join(input_dir, f'{test_name}.csv')
 
     try:
         # Load scores from the specified file
@@ -84,7 +85,7 @@ def get_scores(test_name):
         raw_data.sort_values(by='GeneID', inplace=True)
 
         # Transform raw data into a dictionary for quick lookup
-        scores_dict = raw_data.set_index('GeneID')[['Score', 'P-value']].to_dict('index')
+        scores_dict = raw_data.set_index('GeneID')[['Score', 'P-value']].to_dict()
         return scores_dict
 
     except FileNotFoundError:
@@ -113,34 +114,34 @@ def hypergeometric_sf(x, M, N, n):
     return probability
 
 
-def bh_correction(p_values):
-    """
-    Perform Benjamini-Hochberg correction for multiple hypothesis testing on a list of P-values.
-
-    Parameters:
-    - p_values (list of float): The original P-values from multiple hypotheses tests.
-
-    Returns:
-    list of float: Adjusted P-values after applying Benjamini-Hochberg correction.
-    """
-    # Calculate ranks for the P-values, both in 'max' and 'ordinal' method
-    p_vals_max_rank = rankdata(p_values, 'max') - 1
-    p_vals_ordinal_rank = rankdata(p_values, 'ordinal') - 1
-
-    # Initialize an array to store sorted indices based on rank
-    p_values_sorted_indices = np.zeros_like(p_vals_max_rank)
-    p_values_sorted_indices[p_vals_ordinal_rank] = np.arange(len(p_vals_ordinal_rank))
-
-    # Adjust the P-values using the BH correction formula
-    adjusted_p_values = p_values * (len(p_values) / (p_vals_max_rank + 1))
-    adjusted_p_values_by_rank = adjusted_p_values[p_values_sorted_indices]
-
-    # Order the adjusted P-values and apply cumulative minimum to meet BH conditions
-    p_values_ordered = np.minimum(adjusted_p_values_by_rank,
-                                  np.minimum.accumulate(adjusted_p_values_by_rank[::-1])[::-1])
-    final_adjusted_p_values = p_values_ordered[p_vals_max_rank]
-
-    return final_adjusted_p_values
+# def bh_correction(p_values):
+#     """
+#     Perform Benjamini-Hochberg correction for multiple hypothesis testing on a list of P-values.
+#
+#     Parameters:
+#     - p_values (list of float): The original P-values from multiple hypotheses tests.
+#
+#     Returns:
+#     list of float: Adjusted P-values after applying Benjamini-Hochberg correction.
+#     """
+#     # Calculate ranks for the P-values, both in 'max' and 'ordinal' method
+#     p_vals_max_rank = rankdata(p_values, 'max') - 1
+#     p_vals_ordinal_rank = rankdata(p_values, 'ordinal') - 1
+#
+#     # Initialize an array to store sorted indices based on rank
+#     p_values_sorted_indices = np.zeros_like(p_vals_max_rank)
+#     p_values_sorted_indices[p_vals_ordinal_rank] = np.arange(len(p_vals_ordinal_rank))
+#
+#     # Adjust the P-values using the BH correction formula
+#     adjusted_p_values = p_values * (len(p_values) / (p_vals_max_rank + 1))
+#     adjusted_p_values_by_rank = adjusted_p_values[p_values_sorted_indices]
+#
+#     # Order the adjusted P-values and apply cumulative minimum to meet BH conditions
+#     p_values_ordered = np.minimum(adjusted_p_values_by_rank,
+#                                   np.minimum.accumulate(adjusted_p_values_by_rank[::-1])[::-1])
+#     final_adjusted_p_values = p_values_ordered[p_vals_max_rank]
+#
+#     return final_adjusted_p_values
 
 
 def perform_statist(test_name):
@@ -171,7 +172,6 @@ def perform_statist(test_name):
     }
 
     # Populate a set with all genes from the filtered pathways
-    filtered_genes = set()
     for genes in pathways_with_many_genes.values():
         filtered_genes.update(genes)
 
@@ -207,8 +207,10 @@ def perform_statist(test_name):
         background_scores = [scores['Score'][gene_id] for gene_id in background_genes]
         ks_p_values.append(kolmogorov_smirnov_test(pathway_scores, background_scores))
 
-    # Apply Benjamini-Hochberg correction to the KS P-values
-    adjusted_p_values = bh_correction(np.array(ks_p_values))
+    # # Apply Benjamini-Hochberg correction to the KS P-values
+    # adjusted_p_values = bh_correction(np.array(ks_p_values))
+    #use fdr correction
+    adjusted_p_values = multipletests(ks_p_values, method='fdr_bh')[1]
 
     # Filter significant pathways based on adjusted KS P-values
     ks_significant_pathways_with_genes = {
@@ -236,18 +238,20 @@ def perform_statist_mann_whitney(passed_ks_pathway_dict, scores):
     mw_p_values = []  # List to store Mann-Whitney p-values
     significant_pathways_with_genes = {}
 
-    # Extract all gene IDs from the scores and rank them
-    scores_keys = set(scores['Score'].keys())
+    # Use filtered_genes for ranking and background scores
+    filtered_scores = [scores['Score'][gene_id] for gene_id in filtered_genes]
+
+    # Rank the scores only for the filtered genes and reverse the ranks
+    ranks = rankdata(filtered_scores)
     scores_rank = {
-        gene_id: rank for gene_id, rank in
-        zip(scores_keys, rankdata([scores['Score'][gene_id] for gene_id in scores_keys]))
+        gene_id: rank for gene_id, rank in zip(filtered_genes, ranks)
     }
 
     # Iterate over pathways that passed the KS test to perform the Mann-Whitney U test
     for pathway, genes_info in passed_ks_pathway_dict.items():
         pathway_genes = set(genes_info[0])
         pathway_scores = [scores['Score'][gene_id] for gene_id in pathway_genes]
-        background_genes = set(scores_keys) - pathway_genes
+        background_genes = filtered_genes - pathway_genes
         background_scores = [scores['Score'][gene_id] for gene_id in background_genes]
 
         pathway_ranks = [scores_rank[gene_id] for gene_id in pathway_genes]
@@ -255,17 +259,17 @@ def perform_statist_mann_whitney(passed_ks_pathway_dict, scores):
 
         # Compute the Mann-Whitney U test p-value using scores
         mw_pval = wilcoxon_rank_sums_test(pathway_scores, background_scores)
-        _, rmw_pval = compute_mw_python(pathway_scores, background_scores, pathway_ranks, background_ranks)
+        _, rmw_pval = compute_mw_python(pathway_ranks, background_ranks)
         mw_p_values.append(mw_pval)
 
     # Apply Benjamini-Hochberg correction to adjust the p-values
-    adjusted_mw_p_values = bh_correction(np.array(mw_p_values))
+    # adjusted_mw_p_values = bh_correction(np.array(mw_p_values))
+    adjusted_mw_p_values = multipletests(mw_p_values, method='fdr_bh')[1]
 
     # Collect significant pathways after adjustment
     filtered_pathways = []
     for i, (pathway, genes) in enumerate(passed_ks_pathway_dict.items()):
         if adjusted_mw_p_values[i] < 0.05:  # Threshold for significance
-            significant_pathways_with_genes[pathway] = genes
             filtered_pathways.append({
                 'Pathway': pathway,
                 'Adjusted_p_value': adjusted_mw_p_values[i],
@@ -386,39 +390,25 @@ def wilcoxon_rank_sums_test(experiment_scores, control_scores, alternative='two-
     return p_vals
 
 
-def compute_mw_python(experiment_scores, control_scores, experiment_ranks2, control_ranks2):
+def compute_mw_python(experiment_ranks, control_ranks):
     """
     Compute the Mann-Whitney U test manually using rank sums to determine the statistical difference
     between two independent samples.
 
     Parameters:
-    - experiment_scores (list or ndarray): Scores from the experimental group.
-    - control_scores (list or ndarray): Scores from the control group.
-    - experiment_ranks2 (list or ndarray): Precomputed ranks for the experimental group.
-    - control_ranks2 (list or ndarray): Precomputed ranks for the control group.
-
+    - experiment_ranks (list): Ranks of the experimental group.
+    - control_ranks (list): Ranks of the control group.
     Returns:
     tuple: The Mann-Whitney U statistic and the corresponding p-value.
     """
-    # Combine scores from both groups and compute overall ranks
-    combined_scores = np.concatenate([experiment_scores, control_scores])
-    ranks = np.argsort(np.argsort(combined_scores)) + 1  # Rank data
-
-    # Print the highest rank to monitor the ranking process
-    print("Highest rank assigned:", ranks[-1])
-
-    # Separate the combined ranks back into two groups
-    experiment_ranks = ranks[:len(experiment_scores)]
-    control_ranks = ranks[len(control_scores):]
 
     # Calculate the sum of ranks for each group
     R1 = np.sum(experiment_ranks)
-    R12 = np.sum(experiment_ranks2)
     R2 = np.sum(control_ranks)
 
     # Number of observations in each group
-    n1 = len(experiment_scores)
-    n2 = len(control_scores)
+    n1 = len(experiment_ranks)
+    n2 = len(control_ranks)
 
     # Compute the Mann-Whitney U statistics for both groups
     U1 = R1 - n1 * (n1 + 1) / 2  # U statistic for the experimental group
@@ -452,7 +442,7 @@ def print_enriched_pathways_to_file(filtered_pathways, output_folder, test_name,
     - test_name (str): Name of the test, used to name the output file.
     - threshold (float, optional): P-value threshold for pathways to be considered significant. Defaults to 0.05.
     """
-    output_file_path = path.join(output_folder, f'{test_name}.txt')
+    output_file_path = os.path.join(output_folder, f'{test_name}.txt')
     significant_count = 0  # Counter for significant pathways
 
     with open(output_file_path, 'w') as file:
@@ -527,7 +517,7 @@ def process_condition(condition_file, experiment_file, pathways_file):
     experiment_data_filtered_df = condition_data_df[condition_data_df['Score'] != 0]
 
     # Extract the condition name from the file name
-    condition_name = path.basename(condition_file).split('.')[-1]
+    condition_name = os.path.basename(condition_file).split('.')[-2]
 
     # Load pathway data mapping pathway names to lists of gene IDs
     homo_sapien_pathway_dict = read_pathways(pathways_file)
@@ -544,10 +534,10 @@ def process_condition(condition_file, experiment_file, pathways_file):
         pathway_genes = homo_sapien_pathway_dict[pathway]
 
         # Filter the experiment data to only include genes that are part of the current pathway
-        filtered_genes = experiment_data_filtered_df[experiment_data_filtered_df['GeneID'].isin(pathway_genes)]
+        pathway_filtered_genes = experiment_data_filtered_df[experiment_data_filtered_df['GeneID'].isin(pathway_genes)]
 
         # Store details of filtered genes in a dictionary
-        enriched_pathway_genes[pathway] = filtered_genes.set_index('GeneID')[['Symbol', 'Score', 'P-value']].to_dict(
+        enriched_pathway_genes[pathway] = pathway_filtered_genes.set_index('GeneID')[['Symbol', 'Score', 'P-value']].to_dict(
             orient='index')
 
         # Filter to find significant genes based on the P-value threshold
@@ -752,7 +742,7 @@ def plot_pathways_mean_scores(output_dir, experiment_name):
 genes_by_pathway = load_pathways_genes()
 
 # Define a list of tests to be processed
-test_list = ['T_v_N', '500nm_v_T']
+test_list = ['T_v_N']
 for test_name in test_list:
     print(f"running enrichment on {test_name}")
     # Perform initial statistical enrichment test to identify significant pathways
@@ -760,30 +750,28 @@ for test_name in test_list:
     # Further statistical test using Mann-Whitney U test
     filtered_pathways = perform_statist_mann_whitney(significant_pathways_with_genes, scores)
     # Output the enriched pathways to files
-    print_enriched_pathways_to_file(filtered_pathways, temp_output_folder, FDR_THRESHOLD)
+    print_enriched_pathways_to_file(filtered_pathways, temp_output_folder, test_name)
 
 print("finished enrichment")
 
 # Define file paths for additional conditions
-test_file_paths = [f'{input_dir}/T_v_N.csv', f'{input_dir}/500nm_v_T.csv', f'{input_dir}/10um_v_T.csv']
-import os
-# Extract the test names from the file paths to match them with condition files
-# test_names = [os.path.splitext(os.path.basename(path))[0] for path in test_file_paths]
+test_file_paths = [f'{input_dir}/T_v_N.csv']
 
+# Extract the test names from the file paths to match them with condition files
+test_names = [os.path.splitext(os.path.basename(path))[0] for path in test_file_paths]
 
 # Get the list of condition files
-# condition_files_unsorted = [os.path.join(temp_output_folder, file) for file in os.listdir(temp_output_folder)]
+condition_files_unsorted = [os.path.join(temp_output_folder, file) for file in os.listdir(temp_output_folder)]
 
 # Sort condition_files based on the order of test_names
-# condition_files = sorted(condition_files_unsorted, key=lambda x: test_names.index(os.path.splitext(os.path.basename(x))[0]))
-# Define paths to output condition files from earlier steps
-condition_files = ['Outputs/Temp/TvN', 'Outputs/Temp/500vT', 'Outputs/Temp/10vT']
+condition_files = sorted(condition_files_unsorted, key=lambda x: test_names.index(os.path.splitext(os.path.basename(x))[0]))
+
 all_pathways = {}
 
 # Load enriched pathways from files into a dictionary for further processing
 for condition_file in condition_files:
     enriched_pathway_dict = read_scores(condition_file)
-    condition_name = os.path.basename(condition_file).split('.')[-1]
+    condition_name = os.path.basename(condition_file).split('.')[-2]
     for pathway in enriched_pathway_dict.keys():
         if pathway not in all_pathways:
             all_pathways[pathway] = {}
