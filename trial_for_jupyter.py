@@ -526,7 +526,7 @@ def process_condition(condition_file, experiment_file, pathways_file):
     enriched_pathway_genes = {}
 
     # Loop through each pathway
-    for pathway in homo_sapien_pathway_dict:
+    for pathway in all_pathways:
         # Initialize a dictionary for the pathway under the current condition
         all_pathways[pathway][condition_name] = {}
 
@@ -742,7 +742,7 @@ def plot_pathways_mean_scores(output_dir, experiment_name):
 genes_by_pathway = load_pathways_genes()
 
 # Define a list of tests to be processed
-test_list = ['T_v_N']
+test_list = ['T_v_N', '10um_v_T', '500Nm_v_T']
 for test_name in test_list:
     print(f"running enrichment on {test_name}")
     # Perform initial statistical enrichment test to identify significant pathways
@@ -755,7 +755,7 @@ for test_name in test_list:
 print("finished enrichment")
 
 # Define file paths for additional conditions
-test_file_paths = [f'{input_dir}/T_v_N.csv']
+test_file_paths = [f'{input_dir}/T_v_N.csv', f'{input_dir}/10um_v_T.csv', f'{input_dir}/500Nm_v_T.csv']
 
 # Extract the test names from the file paths to match them with condition files
 test_names = [os.path.splitext(os.path.basename(path))[0] for path in test_file_paths]
