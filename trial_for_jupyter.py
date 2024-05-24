@@ -49,20 +49,27 @@ def load_pathways_genes():
     """
     pathways = {}
     # Open the file containing pathway data
-    with open(pathway_file_dir, 'r') as file:
-        for line in file:
-            # Process each line, normalize case, and split by tab
-            parts = line.strip().upper().split('\t')
-            # Skip lines that don't have at least 3 parts or where the second part isn't a digit
-            if len(parts) < 3 or not parts[1].isdigit():
-                continue
+    try:
+        with open(pathway_file_dir, 'r') as file:
+            for line in file:
+                # Process each line, normalize case, and split by tab
+                parts = line.strip().upper().split('\t')
+                # Skip lines that don't have at least 3 parts or where the second part isn't a digit
+                if len(parts) < 3 or not parts[1].isdigit():
+                    continue
 
-            # Parse pathway name and expected size
-            pathway_name, pathway_size = parts[0], int(parts[1])
+                # Parse pathway name and expected size
+                pathway_name, pathway_size = parts[0], int(parts[1])
 
-            # Collect gene IDs ensuring they are numeric and don't exceed the pathway size
-            genes = [int(gene) for gene in parts[2].split()[:pathway_size] if gene.isdigit()]
-            pathways[pathway_name] = genes
+                # Collect gene IDs ensuring they are numeric and don't exceed the pathway size
+                genes = [int(gene) for gene in parts[2].split()[:pathway_size] if gene.isdigit()]
+                pathways[pathway_name] = genes
+
+    except FileNotFoundError:
+        print(f"File not found: {pathway_file_dir}")
+    except Exception as e:
+        print(f"An error occurred while loading pathways: {e}")
+
     return pathways
 
 def get_scores(test_name):
@@ -90,10 +97,10 @@ def get_scores(test_name):
 
     except FileNotFoundError:
         print(f"File not found: {raw_scores_file_path}")
-        return {}, {}
+        return  {}
     except Exception as e:
         print(f"An error occurred: {e}")
-        return {}, {}
+        return  {}
 
 
 def hypergeometric_sf(x, M, N, n):
@@ -207,9 +214,7 @@ def perform_statist(test_name):
         background_scores = [scores['Score'][gene_id] for gene_id in background_genes]
         ks_p_values.append(kolmogorov_smirnov_test(pathway_scores, background_scores))
 
-    # # Apply Benjamini-Hochberg correction to the KS P-values
-    # adjusted_p_values = bh_correction(np.array(ks_p_values))
-    #use fdr correction
+    # Apply Benjamini-Hochberg correction to the KS P-values
     adjusted_p_values = multipletests(ks_p_values, method='fdr_bh')[1]
 
     # Filter significant pathways based on adjusted KS P-values
@@ -352,23 +357,23 @@ def ks(alam):
     float: The probability associated with the KS statistic.
     """
     EPS1 = 1e-6  # Precision for the convergence of term's absolute value
-    EPS2 = 1e-10  # Precision for the convergence of the sum's relative value
+    EPS2 = 1e-10  # Precision for the convergence of the series_sum's relative value
     a2 = -2.0 * alam ** 2  # Adjust lambda for exponential calculation
     fac = 2.0
-    sum = 0.0
-    termbf = 0.0
+    series_sum = 0.0
+    previous_term = 0.0
 
     # Sum the series until convergence criteria are met
     for j in range(1, 101):
         term = fac * np.exp(a2 * j ** 2)  # Calculate term of the series
-        sum += term  # Add to sum
+        series_sum += term  # Add to series_sum
 
         # Check for convergence
-        if np.abs(term) <= EPS1 * termbf or np.abs(term) <= EPS2 * sum:
-            return sum
+        if np.abs(term) <= EPS1 * previous_term or np.abs(term) <= EPS2 * series_sum:
+            return series_sum
 
         fac = -fac  # Alternate the sign
-        termbf = np.abs(term)  # Update the term before flag
+        previous_term = np.abs(term)  # Update the term before flag
 
     # Return 1.0 if the series does not converge within 100 terms
     return 1.0
