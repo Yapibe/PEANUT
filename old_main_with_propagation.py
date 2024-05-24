@@ -5,6 +5,8 @@ from statistic_methods import wilcoxon_rank_sums_test, students_t_test, kolmogor
 from pathway_enrichment import run
 import time
 import numpy as np
+import os
+
 
 
 def perform_propagation(prop_task):
@@ -23,8 +25,6 @@ def perform_propagation(prop_task):
 
     # Load and prepare prior set
     prior_data = read_prior_set(prop_task.experiment_file_path)
-    # save prior data to excel
-    prior_data.to_excel('roded_M.xlsx', index=False)
     print("loaded prior data")
 
     if prop_task.alpha == 1:
@@ -48,7 +48,7 @@ def perform_propagation(prop_task):
 
         save_propagation_score(propagation_scores=gene_scores, prior_set=sorted_prior_data,
                                propagation_input=propagation_input, genes_id_to_idx=experiment_gene_index,
-                               task=prop_task, save_dir=prop_task.temp_output_folder)
+                               task=prop_task, save_dir=prop_task.output_folder)
 
         return
 
@@ -69,7 +69,7 @@ def perform_propagation(prop_task):
 
     # Propagate network
     print("propagating network")
-    propagation_input = get_propagation_input(all_genes_ids, prior_data, prop_task.propagation_input_type)
+    propagation_input = get_propagation_input(all_genes_ids, prior_data)
     propagation_score, gene_score_dict = propagate_network(propagation_input, matrix, network_gene_index)
 
     # print("getting ones input")
@@ -93,7 +93,7 @@ def perform_propagation(prop_task):
     # save propagation score
     print("saving propagation score")
     save_propagation_score(propagation_scores=propagation_score, prior_set=prior_data, propagation_input=propagation_input,
-                           genes_id_to_idx=network_gene_index, task=prop_task, save_dir=prop_task.temp_output_folder)
+                           genes_id_to_idx=network_gene_index, task=prop_task, save_dir=prop_task.output_folder)
 
 
 def perform_enrichment(prop_task):
@@ -108,27 +108,21 @@ def perform_enrichment(prop_task):
     """
     # run enrichment
     print("running enrichment")
-    FDR_threshold = 0.05
-    num_shuffles = 1000
-    alpha = 0.2
+    propagation_folder = os.path.join(root_folder, 'Outputs', 'propagation_scores', prop_task.experiment_name)
     if run_propagation_flag:
-
-        propagation_scores_file = '{}_{}_{}_{}'.format(prop_task.test_name, prop_task.propagation_input_type,
-                                                       prop_task.alpha, prop_task.date)
-        task1 = EnrichTask(name=prop_task.test_name, propagation_file=propagation_scores_file,
-                           propagation_folder=f'Outputs\\propagation_scores\\{prop_task.test_name}',
-                           statistic_test=kolmogorov_smirnov_test, target_field='gene_prop_scores', alpha=alpha,
-                           create_propagation_matrix=False, create_scores=True)
+        propagation_scores_file = '{}_{}_{}'.format(prop_task.experiment_name, prop_task.alpha, prop_task.date)
+        general_args = GeneralArgs(prop_task.network_file_path, genes_names_path=prop_task.genes_names_file_path,
+                                   pathway_members_path=prop_task.pathway_file_dir,
+                                   propagation_file=propagation_scores_file, propagation_folder=propagation_folder)
     else:
-        task1 = EnrichTask(name='TvN', propagation_file='TvN_Score_1_26_11_2023__20_07_31',
-                           propagation_folder=f'Outputs\\propagation_scores\\TvN',
-                           statistic_test=wilcoxon_rank_sums_test, target_field='gene_prop_scores', alpha=alpha,
-                           create_propagation_matrix=False, create_scores=True)
+        general_args = GeneralArgs(prop_task.network_file_path, genes_names_path=prop_task.genes_names_file_path,
+                                   pathway_members_path=prop_task.pathway_file_dir,
+                                   propagation_file='TvN_1_26_11_2023_20_07_31', propagation_folder= propagation_folder)
 
-    general_args = GeneralArgs(prop_task.network_file_path, genes_names_path=prop_task.genes_names_file_path,
-                               pathway_members_path=prop_task.pathway_file_dir, FDR_threshold=FDR_threshold)
+    enrich_task = EnrichTask(name=prop_task.experiment_name, create_scores=True, target_field='gene_prop_scores',
+                             statistic_test=kolmogorov_smirnov_test)
     print('running')
-    run(task1, general_args, num_shuffles=num_shuffles)
+    run(enrich_task, general_args)
 
 
 def main(run_propagation=True, run_enrichment=True):
@@ -142,20 +136,29 @@ def main(run_propagation=True, run_enrichment=True):
     Returns:
     - None: This function orchestrates the execution of other functions but does not return a value.
     """
+    # Identify test conditions from the input directory
+    input_dir = os.path.join(root_folder, 'Inputs', 'experiments_data', 'Parkinson')
+    test_list = [file.split('.')[0] for file in os.listdir(input_dir) if file.endswith('.xlsx')]
 
-    # create a propagation task
-    prop_task = PropagationTask(experiment_name='TvN')
+    for test_name in test_list:
+        print(f"Running propagation and enrichment on {test_name}")
 
-    if run_propagation:
-        perform_propagation(prop_task)
+        # Create a propagation task
+        prop_task = PropagationTask(experiment_file_path=os.path.join(input_dir, f'{test_name}.xlsx'),
+                                    experiment_name=test_name, root_folder=root_folder, create_similarity_matrix=False,
+                                    alpha=0.1)
 
-    if run_enrichment:
-        perform_enrichment(prop_task)
+        if run_propagation:
+            perform_propagation(prop_task)
+
+        if run_enrichment:
+            perform_enrichment(prop_task)
 
 
 if __name__ == '__main__':
     start = time.time()
-
+    # Dynamically determine the root path
+    root_folder = os.path.dirname(os.path.abspath(__file__))
     # Set these flags to control the tasks to run
     run_propagation_flag = True
     run_enrichment_flag = True

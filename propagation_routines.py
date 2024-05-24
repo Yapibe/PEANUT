@@ -73,10 +73,10 @@ def generate_similarity_matrix(network, similarity_matrix_path, alpha):
         tuple: A tuple containing the inverse of the similarity matrix and the list of genes.
     """
     genes = sorted(network.nodes())
-    gene_index = dict([(gene, index) for (index, gene) in enumerate(genes)])
+    gene_index = {gene: index for index, gene in enumerate(genes)}
 
     if not sp.sparse.issparse(network):
-        matrix = nx.to_scipy_sparse_matrix(network, genes, weight=2)
+        matrix = nx.to_scipy_sparse_array(network, nodelist=genes, weight=2)
     else:
         matrix = network
 
@@ -84,7 +84,7 @@ def generate_similarity_matrix(network, similarity_matrix_path, alpha):
     start = time.time()
     print("Normalizing the matrix")
     # Normalize the matrix
-    norm_matrix = sp.sparse.diags(1 / sp.sqrt(matrix.sum(0).A1), format="csr")
+    norm_matrix = sp.sparse.diags(1 / sp.sqrt(matrix.sum(0).ravel()), format="csr")
     matrix = norm_matrix * matrix * norm_matrix
 
     print("Calculating the inverse")
@@ -110,6 +110,9 @@ def generate_similarity_matrix(network, similarity_matrix_path, alpha):
 
     print("Saving the matrix")
     # Save the matrix in .npz format
+    # check if path exists if not create it
+    if not os.path.exists(os.path.dirname(similarity_matrix_path)):
+        os.makedirs(os.path.dirname(similarity_matrix_path))
     sp.sparse.save_npz(similarity_matrix_path, matrix_inverse_csr)
 
     end = time.time()

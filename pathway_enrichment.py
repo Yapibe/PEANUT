@@ -84,7 +84,7 @@ def perform_statist(task, general_args, genes_by_pathway, all_experiment_genes_s
     return significant_pathways_with_genes
 
 
-def run(task1, general_args):
+def run(task, general_args):
     """
     Main function to run the pathway enrichment analysis.
 
@@ -99,10 +99,10 @@ def run(task1, general_args):
         None
     """
     print("uploding data")
-    genes_by_pathway, scores = load_network_and_pathways(task1)
+    genes_by_pathway, scores = load_network_and_pathways(general_args)
 
     # Stage 1 - calculate nominal p-values and directions
-    significant_pathways_with_genes = perform_statist(task1, general_args, genes_by_pathway, scores)
+    significant_pathways_with_genes = perform_statist(task, general_args, genes_by_pathway, scores)
 
 
 

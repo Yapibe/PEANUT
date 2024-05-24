@@ -83,7 +83,8 @@ def read_prior_set(excel_dir):
 
     # Drop duplicate GeneID values
     # print all duplicates
-    print(prior_data[prior_data.duplicated(subset=['GeneID'])])
+    # print how many genes pre editing
+    print(f"Number of genes before editing: {len(prior_data)}")
     prior_data = prior_data.drop_duplicates(subset='GeneID')
     # remove any row with no value in Score column
     prior_data = prior_data[prior_data['Score'].notna()]
@@ -96,11 +97,11 @@ def read_prior_set(excel_dir):
 
     # Reset the DataFrame index
     prior_data = prior_data.reset_index(drop=True)
-
+    print(f"Number of genes after editing: {len(prior_data)}")
     return prior_data
 
 
-def get_propagation_input(prior_gene_ids, prior_data, input_type):
+def get_propagation_input(prior_gene_ids, prior_data, input_type='Score'):
     """
     Generates propagation inputs based on specified type and network.
 
@@ -168,8 +169,8 @@ def save_propagation_score(propagation_scores, prior_set, propagation_input, gen
     Returns:
         dict: A dictionary containing the saved data.
     """
-    file_name = f"{task.test_name}_{task.propagation_input_type}_{task.alpha}_{task.date}"
-    save_dir = save_dir or task.propagation_scores_path
+    file_name = f"{task.experiment_name}_{task.alpha}_{task.date}"
+    save_dir = save_dir
     os.makedirs(save_dir, exist_ok=True)
     propagation_results_path = path.join(save_dir, file_name)
 
@@ -182,15 +183,6 @@ def save_propagation_score(propagation_scores, prior_set, propagation_input, gen
     return save_dict
 
 
-def get_root_path():
-    """
-    Retrieves the root path of the current script.
-    Returns:
-        str: The root directory path of the current script file.
-    """
-    return path.dirname(path.realpath(__file__))
-
-
 def load_pathways_genes(pathways_dir):
     """
     Loads the pathways and their associated genes from a file.
@@ -201,36 +193,28 @@ def load_pathways_genes(pathways_dir):
     Returns:
         dict: A dictionary mapping pathway names to lists of genes in each pathway.
     """
-    # with open(pathways_dir, 'r') as f:
-    #     lines = [str.upper(x.strip()).split('\t') for x in f]
-    # pathways = {x[0]: [int(y) for y in x[2:]] for x in lines}
-    #
-    # return pathways
-
     pathways = {}
-    with open(pathways_dir, 'r') as f:
-        for line in f:
-            parts = line.strip().upper().split('\t')  # Split each line into parts
-            if len(parts) < 3:  # If there are not enough parts for name, size, and genes
-                continue
+    # Open the file containing pathway data
+    try:
+        with open(pathways_dir, 'r') as file:
+            for line in file:
+                # Process each line, normalize case, and split by tab
+                parts = line.strip().upper().split('\t')
+                # Skip lines that don't have at least 3 parts or where the second part isn't a digit
+                if len(parts) < 3 or not parts[1].isdigit():
+                    continue
 
-            pathway_name = parts[0]  # The pathway name is the first part
-            try:
-                pathway_size = int(parts[1])  # The pathway size is the second part
-            except ValueError:
-                continue  # Skip this line if the size is not an integer
+                # Parse pathway name and expected size
+                pathway_name, pathway_size = parts[0], int(parts[1])
 
-            # Further split the gene part by spaces and then take the number of genes specified by pathway_size
-            genes = parts[2]  # The third part is the space-separated list of gene IDs
-            gene_list = genes.split()  # Split the genes by spaces
+                # Collect gene IDs ensuring they are numeric and don't exceed the pathway size
+                genes = [int(gene) for gene in parts[2].split()[:pathway_size] if gene.isdigit()]
+                pathways[pathway_name] = genes
 
-            # Convert each gene to an integer
-            try:
-                genes = [int(gene) for gene in gene_list[:pathway_size]]
-            except ValueError:
-                continue  # Skip this line if any gene is not an integer
-
-            pathways[pathway_name] = genes  # Add the pathway and its genes to the dictionary
+    except FileNotFoundError:
+        print(f"File not found: {pathways_dir}")
+    except Exception as e:
+        print(f"An error occurred while loading pathways: {e}")
 
     return pathways
 
@@ -256,22 +240,8 @@ def load_file(load_dir, decompress=True):
     return file
 
 
-def load_propagation_scores(task, propagation_file_name=None):
-    """
-    Loads the propagation scores from a file.
-
-    Args:
-        task (PropagationTask): The propagation task object containing program arguments.
-        propagation_file_name (str, optional): Name of the file to load the results from.
-
-    Returns:
-        dict: Dictionary containing the propagation scores, input, and gene index to ID mapping.
-    """
-    propagation_results_path = path.join(task.propagation_scores_path, propagation_file_name)
-    propagation_results_path = propagation_results_path.replace("\\", "/")  # Replace backslashes
-
-    propagation_result_dict: dict = load_file(propagation_results_path, decompress=True)
-
+def load_propagation_scores(propagation_file_path):
+    propagation_result_dict: dict = load_file(propagation_file_path, decompress=True)
     return propagation_result_dict
 
 
@@ -296,7 +266,7 @@ def shuffle_scores(dataframe, shuffle_column, num_shuffles=10):
     return result_df
 
 
-def load_network_and_pathways(task):
+def load_network_and_pathways(general_args):
     """
     Loads the network graph and pathways based on the provided configuration.
     Returns:
@@ -304,25 +274,21 @@ def load_network_and_pathways(task):
                pathways to their genes.
     """
     # network_graph = read_network(general_args.network_file_path)
-    genes_by_pathway = load_pathways_genes(task.pathway_file_dir)
-    scores = get_scores(task)
+    genes_by_pathway = load_pathways_genes(general_args.pathway_members_path)
+    scores = get_scores(general_args.propagation_file_path)
 
     return genes_by_pathway, scores
 
 
-def get_scores(task):
+def get_scores(score_path):
     # Path to the file containing the raw scores (adjust as necessary)
-    raw_scores_file_path = task.experiment_file_path
+    # raw_scores_file_path = score_path
 
     try:
         # Load raw data from the file
-        raw_data = pd.read_excel(raw_scores_file_path)
+        propagation_result_dict = load_propagation_scores(score_path)
 
-        # Perform necessary preprocessing on raw_data
-        # For instance, sorting, filtering, or extracting specific columns
-        # Assuming 'GeneID' and 'Score' are columns in the raw data
-        sorted_raw_data = raw_data.sort_values(by='GeneID').reset_index(drop=True)
-
+        sorted_scores = propagation_result_dict['gene_prop_scores'].sort_values(by='GeneID').reset_index(drop=True)
         # Create a dictionary for gene_id_to_score
         scores_dict = {gene_id: score for gene_id, score in zip(sorted_raw_data['GeneID'], sorted_raw_data['Score'])}
         return scores_dict
