@@ -1,87 +1,138 @@
-from propagation_routines import generate_propagation_scores
-from args import PathwayResults
-from statistic_methods import calculate_empirical_p_values, sign_test, bh_correction, wilcoxon_rank_sums_test, jaccard_index
+from statistic_methods import hypergeometric_sf, wilcoxon_rank_sums_test, jaccard_index , kolmogorov_smirnov_test, compute_mw_python
+from statsmodels.stats.multitest import multipletests
+from scipy.stats import rankdata
 from utils import shuffle_scores, load_network_and_pathways
 import numpy as np
+import pandas as pd
 import csv
 from os import path
 
 
-def perform_statist(task, general_args, genes_by_pathway, all_experiment_genes_scores):
-    significant_pathways_with_genes = {}
-    ks_p_values = []
+def perform_statist(task, general_args, genes_by_pathway, scores):
+    # Identify genes with P-values below the significance threshold
+    significant_p_vals = {gene_id: p_value for gene_id, (score, p_value) in scores.items()
+                          if p_value < general_args.FDR_threshold}
+
+    # Retrieve keys (gene IDs) with scores
+    scores_keys = set(scores.keys())
+
+    # Filter pathways by those having gene counts within the specified range and that intersect with scored genes
+    pathways_with_many_genes = { pathway: set(genes).intersection(scores_keys)
+                                 for pathway, genes in genes_by_pathway.items()
+                                 if general_args.minimum_gene_per_pathway <=
+                                 len(set(genes).intersection(scores_keys)) <= general_args.maximum_gene_per_pathway}
+
+    # Populate a set with all genes from the filtered pathways
+    for genes in pathways_with_many_genes.values():
+        task.filtered_genes.update(genes)
+
+    # Total number of scored genes
+    M = len(scores_keys)
+    # Number of genes with significant P-values
+    n = len(significant_p_vals)
+
+    # Prepare lists to hold the hypergeometric P-values and corresponding pathway names
+    hypergeom_p_values = []
     pathway_names = []
-    mw_p_values = []
-    # Filter genes for each pathway, only includes genes that are in the experiment and in the pathway file
-    genes_by_pathway_filtered = {
-        pathway: [gene_id for gene_id in genes if gene_id in all_experiment_genes_scores]
-        for pathway, genes in genes_by_pathway.items()
+
+    # Calculate hypergeometric P-values for each pathway with enough genes
+    for pathway_name, pathway_genes in pathways_with_many_genes.items():
+        N = len(pathway_genes)  # Number of genes in the current pathway
+        x = len(set(pathway_genes).intersection(significant_p_vals.keys()))  # Enriched genes in the pathway
+        # Apply hypergeometric test; if fewer than 5 enriched genes, assign a P-value of 1 (non-significant)
+        pval = hypergeometric_sf(x, M, N, n) if x >= 5 else 1
+        hypergeom_p_values.append(pval)
+        pathway_names.append(pathway_name)
+
+    # Identify pathways with significant hypergeometric P-values
+    significant_pathways = [
+        pathway for i, pathway in enumerate(pathway_names) if hypergeom_p_values[i] < 0.05
+    ]
+
+    # Perform the Kolmogorov-Smirnov test to compare distributions of scores between pathway genes and background
+    ks_p_values = []
+    for pathway in significant_pathways:
+        genes = pathways_with_many_genes[pathway]
+        pathway_scores = [scores[gene_id][0] for gene_id in genes if gene_id in scores]
+        background_genes = scores_keys - genes
+        background_scores = [scores[gene_id][0] for gene_id in background_genes]
+        ks_p_values.append(kolmogorov_smirnov_test(pathway_scores, background_scores))
+
+    # Apply Benjamini-Hochberg correction to the KS P-values
+    adjusted_p_values = multipletests(ks_p_values, method='fdr_bh')[1]
+
+    # Filter significant pathways based on adjusted KS P-values
+    task.ks_significant_pathways_with_genes = {
+        pathway: (pathways_with_many_genes[pathway], adjusted_p_values[i])
+        for i, pathway in enumerate(significant_pathways)
+        if adjusted_p_values[i] < 0.05
     }
 
-    # Filter pathways based on gene count criteria
-    pathways_with_many_genes = [
-        pathway for pathway, genes in genes_by_pathway_filtered.items()
-        if general_args.MIN_GENE_PER_PATHWAY <= len(genes) <= general_args.MAX_GENE_PER_PATHWAY
-    ]
 
-    # Perform statistical tests
-    print('After filtering:', len(pathways_with_many_genes))
-    for pathway in pathways_with_many_genes:
-        pathway_scores = [all_experiment_genes_scores[gene_id] for gene_id in genes_by_pathway_filtered[pathway]]
-        background_genes = set(all_experiment_genes_scores.keys()) - set(genes_by_pathway_filtered[pathway])
-        background_scores = [all_experiment_genes_scores[gene_id] for gene_id in background_genes]
-        result = task.statistic_test(pathway_scores, background_scores)
+def perform_statist_mann_whitney(task, args, scores):
+    mw_p_values = []  # List to store Mann-Whitney p-values
 
-        task.results[pathway] = PathwayResults(p_value=result.p_value, direction=result.directionality)
-        ks_p_values.append(result.p_value)
-        pathway_names.append(pathway)
+    # Use filtered_genes for ranking and background scores
+    filtered_scores = [scores[gene_id][0] for gene_id in task.filtered_genes]
 
-    # Apply BH correction
-    adjusted_p_values = bh_correction(np.array(ks_p_values))
+    # Rank the scores only for the filtered genes and reverse the ranks
+    ranks = rankdata(filtered_scores)
+    scores_rank = {
+        gene_id: rank for gene_id, rank in zip(task.filtered_genes, ranks)
+    }
 
-    # Filter significant pathways based on adjusted p-values
-    for i, pathway in enumerate(pathway_names):
-        if adjusted_p_values[i] < 0.05:  # Using a significance threshold of 0.05
-            significant_pathways_with_genes[pathway] = genes_by_pathway_filtered[pathway]
+    # Iterate over pathways that passed the KS test to perform the Mann-Whitney U test
+    for pathway, genes_info in task.ks_significant_pathways_with_genes.items():
+        pathway_genes = set(genes_info[0])
+        pathway_scores = [scores[gene_id][0] for gene_id in pathway_genes]
+        background_genes = task.filtered_genes - pathway_genes
+        background_scores = [scores[gene_id][0] for gene_id in background_genes]
 
-    specific_pathways = [
-        "WP_DISRUPTION_OF_POSTSYNAPTIC_SIGNALING_BY_CNV",
-        "WP_HIPPOCAMPAL_SYNAPTOGENESIS_AND_NEUROGENESIS",
-        "WP_SYNAPTIC_SIGNALING_PATHWAYS_ASSOCIATED_WITH_AUTISM_SPECTRUM_DISORDER",
-        "REACTOME_NEUROTRANSMITTER_RECEPTORS_AND_POSTSYNAPTIC_SIGNAL_TRANSMISSION"
-    ]
-    # print the p-values of specific pathways
-    for pathway in specific_pathways:
-        if pathway in task.results:
-            print(f'{pathway}: {task.results[pathway].p_value}')
+        pathway_ranks = [scores_rank[gene_id] for gene_id in pathway_genes]
+        background_ranks = [scores_rank[gene_id] for gene_id in background_genes]
 
-    # Mann-Whitney U test and FDR
-    for pathway in pathways_with_many_genes:
-        pathway_scores = [all_experiment_genes_scores[gene_id] for gene_id in genes_by_pathway_filtered[pathway]]
-        background_genes = set(all_experiment_genes_scores.keys()) - set(genes_by_pathway_filtered[pathway])
-        background_scores = [all_experiment_genes_scores[gene_id] for gene_id in background_genes]
-
-        # Perform Mann-Whitney U Test
-        u_stat, mw_pval =  wilcoxon_rank_sums_test(pathway_scores, background_scores, alternative='two-sided')
+        # Compute the Mann-Whitney U test p-value using scores
+        mw_pval = wilcoxon_rank_sums_test(pathway_scores, background_scores)
+        # _, rmw_pval = compute_mw_python(pathway_ranks, background_ranks)
         mw_p_values.append(mw_pval)
-        pathway_names.append(pathway)
 
-    # Apply BH correction to Mann-Whitney p-values
-    adjusted_mw_p_values = bh_correction(np.array(mw_p_values))
+    # Apply Benjamini-Hochberg correction to adjust the p-values
+    adjusted_mw_p_values = multipletests(mw_p_values, method='fdr_bh')[1]
 
-    # Filter significant pathways based on adjusted Mann-Whitney p-values
-    for i, pathway in enumerate(pathway_names):
-        if adjusted_mw_p_values[i] < 0.05:  # Using a significance threshold of 0.05
-            significant_pathways_with_genes[pathway] = genes_by_pathway_filtered[pathway]
+    # Collect significant pathways after adjustment
+    filtered_pathways = []
+    for i, (pathway, genes) in enumerate(task.ks_significant_pathways_with_genes.items()):
+        if adjusted_mw_p_values[i] < args.FDR_threshold:
+            filtered_pathways.append({
+                'Pathway': pathway,
+                'Adjusted_p_value': adjusted_mw_p_values[i],
+                'Genes': genes[0]
+            })
 
-    # Filter pathways based on adjusted p-values and Jaccard index
-    filtered_pathways = {}
-    JAC_THRESHOLD = 0.05  # Set your Jaccard threshold
-    for i, pathway_i in enumerate(pathway_names):
-        if adjusted_mw_p_values[i] > 0.05:
-            continue
+    # Convert the list of filtered pathways to a DataFrame and sort by p-value
+    pathways_df = pd.DataFrame(filtered_pathways)
+    pathways_df.sort_values(by='Adjusted_p_value', inplace=True)
 
-    return significant_pathways_with_genes
+    # Filter out pathways with high overlap using the Jaccard index
+    for i, row in pathways_df.iterrows():
+        current_genes = set(row['Genes'])
+        if not any(jaccard_index(current_genes, set(filtered_row['Genes'])) > args.JAC_THRESHOLD
+                   for filtered_row in task.filtered_pathways.values()):
+            task.filtered_pathways[row['Pathway']] = row
+
+
+def print_enriched_pathways_to_file(task,FDR_threshold):
+    output_file_path = path.join(task.temp_output_folder, f'{task.name}.txt')
+    significant_count = 0  # Counter for significant pathways
+
+    with open(output_file_path, 'w') as file:
+        for pathway, details in task.filtered_pathways.items():
+            p_value = details.get('Adjusted_p_value')
+            if p_value is not None and p_value < FDR_threshold:
+                file.write(f"{pathway} {p_value:.5f}\n")  # Format p-value to 5 decimal places
+                significant_count += 1
+
+    print(f"Total significant pathways written: {significant_count}")
 
 
 def run(task, general_args):
@@ -89,7 +140,7 @@ def run(task, general_args):
     Main function to run the pathway enrichment analysis.
 
     Args:
-        task1 (Task): task to be processed.
+        task (Task): task to be processed.
         general_args (GeneralArgs): General configuration settings.
     Side Effects:
         Executes the entire pathway enrichment analysis workflow, including data loading, processing,
@@ -102,47 +153,9 @@ def run(task, general_args):
     genes_by_pathway, scores = load_network_and_pathways(general_args)
 
     # Stage 1 - calculate nominal p-values and directions
-    significant_pathways_with_genes = perform_statist(task, general_args, genes_by_pathway, scores)
+    perform_statist(task, general_args, genes_by_pathway, scores)
+    # Further statistical test using Mann-Whitney U test
+    perform_statist_mann_whitney(task, general_args, scores)
+    # Output the enriched pathways to files
+    print_enriched_pathways_to_file(task, general_args.FDR_threshold)
 
-
-
-    print("shuffling scores")
-    updated_prior_data = shuffle_scores(scores, 'Score', num_shuffles=num_shuffles)
-    print("Calculating empirical p-values")
-    updated_prior_data_float = updated_prior_data.select_dtypes(include=['number']).astype(float)
-    empirical_p_values = calculate_empirical_p_values(updated_prior_data_float, significant_pathways_with_genes,
-                                                          sign_test, num_simulations=num_shuffles)
-
-    # save empirical p values to csv
-    # get path
-    main_dir = path.dirname(path.realpath(__file__))
-    empirical_p_values_path = path.join(main_dir, 'Outputs', 'empirical_p_values',
-                                        f'empirical_p_values_ks.csv')
-    try:
-        with open(empirical_p_values_path, 'w', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(['Pathway', 'Empirical P-Value'])
-            for pathway, pval in empirical_p_values.items():
-                writer.writerow([pathway, pval])
-    except Exception as e:
-        print(f"Error occurred while saving CSV: {e}")
-
-    specific_pathways = [
-        "WP_PARKINSONS_DISEASE_PATHWAY",
-        "KEGG_PARKINSONS_DISEASE",
-        "REACTOME_ELASTIC_FIBRE_FORMATION",
-        "REACTOME_NUCLEAR_EVENTS_KINASE_AND_TRANSCRIPTION_FACTOR_ACTIVATION",
-        "REACTOME_BASIGIN_INTERACTIONS",
-        "REACTOME_NGF_STIMULATED_TRANSCRIPTION",
-        "WP_PHOTODYNAMIC_THERAPYINDUCED_HIF1_SURVIVAL_SIGNALING",
-        "WP_HAIR_FOLLICLE_DEVELOPMENT_CYTODIFFERENTIATION_PART_3_OF_3",
-        "WP_OLIGODENDROCYTE_SPECIFICATION_AND_DIFFERENTIATION_LEADING_TO_MYELIN_COMPONENTS_FOR_CNS",
-        "WP_DISRUPTION_OF_POSTSYNAPTIC_SIGNALING_BY_CNV",
-        "WP_SYNAPTIC_SIGNALING_PATHWAYS_ASSOCIATED_WITH_AUTISM_SPECTRUM_DISORDER",
-        "WP_PHOTODYNAMIC_THERAPYINDUCED_UNFOLDED_PROTEIN_RESPONSE",
-        "PID_AP1_PATHWAY",
-        "PID_HIF1_TFPATHWAY"
-    ]
-    for pathway, pval in empirical_p_values.items():
-        if pathway in specific_pathways:
-            print(f'{pathway}: {pval}')

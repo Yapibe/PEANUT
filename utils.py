@@ -6,8 +6,7 @@ import os
 from os import path
 import pickle
 import zlib
-import args
-import openpyxl
+import matplotlib.pyplot as plt
 
 def save_filtered_pathways_to_tsv(pathways_with_many_genes, genes_by_pathway, output_file_path):
     """
@@ -219,25 +218,24 @@ def load_pathways_genes(pathways_dir):
     return pathways
 
 
-def load_file(load_dir, decompress=True):
+def load_file(file_path, decompress=True):
     """
-    Loads an object from a file using pickle with optional decompression.
+    Loads the propagation score data from a file.
 
     Args:
-        load_dir (str): The directory from which to load the file.
-        decompress (bool, optional): Whether to decompress the file.
+        file_path (str): The path to the file to be loaded.
 
     Returns:
-        file (dict): The object loaded from the file.
+        dict: The loaded data containing propagation scores and other information.
     """
-    with open(load_dir, 'rb') as f:
-        file = pickle.load(f)
+    with open(file_path, 'rb') as file:
+        decompressed_data = pickle.load(file)
     if decompress:
         try:
-            file = pickle.loads(zlib.decompress(file))
+            decompressed_data = pickle.loads(zlib.decompress(decompressed_data))
         except zlib.error:
             print('Entered an uncompressed file but asked to decompress it')
-    return file
+    return decompressed_data
 
 
 def load_propagation_scores(propagation_file_path):
@@ -281,24 +279,34 @@ def load_network_and_pathways(general_args):
 
 
 def get_scores(score_path):
-    # Path to the file containing the raw scores (adjust as necessary)
-    # raw_scores_file_path = score_path
+    """
+        Loads gene scores and P-values from a file and returns a dictionary mapping gene IDs to their scores and P-values.
 
+        Args:
+            score_path (str): The path to the file containing the propagation scores.
+
+        Returns:
+            dict: A dictionary with gene IDs as keys and tuples of (Score, P-value) as values.
+        """
     try:
-        # Load raw data from the file
-        propagation_result_dict = load_propagation_scores(score_path)
+        # Load propagation results from the specified file
+        propagation_results = load_propagation_scores(score_path)
 
-        sorted_scores = propagation_result_dict['gene_prop_scores'].sort_values(by='GeneID').reset_index(drop=True)
-        # Create a dictionary for gene_id_to_score
-        scores_dict = {gene_id: score for gene_id, score in zip(sorted_raw_data['GeneID'], sorted_raw_data['Score'])}
-        return scores_dict
+        # Sort the propagation scores by GeneID
+        sorted_scores = propagation_results['gene_prop_scores'].sort_values(by='GeneID').reset_index(drop=True)
+
+        # Create a dictionary mapping gene IDs to tuples of (Score, P-value)
+        gene_scores = {gene_id: (score, pvalue) for gene_id, score, pvalue
+                       in zip(sorted_scores['GeneID'], sorted_scores['Score'], sorted_scores['P-value'])}
+
+        return gene_scores
 
     except FileNotFoundError:
-        print(f"File not found: {raw_scores_file_path}")
-        return pd.DataFrame(), {}
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return pd.DataFrame(), {}
+        print(f"File not found: {score_path}")
+        return {}
+    except Exception as error:
+        print(f"An error occurred: {error}")
+        return {}
 
 def load_and_prepare_data(task):
     data = read_prior_set(task.experiment_file_path)
@@ -311,3 +319,234 @@ def load_and_prepare_data(task):
     data = data.reset_index(drop=True)
 
     return data
+
+
+def read_pathways(file_name):
+    """
+    Reads pathways from a file into a dictionary mapping each pathway to a list of gene IDs.
+
+    Parameters:
+    - file_name (str): Path to the file containing the pathways.
+
+    Returns:
+    dict: A dictionary mapping pathway names to lists of gene IDs.
+    """
+    try:
+        with open(file_name, 'r') as file:
+            return {line.split()[0]: [int(gene) for gene in line.split()[2:]] for line in file if line.strip()}
+    except FileNotFoundError:
+        print(f"File not found: {file_name}")
+        return {}
+    except Exception as e:
+        print(f"Error reading pathways from {file_name}: {e}")
+        return {}
+
+
+def read_temp_scores(file_name):
+    """
+    Read scores from a file into a dictionary.
+
+    Parameters:
+    - file_name (str): Path to the file containing the scores.
+
+    Returns:
+    dict: A dictionary mapping pathways to their scores.
+    """
+    try:
+        scores = pd.read_csv(file_name, sep=' ', header=None, names=['Pathway', 'Score'], index_col='Pathway')
+        return scores['Score'].to_dict()
+    except FileNotFoundError:
+        print(f"File not found: {file_name}")
+        return {}
+    except Exception as e:
+        print(f"Error reading scores from {file_name}: {e}")
+        return {}
+
+
+def process_condition(condition_file, experiment_file, pathways_file, all_pathways, P_VALUE_THRESHOLD=0.05):
+    """
+    Processes experimental data to determine the enrichment and trends of pathways based on specified conditions.
+
+    Parameters:
+    - condition_file (str): Path to the file containing score conditions.
+    - experiment_file (str): Path to the file containing experimental data.
+    - pathways_file (str): Path to the file containing pathways data.
+
+    Returns:
+    dict: A dictionary containing scores, enriched pathway genes, and mean scores for pathways under the given condition.
+    """
+    # Read scores for the condition, mapping pathways to their scores
+    enriched_pathway_dict = read_temp_scores(condition_file)
+
+    # Load experiment data and filter out entries where the score is zero. experiment file is xlsx
+    condition_data_df = pd.read_excel(experiment_file)
+    experiment_data_filtered_df = condition_data_df[condition_data_df['Score'] != 0]
+
+    # Extract the condition name from the file name
+    condition_name = os.path.basename(condition_file).split('.')[-2]
+
+    # Load pathway data mapping pathway names to lists of gene IDs
+    homo_sapien_pathway_dict = read_pathways(pathways_file)
+
+    # Dictionary to store enriched pathway genes
+    enriched_pathway_genes = {}
+
+    # Loop through each pathway
+    for pathway in all_pathways:
+        # Initialize a dictionary for the pathway under the current condition
+        all_pathways[pathway][condition_name] = {}
+
+        # List of genes associated with the current pathway
+        pathway_genes = homo_sapien_pathway_dict[pathway]
+
+        # Filter the experiment data to only include genes that are part of the current pathway
+        pathway_filtered_genes = experiment_data_filtered_df[experiment_data_filtered_df['GeneID'].isin(pathway_genes)]
+
+        # Store details of filtered genes in a dictionary
+        enriched_pathway_genes[pathway] = pathway_filtered_genes.set_index('GeneID')[['Symbol', 'Score', 'P-value']].to_dict(
+            orient='index')
+
+        # Filter to find significant genes based on the P-value threshold
+        significant_genes = {gene_id: gene_details for gene_id, gene_details in
+                             enriched_pathway_genes[pathway].items() if
+                             gene_details['P-value'] <= P_VALUE_THRESHOLD}
+
+        # Calculate the mean score of significant genes or set to 0 if none are significant
+        mean_score = np.mean(
+            [gene_details['Score'] for gene_details in significant_genes.values()]) if significant_genes else 0
+
+        # Store the mean score and significant genes for the pathway under the condition
+        all_pathways[pathway][condition_name]['Mean'] = mean_score
+        all_pathways[pathway][condition_name]['significant_genes'] = significant_genes
+
+        # Check if the pathway is in the enriched pathway dictionary to assign a P-value and trend
+        if pathway in enriched_pathway_dict:
+            all_pathways[pathway][condition_name]['P-value'] = enriched_pathway_dict[pathway]
+            all_pathways[pathway][condition_name]['Trend'] = "Up*" if mean_score > 0 else "Down*"
+        else:
+            all_pathways[pathway][condition_name]['P-value'] = 1  # Default P-value if not in enriched dictionary
+            all_pathways[pathway][condition_name]['Trend'] = "Up" if mean_score > 0 else "Down"
+
+
+def print_aggregated_pathway_information(output_dir, experiment_name, all_pathways):
+    """
+    Print aggregated pathway information including P-values, trends, and significant genes
+    for each pathway to a text file based on a given experiment.
+
+    Parameters:
+    - output_dir (str): Directory where the output text file will be saved.
+    - experiment_name (str): Name of the experiment used to name the output file.
+    """
+    # Define the path for the output file
+    file_path = os.path.join(output_dir, 'Text', f'{experiment_name}_aggregated.txt')
+
+    # Create a list of (pathway, best_p_value) tuples
+    pathways_p_values = []
+    for pathway, conditions in all_pathways.items():
+        # Find the minimum P-value for each pathway across all conditions
+        best_p_value = min(condition_data['P-value'] for condition_data in conditions.values())
+        pathways_p_values.append((pathway, best_p_value))
+
+    # Sort pathways by the best (lowest) P-value
+    pathways_sorted = sorted(pathways_p_values, key=lambda x: x[1])
+
+    # Write to the output file
+    with open(file_path, 'w') as file:
+        for pathway, best_p_value in pathways_sorted:
+            file.write(f"Pathway: {pathway} P-value: {best_p_value:.5f}\n")  # Print pathway and its best P-value
+
+            # Aggregate and write trends for all conditions for the pathway
+            trends = [f"{condition_name}: {all_pathways[pathway][condition_name]['Trend']}"
+                      for condition_name in all_pathways[pathway]]
+            file.write(f"Trends: {', '.join(trends)}\n")
+
+            # Aggregate and write significant genes across all conditions
+            file.write("Significant Genes:\n")
+            gene_scores_across_conditions = {}
+            for condition_name, condition_data in all_pathways[pathway].items():
+                for gene_id, gene_info in condition_data.get('significant_genes', {}).items():
+                    if gene_id not in gene_scores_across_conditions:
+                        gene_scores_across_conditions[gene_id] = {'Symbol': gene_info['Symbol'], 'Scores': []}
+                    gene_scores_across_conditions[gene_id]['Scores'].append(gene_info['Score'])
+
+            # List each gene with its scores across conditions
+            for gene_id, gene_data in gene_scores_across_conditions.items():
+                scores_str = ', '.join(map(str, gene_data['Scores']))
+                file.write(f"    {gene_data['Symbol']}: {scores_str}\n")
+
+            file.write("\n")
+
+
+def plot_pathways_mean_scores(output_dir, experiment_name, all_pathways, P_VALUE_THRESHOLD=0.05):
+    """
+    Plots mean scores of pathways across different experimental conditions in a horizontal bar chart,
+    highlighting significant differences.
+
+    Parameters:
+    - output_dir (str): The directory where the plot will be saved.
+    - experiment_name (str): The name of the experiment to be used in naming the output file.
+    """
+    # Initialize dictionaries to store mean scores and p-values for each condition
+    mean_scores_data = {}
+    p_values_data = {}
+    for pathway, conditions in all_pathways.items():
+        for condition_name, condition_data in conditions.items():
+            mean_scores_data.setdefault(condition_name, {})[pathway] = condition_data.get('Mean', 0)
+            p_values_data.setdefault(condition_name, {})[pathway] = condition_data.get('P-value', 1)
+
+    # Create DataFrames from the dictionaries
+    data_df = pd.DataFrame(mean_scores_data)
+    p_values_df = pd.DataFrame(p_values_data)
+
+    # Create a large figure to accommodate the potentially large number of pathways
+    plt.figure(figsize=(20, 60))  # This may need adjustment based on the actual data
+    ax = plt.subplot(111)
+
+    # Prepare data for plotting
+    conditions = list(mean_scores_data.keys())
+    total_pathways = data_df.index
+    num_conditions = len(conditions)
+    bar_height = 0.8 / num_conditions  # Calculate bar height based on the number of conditions
+    positions = np.arange(len(total_pathways))
+
+    # Generate a color map for the conditions
+    colors = plt.cm.get_cmap('viridis', num_conditions)
+
+    # Define keywords for bold formatting
+    keywords = ['NEURO', 'SYNAP']
+
+    # Plot each condition's mean scores for each pathway
+    for i, condition in enumerate(conditions):
+        mean_scores = data_df[condition].values
+        p_values = p_values_df[condition].values
+
+        # Plot bars with different styles based on p-value significance
+        for j, (score, p_value) in enumerate(zip(mean_scores, p_values)):
+            bar_style = {"color": "white", "edgecolor": colors(i), "hatch": "//"} if p_value > P_VALUE_THRESHOLD else {"color": colors(i)}
+            ax.barh(positions[j] + bar_height * i, score, height=bar_height, **bar_style)
+
+    # Set y-axis labels to be pathway names, replace underscores with spaces for readability
+    ax.set_yticks(positions + bar_height * (num_conditions / 2) - bar_height / 2)
+    formatted_pathways = [pathway.replace('_', ' ') for pathway in total_pathways]
+    ax.set_yticklabels(formatted_pathways, fontsize=12)
+
+    # Bold labels for specific keywords
+    for i, label in enumerate(ax.get_yticklabels()):
+        if any(keyword in label.get_text().upper() for keyword in keywords):
+            label.set_fontweight('bold')
+
+    # Label axes and set title
+    ax.set_ylabel('Pathways', fontsize=16)
+    ax.set_xlabel('Mean Scores', fontsize=16)
+    ax.set_title('Pathway Mean Scores Across Different Conditions', fontsize=20)
+
+    # Create a legend for the conditions
+    plt.legend([plt.Rectangle((0,0),1,1, color=colors(i)) for i in range(num_conditions)], conditions, prop={'size': 14})
+
+    # Adjust subplot layout to avoid clipping of tick-labels
+    plt.subplots_adjust(left=0.4)
+
+    # Save the figure to a PDF file in the specified output directory
+    output_file_path = os.path.join(output_dir, 'Plots', f"{experiment_name}_pathway_scores.pdf")
+    plt.savefig(output_file_path, format='pdf', bbox_inches='tight')
+    plt.show()

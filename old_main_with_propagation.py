@@ -1,12 +1,12 @@
 from args import PropagationTask, EnrichTask, GeneralArgs
-from utils import save_propagation_score, read_prior_set, get_propagation_input, filter_network_by_prior_data
+from utils import save_propagation_score, read_prior_set, get_propagation_input, filter_network_by_prior_data, read_temp_scores, process_condition, print_aggregated_pathway_information, plot_pathways_mean_scores
 from propagation_routines import propagate_network, generate_similarity_matrix, read_sparse_matrix_txt
 from statistic_methods import wilcoxon_rank_sums_test, students_t_test, kolmogorov_smirnov_test
 from pathway_enrichment import run
 import time
 import numpy as np
 import os
-
+import shutil
 
 
 def perform_propagation(prop_task):
@@ -46,7 +46,10 @@ def perform_propagation(prop_task):
         # make gene_scores a 2 dimensional array
         gene_scores = gene_scores.reshape((len(gene_scores), 1))
 
-        save_propagation_score(propagation_scores=gene_scores, prior_set=sorted_prior_data,
+        posterior_set = sorted_prior_data.copy()
+        posterior_set['Score'] = gene_scores.flatten()
+
+        save_propagation_score(propagation_scores=posterior_set, prior_set=sorted_prior_data,
                                propagation_input=propagation_input, genes_id_to_idx=experiment_gene_index,
                                task=prop_task, save_dir=prop_task.output_folder)
 
@@ -56,6 +59,9 @@ def perform_propagation(prop_task):
     filtered_network = filter_network_by_prior_data(prop_task.network_file_path, prior_data)
     # Intersection with network nodes
     all_genes_ids = filtered_network.nodes()
+
+    # Filter prior_data to include only genes in the filtered network
+    filtered_prior_data = prior_data[prior_data['GeneID'].isin(all_genes_ids)]
 
     # create or upload similarity matrix
     if prop_task.create_similarity_matrix:
@@ -90,9 +96,13 @@ def perform_propagation(prop_task):
     non_zero_indices = np.nonzero(propagation_score != 0)[0]
     propagation_score[non_zero_indices] = propagation_score[non_zero_indices] / np.abs(ones_gene_scores_inverse[non_zero_indices])
 
+    # Create posterior set DataFrame
+    posterior_set = filtered_prior_data.copy()
+    posterior_set['Score'] = propagation_score
+
     # save propagation score
     print("saving propagation score")
-    save_propagation_score(propagation_scores=propagation_score, prior_set=prior_data, propagation_input=propagation_input,
+    save_propagation_score(propagation_scores=posterior_set, prior_set=prior_data, propagation_input=propagation_input,
                            genes_id_to_idx=network_gene_index, task=prop_task, save_dir=prop_task.output_folder)
 
 
@@ -137,16 +147,26 @@ def main(run_propagation=True, run_enrichment=True):
     - None: This function orchestrates the execution of other functions but does not return a value.
     """
     # Identify test conditions from the input directory
-    input_dir = os.path.join(root_folder, 'Inputs', 'experiments_data', 'Parkinson')
-    test_list = [file.split('.')[0] for file in os.listdir(input_dir) if file.endswith('.xlsx')]
+    Experiment_name = 'Parkinson'
+    input_dir = os.path.join(root_folder, 'Inputs', 'experiments_data', Experiment_name)
+    temp_output_folder = os.path.join(root_folder, 'Outputs', 'Temp')
+    pathway_file_dir = os.path.join(root_folder,'Data', 'H_sapiens', 'pathways', 'pathways')
+    # Directory for storing output files
+    output_path = os.path.join(root_folder, 'Outputs')
 
-    for test_name in test_list:
+    # Get a list of all .xlsx files in the input directory
+    test_file_paths = [os.path.join(input_dir, file) for file in os.listdir(input_dir) if file.endswith('.xlsx')]
+
+    # Get a list of just the names of the files without the extensions
+    test_name_list = [os.path.splitext(file)[0] for file in os.listdir(input_dir) if file.endswith('.xlsx')]
+
+    for test_name in test_name_list:
         print(f"Running propagation and enrichment on {test_name}")
 
         # Create a propagation task
         prop_task = PropagationTask(experiment_file_path=os.path.join(input_dir, f'{test_name}.xlsx'),
                                     experiment_name=test_name, root_folder=root_folder, create_similarity_matrix=False,
-                                    alpha=0.1)
+                                    alpha=1)
 
         if run_propagation:
             perform_propagation(prop_task)
@@ -154,14 +174,42 @@ def main(run_propagation=True, run_enrichment=True):
         if run_enrichment:
             perform_enrichment(prop_task)
 
+    print("finished enrichment")
+
+    # Get the list of condition files
+    condition_files = [os.path.join(temp_output_folder, file) for file in os.listdir(temp_output_folder)]
+
+
+    all_pathways = {}
+
+    # Load enriched pathways from files into a dictionary for further processing
+    for condition_file in condition_files:
+        enriched_pathway_dict = read_temp_scores(condition_file)
+        for pathway in enriched_pathway_dict.keys():
+            if pathway not in all_pathways:
+                all_pathways[pathway] = {}
+
+    # Process conditions and aggregate data
+    for condition_file, experiment_file in zip(condition_files, test_file_paths):
+        process_condition(condition_file, experiment_file, pathway_file_dir, all_pathways)
+
+    # Output aggregated pathway information to a text file
+    print_aggregated_pathway_information(output_path, Experiment_name, all_pathways)
+
+    # Visualize mean scores of pathways across all conditions
+    plot_pathways_mean_scores(output_path, Experiment_name, all_pathways)
+
+    # Clean up temporary output folder if it exists
+    if os.path.exists(temp_output_folder):
+        shutil.rmtree(temp_output_folder)
 
 if __name__ == '__main__':
     start = time.time()
     # Dynamically determine the root path
     root_folder = os.path.dirname(os.path.abspath(__file__))
     # Set these flags to control the tasks to run
-    run_propagation_flag = True
-    run_enrichment_flag = True
+    run_propagation_flag = False
+    run_enrichment_flag = False
 
     main(run_propagation=run_propagation_flag, run_enrichment=run_enrichment_flag)
 

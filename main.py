@@ -241,7 +241,6 @@ def perform_statist_mann_whitney(passed_ks_pathway_dict, scores):
     dict: Filtered pathways after applying statistical tests and corrections.
     """
     mw_p_values = []  # List to store Mann-Whitney p-values
-    significant_pathways_with_genes = {}
 
     # Use filtered_genes for ranking and background scores
     filtered_scores = [scores['Score'][gene_id] for gene_id in filtered_genes]
@@ -264,11 +263,11 @@ def perform_statist_mann_whitney(passed_ks_pathway_dict, scores):
 
         # Compute the Mann-Whitney U test p-value using scores
         mw_pval = wilcoxon_rank_sums_test(pathway_scores, background_scores)
-        _, rmw_pval = compute_mw_python(pathway_ranks, background_ranks)
+        # _, rmw_pval = compute_mw_python(pathway_ranks, background_ranks)
         mw_p_values.append(mw_pval)
-
+    # empty filtered_genes
+    filtered_genes.clear()
     # Apply Benjamini-Hochberg correction to adjust the p-values
-    # adjusted_mw_p_values = bh_correction(np.array(mw_p_values))
     adjusted_mw_p_values = multipletests(mw_p_values, method='fdr_bh')[1]
 
     # Collect significant pathways after adjustment
@@ -567,41 +566,6 @@ def process_condition(condition_file, experiment_file, pathways_file):
             all_pathways[pathway][condition_name]['Trend'] = "Up" if mean_score > 0 else "Down"
 
 
-# def process_condition(condition_file, experiment_file, pathways_file):
-#     """Processes an experiment and returns scores, enriched pathway genes, and mean scores."""
-#     enriched_pathway_dict = read_scores(condition_file)
-#     condition_data_df = pd.read_csv(experiment_file)
-#     condition_data_df_filtered = condition_data_df[condition_data_df['Score'] != 0]
-#     condition_name = path.basename(condition_file).split('.')[-1]
-#     homo_sapien_pathway_dict = read_pathways(pathways_file)
-#     enriched_pathway_genes = {}
-#
-#     for pathway in all_pathways:
-#         all_pathways[pathway][condition_name] = {}
-#         pathway_genes = homo_sapien_pathway_dict[pathway]
-#         filtered_genes = condition_data_df_filtered[condition_data_df_filtered['GeneID'].isin(pathway_genes)]
-#         enriched_pathway_genes[pathway] = filtered_genes.set_index('GeneID')[['Symbol', 'Score', 'P-value']].to_dict(
-#             orient='index')
-#         significant_genes = {gene_id: gene_details for gene_id, gene_details in
-#                              enriched_pathway_genes[pathway].items() if
-#                              gene_details['P-value'] <= P_VALUE_THRESHOLD}
-#         if significant_genes:
-#             mean_score = np.mean([gene_details['Score'] for gene_details in significant_genes.values()])
-#         else:
-#             mean_score = 0
-#         all_pathways[pathway][condition_name]['Mean'] = mean_score
-#         # Assign significant genes to the pathway in all_pathways
-#         all_pathways[pathway][condition_name]['significant_genes'] = significant_genes
-#         if pathway in enriched_pathway_dict.keys():
-#             all_pathways[pathway][condition_name]['P-value'] = enriched_pathway_dict[pathway]
-#             all_pathways[pathway][condition_name]['Trend'] = "Up*" if mean_score > 0 else "Down*"
-#         else:
-#             all_pathways[pathway][condition_name]['P-value'] = 1
-#             # Filter genes based on p-value threshold
-#             all_pathways[pathway][condition_name]['Trend'] = "Up" if mean_score > 0 else "Down"
-
-
-
 def print_aggregated_pathway_information(output_dir, experiment_name):
     """
     Print aggregated pathway information including P-values, trends, and significant genes
@@ -758,7 +722,6 @@ all_pathways = {}
 # Load enriched pathways from files into a dictionary for further processing
 for condition_file in condition_files:
     enriched_pathway_dict = read_scores(condition_file)
-    condition_name = os.path.basename(condition_file).split('.')[-2]
     for pathway in enriched_pathway_dict.keys():
         if pathway not in all_pathways:
             all_pathways[pathway] = {}

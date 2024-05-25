@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.stats import ranksums, rankdata, ttest_ind, ks_2samp, ttest_rel
+from scipy.stats import ranksums, rankdata, ttest_ind, ks_2samp, ttest_rel,norm, hypergeom
 from tqdm import tqdm
 from math import sqrt, fabs
 
@@ -19,22 +19,21 @@ class StatResults:
         self.name = name
 
 
-def wilcoxon_rank_sums_test(experiment_scores, elements_scores, alternative='two-sided', **kwargs) -> StatResults:
+def wilcoxon_rank_sums_test(experiment_scores, control_scores, alternative='two-sided'):
     """
-    Performs the Wilcoxon rank-sums test (Mann-Whitney U test) on two sets of scores.
+    Perform the Wilcoxon rank-sum test to compare two independent samples.
 
-    Args:
-        experiment_scores (array_like): Array of scores from the experiment group.
-        elements_scores (array_like): Array of scores from the control group.
-        alternative (str, optional): Defines the alternative hypothesis. Possible values are 'two-sided', 'less', or 'greater'.
+    Parameters:
+    - experiment_scores (list): Scores from the experimental group.
+    - control_scores (list): Scores from the control group.
+    - alternative (str): Defines the alternative hypothesis ('two-sided', 'less', 'greater').
 
     Returns:
-        StatResults: Object containing the p-value, directionality, and name of the test.
+    float: The P-value from the Wilcoxon rank-sum test.
     """
-    wilcoxon_rank_sums_test.name = 'Wilcoxon_rank_sums_test'
-    p_vals = ranksums(experiment_scores, elements_scores, alternative=alternative).pvalue
-    direction = np.mean(experiment_scores) > 0
-    return StatResults(p_value=p_vals, directionality=direction, name=wilcoxon_rank_sums_test.name)
+    from scipy.stats import ranksums
+    p_vals = ranksums(experiment_scores, control_scores, alternative=alternative).pvalue
+    return p_vals
 
 
 # Wilcoxon signed-rank test function
@@ -148,80 +147,132 @@ def paired_sample_t_test(real_scores, shuffled_scores):
     return t_statistic
 
 
-def kolmogorov_smirnov_test(experiment_scores, control_scores, alternative='two-sided') -> StatResults:
+def kolmogorov_smirnov_test(experiment_scores, control_scores):
     """
-    Performs the Kolmogorov-Smirnov test on two sets of scores.
+    Perform the Kolmogorov-Smirnov test to compare two samples.
 
-    Args:
-        experiment_scores (array_like): Array of scores from the experiment group.
-        control_scores (array_like): Array of scores from the control group.
-        alternative (str, optional): Defines the alternative hypothesis. Possible values are 'two-sided', 'less', or 'greater'.
+    Parameters:
+    - experiment_scores (list): Scores from the experimental group.
+    - control_scores (list): Scores from the control group.
 
     Returns:
-        StatResults: Object containing the p-value, directionality, and name of the test.
+    float: The P-value from the KS test indicating statistical difference.
     """
-    ks_stats, p_value = ks_2samp(experiment_scores, control_scores, alternative=alternative)
-
-
-    # Convert lists to numpy arrays and sort
+    # Convert lists to numpy arrays for efficient operations
     experiment_scores = np.sort(experiment_scores)
     control_scores = np.sort(control_scores)
 
-    # Initialize variables
+    # Calculate the length of each sample
     en1 = len(experiment_scores)
     en2 = len(control_scores)
 
-
-    # Calculate empirical cumulative distribution functions for both sets
+    # Combine the scores and compute cumulative distribution functions
     data_all = np.concatenate([experiment_scores, control_scores])
     cdf_experiment = np.searchsorted(experiment_scores, data_all, side='right') / en1
     cdf_control = np.searchsorted(control_scores, data_all, side='right') / en2
 
-    # Find the maximum distance
+    # Compute the maximum distance between the two CDFs
     D = np.max(np.abs(cdf_experiment - cdf_control))
 
     # Calculate the KS statistic
     en = np.sqrt(en1 * en2 / (en1 + en2))
     p_value = ks((en + 0.12 + 0.11 / en) * D)
 
-    # Determine directionality
-    if np.mean(experiment_scores) > np.mean(control_scores):
-        direction = 'greater'
-    elif np.mean(experiment_scores) < np.mean(control_scores):
-        direction = 'less'
-    else:
-        direction = 'not significant'
-
-    return StatResults(p_value=p_value, directionality=direction, name="Kolmogorov-Smirnov Test")
-
-
+    return p_value
 
 
 def ks(alam):
-    EPS1 = 1e-6  # Convergence criterion based on the term's absolute value
-    EPS2 = 1e-10  # Convergence criterion based on the sum's relative value
-    a2 = -2.0 * alam**2  # Squared and negated lambda for exponential calculation
-    fac = 2.0
-    sum = 0.0
-    termbf = 0.0
+    """
+    Compute the Kolmogorov-Smirnov probability given a lambda value.
 
-    # Iteratively calculate the KS probability
+    Parameters:
+    - alam (float): Lambda value for the KS statistic.
+
+    Returns:
+    float: The probability associated with the KS statistic.
+    """
+    EPS1 = 1e-6  # Precision for the convergence of term's absolute value
+    EPS2 = 1e-10  # Precision for the convergence of the series_sum's relative value
+    a2 = -2.0 * alam ** 2  # Adjust lambda for exponential calculation
+    fac = 2.0
+    series_sum = 0.0
+    previous_term = 0.0
+
+    # Sum the series until convergence criteria are met
     for j in range(1, 101):
-        term = fac * np.exp(a2 * j**2)  # Calculate term of the series
-        sum += term  # Add to sum
+        term = fac * np.exp(a2 * j ** 2)  # Calculate term of the series
+        series_sum += term  # Add to series_sum
 
         # Check for convergence
-        if np.abs(term) <= EPS1 * termbf or np.abs(term) <= EPS2 * sum:
-            return sum
+        if np.abs(term) <= EPS1 * previous_term or np.abs(term) <= EPS2 * series_sum:
+            return series_sum
 
         fac = -fac  # Alternate the sign
-        termbf = np.abs(term)  # Update term before flag
+        previous_term = np.abs(term)  # Update the term before flag
 
-    # Return 1.0 if the series does not converge in 100 terms
+    # Return 1.0 if the series does not converge within 100 terms
     return 1.0
+
+
+def compute_mw_python(experiment_ranks, control_ranks):
+    """
+    Compute the Mann-Whitney U test manually using rank sums to determine the statistical difference
+    between two independent samples.
+
+    Parameters:
+    - experiment_ranks (list): Ranks of the experimental group.
+    - control_ranks (list): Ranks of the control group.
+    Returns:
+    tuple: The Mann-Whitney U statistic and the corresponding p-value.
+    """
+
+    # Calculate the sum of ranks for each group
+    R1 = np.sum(experiment_ranks)
+    R2 = np.sum(control_ranks)
+
+    # Number of observations in each group
+    n1 = len(experiment_ranks)
+    n2 = len(control_ranks)
+
+    # Compute the Mann-Whitney U statistics for both groups
+    U1 = R1 - n1 * (n1 + 1) / 2  # U statistic for the experimental group
+    U2 = R2 - n2 * (n2 + 1) / 2  # U statistic for the control group
+
+    # Use the smaller U statistic as the test statistic
+    U = min(U1, U2)
+
+    # Calculate the mean and standard deviation for the U distribution under H0 (null hypothesis)
+    mean_U = n1 * n2 / 2
+    std_U = np.sqrt(n1 * n2 * (n1 + n2 + 1) / 12)
+
+    # Calculate the Z-score associated with U statistic
+    Z = (U - mean_U) / std_U
+
+    # Calculate the two-tailed p-value from the Z-score
+    p_value = 2 * norm.cdf(-np.abs(Z))  # Two-tailed test
+
+    return U, p_value
 
 
 def jaccard_index(set1, set2):
     intersection = len(set1.intersection(set2))
     union = len(set1.union(set2))
     return intersection / union
+
+
+def hypergeometric_sf(x, M, N, n):
+    """
+    Calculate the survival function (complement of the CDF) for the hypergeometric distribution.
+
+    Parameters:
+    - x (int): The number of successful draws.
+    - M (int): The total size of the population.
+    - N (int): The number of success states in the population.
+    - n (int): The number of draws.
+
+    Returns:
+    float: The survival function probability.
+    """
+    # Calculate the survival function using hypergeometric distribution
+    probability = hypergeom.sf(x - 1, M, N, n)
+    return probability

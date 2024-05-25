@@ -86,51 +86,12 @@ class EnrichTask:
         self.target_field = target_field
         self.results = dict()
         self.create_scores = create_scores
+        self.filtered_genes = set()
+        self.filtered_pathways = dict()
+        self.ks_significant_pathways_with_genes = dict()
+        self.temp_output_folder = path.join(path.dirname(path.realpath(__file__)), 'Outputs', 'Temp')
         # self.similarity_matrix_path = path.join(path.dirname(path.realpath(__file__)), 'Data',
         #                                         'H_sapiens', 'matrix', f'similarity_matrix_{alpha}.npz')
-
-class NewEnrichTask:
-    def __init__(self, experiment_name, statistic_test):
-        """
-        Initializes an enrichment task with specified parameters.
-
-        This class configures an enrichment analysis task, including setting file paths and statistical tests
-        Parameters:
-        - experiment_name (str): Name of the experiment.
-        - statistic_test (function): Statistical test function to use for enrichment analysis.
-        - network_file (str): Name of the file containing the network data. (optional if needed)
-        Attributes:
-        - Paths and parameters for running enrichment analysis.
-        """
-        self.experiment_name = experiment_name
-        self.species = 'H_sapiens'
-        self.statistic_test = statistic_test
-        self.results = dict()
-        self.root_folder = path.dirname(path.realpath(__file__))
-        self.data_file = 'Data'
-        # self.network_file = network_file  # optional if needed
-        self.genes_names_file = 'H_sapiens.gene_info'  # optional if needed
-        self.date = datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
-        self.pathway_file = 'pathways'
-
-        # Derived Parameters (Initial placeholders)
-        self.data_dir = path.join(self.root_folder, self.data_file)
-        self.genes_names_file_path = path.join(self.data_dir, self.species, 'genes_names', self.genes_names_file)  # optional if needed
-        self.pathway_file_dir = path.join(self.data_dir, self.species, 'pathways', self.pathway_file)
-        # self.network_file_path = path.join(self.data_dir, 'H_sapiens', 'network', self.network_file)  # optional if needed
-        self.input_dir = None
-        self.output_folder = None
-
-        # Initialize derived parameters
-        self.get_derived_parameters()
-
-    def get_derived_parameters(self):
-        """
-        Set derived parameters based on the initial parameters.
-        """
-        self.input_dir = path.join(self.root_folder, 'Inputs', 'experiments_data')
-        self.experiment_file_path = path.join(self.input_dir, f'{self.experiment_name}.xlsx')
-        self.output_folder = path.join(self.root_folder, 'Outputs', 'enrichment_scores', self.experiment_name)
 
 
 class GeneralArgs:
