@@ -127,7 +127,7 @@ def perform_enrichment(prop_task):
     else:
         general_args = GeneralArgs(prop_task.network_file_path, genes_names_path=prop_task.genes_names_file_path,
                                    pathway_members_path=prop_task.pathway_file_dir,
-                                   propagation_file='TvN_1_26_11_2023_20_07_31', propagation_folder= propagation_folder)
+                                   propagation_file='10um_v_T_1_26_05_2024__03_59_46', propagation_folder= propagation_folder)
 
     enrich_task = EnrichTask(name=prop_task.experiment_name, create_scores=True, target_field='gene_prop_scores',
                              statistic_test=kolmogorov_smirnov_test)
@@ -147,6 +147,9 @@ def main(run_propagation=True, run_enrichment=True):
     - None: This function orchestrates the execution of other functions but does not return a value.
     """
     # Identify test conditions from the input directory
+    temp_output_folder = os.path.join(root_folder, 'Outputs', 'Temp')
+    # Ensure output directories exist
+    os.makedirs(temp_output_folder, exist_ok=True)
     Experiment_name = 'Parkinson'
     input_dir = os.path.join(root_folder, 'Inputs', 'experiments_data', Experiment_name)
     temp_output_folder = os.path.join(root_folder, 'Outputs', 'Temp')
@@ -208,8 +211,8 @@ if __name__ == '__main__':
     # Dynamically determine the root path
     root_folder = os.path.dirname(os.path.abspath(__file__))
     # Set these flags to control the tasks to run
-    run_propagation_flag = False
-    run_enrichment_flag = False
+    run_propagation_flag = True
+    run_enrichment_flag = True
 
     main(run_propagation=run_propagation_flag, run_enrichment=run_enrichment_flag)
 

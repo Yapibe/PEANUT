@@ -498,6 +498,13 @@ def plot_pathways_mean_scores(output_dir, experiment_name, all_pathways, P_VALUE
     data_df = pd.DataFrame(mean_scores_data)
     p_values_df = pd.DataFrame(p_values_data)
 
+    # Sort pathways alphabetically
+    sorted_pathways = sorted(data_df.index)
+
+    # Reorder the DataFrames based on the sorted pathways
+    data_df = data_df.loc[sorted_pathways]
+    p_values_df = p_values_df.loc[sorted_pathways]
+
     # Create a large figure to accommodate the potentially large number of pathways
     plt.figure(figsize=(20, 60))  # This may need adjustment based on the actual data
     ax = plt.subplot(111)
@@ -510,7 +517,7 @@ def plot_pathways_mean_scores(output_dir, experiment_name, all_pathways, P_VALUE
     positions = np.arange(len(total_pathways))
 
     # Generate a color map for the conditions
-    colors = plt.cm.get_cmap('viridis', num_conditions)
+    colors = plt.colormaps['viridis'](np.linspace(0, 1, num_conditions))
 
     # Define keywords for bold formatting
     keywords = ['NEURO', 'SYNAP']
@@ -522,7 +529,8 @@ def plot_pathways_mean_scores(output_dir, experiment_name, all_pathways, P_VALUE
 
         # Plot bars with different styles based on p-value significance
         for j, (score, p_value) in enumerate(zip(mean_scores, p_values)):
-            bar_style = {"color": "white", "edgecolor": colors(i), "hatch": "//"} if p_value > P_VALUE_THRESHOLD else {"color": colors(i)}
+            bar_style = {"color": "white", "edgecolor": colors[i], "hatch": "//"} if p_value > P_VALUE_THRESHOLD else {
+                "color": colors[i]}
             ax.barh(positions[j] + bar_height * i, score, height=bar_height, **bar_style)
 
     # Set y-axis labels to be pathway names, replace underscores with spaces for readability
@@ -541,12 +549,14 @@ def plot_pathways_mean_scores(output_dir, experiment_name, all_pathways, P_VALUE
     ax.set_title('Pathway Mean Scores Across Different Conditions', fontsize=20)
 
     # Create a legend for the conditions
-    plt.legend([plt.Rectangle((0,0),1,1, color=colors(i)) for i in range(num_conditions)], conditions, prop={'size': 14})
+    plt.legend([plt.Rectangle((0, 0), 1, 1, color=colors[i]) for i in range(num_conditions)], conditions,
+               prop={'size': 14})
 
     # Adjust subplot layout to avoid clipping of tick-labels
     plt.subplots_adjust(left=0.4)
 
     # Save the figure to a PDF file in the specified output directory
     output_file_path = os.path.join(output_dir, 'Plots', f"{experiment_name}_pathway_scores.pdf")
+    os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
     plt.savefig(output_file_path, format='pdf', bbox_inches='tight')
-    plt.show()
+    plt.close()  # Close the plot to avoid displaying it in environments like Jupyter Notebooks

@@ -124,7 +124,6 @@ def perform_statist_mann_whitney(task, args, scores):
 def print_enriched_pathways_to_file(task,FDR_threshold):
     output_file_path = path.join(task.temp_output_folder, f'{task.name}.txt')
     significant_count = 0  # Counter for significant pathways
-
     with open(output_file_path, 'w') as file:
         for pathway, details in task.filtered_pathways.items():
             p_value = details.get('Adjusted_p_value')
