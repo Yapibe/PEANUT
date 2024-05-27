@@ -1,189 +1,152 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
-from matplotlib.patches import Rectangle, Patch
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from os import path, makedirs
+import pandas as pd
 
-def sort_y_ticks_by_dir_and_pvalue_of_one_column(enrichment_table, y_ticks, annotation_map, direction,
-                                                 dir_column_to_sort_by=0):
+
+def print_aggregated_pathway_information(output_dir, experiment_name, all_pathways):
     """
-    Sorts the rows of the enrichment table by direction and p-value.
-    Args:
-        enrichment_table (numpy.ndarray): The enrichment table to sort.
-        y_ticks (list): The y-axis labels corresponding to rows in the enrichment table.
-        annotation_map (numpy.ndarray): Annotations for each cell in the enrichment table.
-        direction (numpy.ndarray): Array indicating the direction of enrichment for each row.
-        dir_column_to_sort_by (int): Index of the column in the direction array to sort by.
-    Returns:
-        tuple: Tuple containing sorted enrichment table, y-ticks, annotation map, and direction array.
+    Print aggregated pathway information including P-values, trends, and significant genes
+    for each pathway to a text file based on a given experiment.
+
+    Parameters:
+    - output_dir (str): Directory where the output text file will be saved.
+    - experiment_name (str): Name of the experiment used to name the output file.
     """
-    # 1. sort 0s from 1s in direction table
-    sorted_indexes1 = np.argsort(direction[:, dir_column_to_sort_by])
-    enrichment_table = enrichment_table[sorted_indexes1, :]
-    y_ticks = list(np.array(y_ticks)[sorted_indexes1])
-    annotation_map = annotation_map[sorted_indexes1, :]
-    direction = direction[sorted_indexes1, :]
+    # Define the path for the output file
+    file_path = path.join(output_dir, 'Text', f'{experiment_name}_aggregated.txt')
 
-    # 2. sort p_value within indexes with sorted direction (negative first, positives after)
-    negatives = len(direction[direction[:, dir_column_to_sort_by] == 0, dir_column_to_sort_by])
+    # Create a list of (pathway, best_p_value) tuples
+    pathways_p_values = []
+    for pathway, conditions in all_pathways.items():
+        # Find the minimum P-value for each pathway across all conditions
+        best_p_value = min(condition_data['P-value'] for condition_data in conditions.values())
+        pathways_p_values.append((pathway, best_p_value))
 
-    negative_enrichment_table = enrichment_table[:negatives, ]
-    positive_enrichment_table = enrichment_table[negatives:, ]
-    negative_annotation_map = annotation_map[:negatives, ]
-    positive_annotation_map = annotation_map[negatives:, ]
-    negative_direction = direction[:negatives, ]
-    positive_direction = direction[negatives:, ]
-    y_ticks_n = list(np.array(y_ticks)[:negatives])
-    y_ticks_p = list(np.array(y_ticks)[negatives:])
+    # Sort pathways by the best (lowest) P-value
+    pathways_sorted = sorted(pathways_p_values, key=lambda x: x[1])
 
-    sorted_positive_indexes = np.argsort(positive_enrichment_table[:, dir_column_to_sort_by])
-    sorted_negative_indexes = np.argsort(-negative_enrichment_table[:, dir_column_to_sort_by])  # sort descending
+    # Write to the output file
+    with open(file_path, 'w') as file:
+        for pathway, best_p_value in pathways_sorted:
+            file.write(f"Pathway: {pathway} P-value: {best_p_value:.5f}\n")  # Print pathway and its best P-value
 
-    sorted_positive_enrichment_table = positive_enrichment_table[sorted_positive_indexes, :]
-    sorted_negative_enrichment_table = negative_enrichment_table[sorted_negative_indexes, :]
-    sorted_positive_annotation_map = positive_annotation_map[sorted_positive_indexes, :]
-    sorted_negative_annotation_map = negative_annotation_map[sorted_negative_indexes, :]
-    sorted_positive_direction = positive_direction[sorted_positive_indexes, :]
-    sorted_negative_direction = negative_direction[sorted_negative_indexes, :]
-    y_ticks_ns = list(np.array(y_ticks_n)[sorted_negative_indexes])
-    y_ticks_ps = list(np.array(y_ticks_p)[sorted_positive_indexes])
+            # Aggregate and write trends for all conditions for the pathway
+            trends = [f"{condition_name}: {all_pathways[pathway][condition_name]['Trend']}"
+                      for condition_name in all_pathways[pathway]]
+            file.write(f"Trends: {', '.join(trends)}\n")
 
-    # 3. return joined objects, with negatives first.
-    return np.concatenate((sorted_negative_enrichment_table, sorted_positive_enrichment_table),
-                          axis=0), y_ticks_ns + y_ticks_ps, np.concatenate(
-        (sorted_negative_annotation_map, sorted_positive_annotation_map), axis=0), np.concatenate(
-        (sorted_negative_direction, sorted_positive_direction), axis=0)
+            # Aggregate and write significant genes across all conditions
+            file.write("Significant Genes:\n")
+            gene_scores_across_conditions = {}
+            for condition_name, condition_data in all_pathways[pathway].items():
+                for gene_id, gene_info in condition_data.get('significant_genes', {}).items():
+                    if gene_id not in gene_scores_across_conditions:
+                        gene_scores_across_conditions[gene_id] = {'Symbol': gene_info['Symbol'], 'Scores': []}
+                    gene_scores_across_conditions[gene_id]['Scores'].append(gene_info['Score'])
+
+            # List each gene with its scores across conditions
+            for gene_id, gene_data in gene_scores_across_conditions.items():
+                scores_str = ', '.join(map(str, gene_data['Scores']))
+                file.write(f"    {gene_data['Symbol']}: {scores_str}\n")
+
+            file.write("\n")
 
 
-def sort_y_ticks_by_dir(enrichment_table, y_ticks, annotation_map, direction):
+def print_enriched_pathways_to_file(task,FDR_threshold):
+    output_file_path = path.join(task.temp_output_folder, f'{task.name}.txt')
+    significant_count = 0  # Counter for significant pathways
+    with open(output_file_path, 'w') as file:
+        for pathway, details in task.filtered_pathways.items():
+            p_value = details.get('Adjusted_p_value')
+            if p_value is not None and p_value < FDR_threshold:
+                file.write(f"{pathway} {p_value:.5f}\n")  # Format p-value to 5 decimal places
+                significant_count += 1
+
+    print(f"Total significant pathways written: {significant_count}")
+
+
+def plot_pathways_mean_scores(output_dir, experiment_name, all_pathways, P_VALUE_THRESHOLD=0.05):
     """
-    Sorts the rows of the enrichment table by the overall direction of enrichment.
-    Args:
-        enrichment_table (numpy.ndarray): The enrichment table to sort.
-        y_ticks (list): The y-axis labels corresponding to rows in the enrichment table.
-        annotation_map (numpy.ndarray): Annotations for each cell in the enrichment table.
-        direction (numpy.ndarray): Array indicating the direction of enrichment for each row.
-    Returns:
-        tuple: Tuple containing sorted enrichment table, y-ticks, annotation map, and direction array.
+    Plots mean scores of pathways across different experimental conditions in a horizontal bar chart,
+    highlighting significant differences.
+
+    Parameters:
+    - output_dir (str): The directory where the plot will be saved.
+    - experiment_name (str): The name of the experiment to be used in naming the output file.
     """
-    # warning NO ADJ_P_MAT
-    simplified_dir = []
-    for row in direction:
-        if np.sum(row) > 1:
-            simplified_dir.append(1)
-        else:
-            simplified_dir.append(-1)
-    sorted_indexes = np.argsort(simplified_dir)
+    # Initialize dictionaries to store mean scores and p-values for each condition
+    mean_scores_data = {}
+    p_values_data = {}
+    for pathway, conditions in all_pathways.items():
+        for condition_name, condition_data in conditions.items():
+            mean_scores_data.setdefault(condition_name, {})[pathway] = condition_data.get('Mean', 0)
+            p_values_data.setdefault(condition_name, {})[pathway] = condition_data.get('P-value', 1)
 
-    return enrichment_table[sorted_indexes, :], list(np.array(y_ticks)[sorted_indexes]), annotation_map[sorted_indexes,
-                                                                                         :], direction[sorted_indexes,
-                                                                                             :]
+    # Create DataFrames from the dictionaries
+    data_df = pd.DataFrame(mean_scores_data)
+    p_values_df = pd.DataFrame(p_values_data)
 
+    # Sort pathways alphabetically
+    sorted_pathways = sorted(data_df.index)
 
-def sort_y_ticks(enrichment_table, y_ticks, annotation_map):
-    """
-    Sorts the rows of the enrichment table based on a custom sorting of y-ticks.
-    Args:
-        enrichment_table (numpy.ndarray): The enrichment table to sort.
-        y_ticks (list): The y-axis labels corresponding to rows in the enrichment table.
-        annotation_map (numpy.ndarray): Annotations for each cell in the enrichment table.
-    Returns:
-        tuple: Tuple containing sorted enrichment table, y-ticks, and annotation map.
-    """
-    # works (tested reversing the orded)
-    # warning NO ADJ_P_MAT
+    # Reorder the DataFrames based on the sorted pathways
+    data_df = data_df.loc[sorted_pathways]
+    p_values_df = p_values_df.loc[sorted_pathways]
 
-    def custom_sort(list_of_names):
-        sorted_list = list_of_names
-        return sorted_list
+    # Create a large figure to accommodate the potentially large number of pathways
+    plt.figure(figsize=(20, 60))  # This may need adjustment based on the actual data
+    ax = plt.subplot(111)
 
-    old_ind_y_tick = {tick: y_ticks.index(tick) for tick in y_ticks}
-    nonum = [x.split()[1] + ' ' + x.split()[0] for x in y_ticks]
-    srtd_y_ticks = [x.split()[1] + ' ' + x.split()[0] for x in custom_sort(nonum)]
-    new_ind = [old_ind_y_tick[tick] for tick in srtd_y_ticks]
-    return enrichment_table[new_ind, :], srtd_y_ticks, annotation_map[new_ind, :]
+    # Prepare data for plotting
+    conditions = list(mean_scores_data.keys())
+    total_pathways = data_df.index
+    num_conditions = len(conditions)
+    bar_height = 0.8 / num_conditions  # Calculate bar height based on the number of conditions
+    positions = np.arange(len(total_pathways))
 
+    # Generate a color map for the conditions
+    colors = plt.colormaps['viridis'](np.linspace(0, 1, num_conditions))
 
-def plot_enrichment_table(enrichment_table, direction, interesting_pathways, save_dir=None, experiment_names=None,
-                          title=None, res_type=None, adj_p_value_threshold=0.01):
-    """
-    Plots a heatmap of enrichment analysis results, highlighting significant pathways.
-    Args:
-        enrichment_table (numpy.ndarray): 2D array of enrichment scores for each pathway and experiment.
-        direction (numpy.ndarray): 2D array indicating the direction of enrichment.
-        interesting_pathways (list): List of pathway names corresponding to rows in the enrichment table.
-        save_dir (str, optional): Directory to save the generated plot.
-        experiment_names (list, optional): Names of experiments corresponding to columns in the enrichment table.
-        title (str, optional): Title for the plot.
-        res_type (str, optional): Type of results being plotted, e.g., 'z_score'.
-        adj_p_value_threshold (float, optional): Threshold for adjusted p-value to highlight significant pathways.
-    Returns:
-        None: The function saves the plot to the specified directory.
-    """
+    # Define keywords for bold formatting
+    keywords = ['NEURO', 'SYNAP']
 
-    # Initialize the plot
-    fig, ax = plt.subplots()
+    # Plot each condition's mean scores for each pathway
+    for i, condition in enumerate(conditions):
+        mean_scores = data_df[condition].values
+        p_values = p_values_df[condition].values
 
-    # Find non-zero columns and rows in the enrichment table
-    enriched_clusters = np.nonzero(np.sum(enrichment_table, axis=0) != 0)[0]
-    found_pathways = np.nonzero(np.sum(enrichment_table, axis=1) != 0)[0]
+        # Plot bars with different styles based on p-value significance
+        for j, (score, p_value) in enumerate(zip(mean_scores, p_values)):
+            bar_style = {"color": "white", "edgecolor": colors[i], "hatch": "//"} if p_value > P_VALUE_THRESHOLD else {
+                "color": colors[i]}
+            ax.barh(positions[j] + bar_height * i, score, height=bar_height, **bar_style)
 
-    # Filter the enrichment table to include only non-zero rows and columns
-    enrichment_table = enrichment_table[:, enriched_clusters][found_pathways, :]
-    interesting_pathways_filtered = {i: path for i, path in enumerate(interesting_pathways) if i in found_pathways}
+    # Set y-axis labels to be pathway names, replace underscores with spaces for readability
+    ax.set_yticks(positions + bar_height * (num_conditions / 2) - bar_height / 2)
+    formatted_pathways = [pathway.replace('_', ' ') for pathway in total_pathways]
+    ax.set_yticklabels(formatted_pathways, fontsize=12)
 
-    # Prepare the annotations for the heatmap
-    annotation_map = (np.round(enrichment_table, 3)).astype(str)
-    annotation_map[annotation_map == '0.0'] = ''
-    y_ticks = [path[:60] for path in interesting_pathways_filtered.values()]
+    # Bold labels for specific keywords
+    for i, label in enumerate(ax.get_yticklabels()):
+        if any(keyword in label.get_text().upper() for keyword in keywords):
+            label.set_fontweight('bold')
 
-    # Sort pathways for visualization
-    enrichment_table, y_ticks, annotation_map, direction = sort_y_ticks_by_dir_and_pvalue_of_one_column(
-        enrichment_table, y_ticks, annotation_map, direction)
+    # Label axes and set title
+    ax.set_ylabel('Pathways', fontsize=16)
+    ax.set_xlabel('Mean Scores', fontsize=16)
+    ax.set_title('Pathway Mean Scores Across Different Conditions', fontsize=20)
 
-    # Find indexes of important pathways (below the adj. p-value threshold)
-    important_indexes = np.where(enrichment_table)
+    # Create a legend for the conditions
+    plt.legend([plt.Rectangle((0, 0), 1, 1, color=colors[i]) for i in range(num_conditions)], conditions,
+               prop={'size': 14})
 
-    # Color negative enrichment values if direction is given and res_type is not 'z_score'
-    if direction is not None and res_type != 'z_score':
-        enrichment_table[np.logical_not(direction)] = -enrichment_table[np.logical_not(direction)]
-        # Create a color axis for the heatmap
-    colorbar_edge = np.max(np.abs(enrichment_table))
-    cax = inset_axes(ax, width="100%", height="70%", loc='lower left',
-                     bbox_to_anchor=(1.1, 0.2, 0.2, 1), bbox_transform=ax.transAxes, borderpad=0)
+    # Adjust subplot layout to avoid clipping of tick-labels
+    plt.subplots_adjust(left=0.4)
 
-    # Plot the heatmap
-    heatmap = sns.heatmap(enrichment_table, fmt=".4s", yticklabels=y_ticks, cbar_ax=cax,
-                          annot=annotation_map, cmap="coolwarm", linewidths=.1, linecolor='gray',
-                          cbar_kws={'label': res_type}, ax=ax, vmin=-colorbar_edge, vmax=colorbar_edge)
-    ax.set_xticklabels(experiment_names, fontsize=24)
+    # Save the figure to a PDF file in the specified output directory
+    output_file_path = path.join(output_dir, 'Plots', f"{experiment_name}_pathway_scores.pdf")
+    makedirs(path.dirname(output_file_path), exist_ok=True)
+    plt.savefig(output_file_path, format='pdf', bbox_inches='tight')
+    plt.close()  # Close the plot to avoid displaying it in environments like Jupyter Notebooks
 
-    # Highlight significant pathways with a rectangle
-    for i in range(len(important_indexes[0])):
-        heatmap.add_patch(Rectangle((important_indexes[1][i], important_indexes[0][i]), 1, 1,
-                                    fill=False, edgecolor='black', lw=3))
-    # set font size of colobar ticks
-    heatmap.figure.axes[-1].yaxis.label.set_size(20)
-
-    # Set colorbar properties
-    cbar = heatmap.collections[0].colorbar
-    cbar.set_ticks(cbar.get_ticks())
-    cbar.set_ticklabels(np.round(np.abs(cbar.get_ticks()), 1))
-
-    # Adjust x-tick labels
-    heatmap.set_xticklabels(heatmap.get_xticklabels(), rotation=45, horizontalalignment='right')
-
-    # Add legend for significance and direction
-    legend_handles = [Patch(fill=False, edgecolor='black', label=f'adj_p_value<{adj_p_value_threshold}')]
-    if direction is not None:
-        legend_handles.append(Patch(fill=True, color='red', label='Upwards'))
-        legend_handles.append(Patch(fill=True, color='blue', label='Downwards'))
-    ax.legend(handles=legend_handles, bbox_to_anchor=[1, 0, 1, 1], ncol=1, loc='lower left', fontsize=14)
-
-    # Set plot title
-    ax.set_title(title, fontsize=28)
-
-    # Adjust figure size and save the plot
-    fig.set_size_inches(20, 40)
-    plt.savefig(save_dir, bbox_inches='tight')
-    print(f"plot saved to {save_dir}")

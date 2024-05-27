@@ -1,72 +1,21 @@
-from os import path
+from os import path, makedirs
 from datetime import datetime
 
 
-
 class PropagationTask:
-    def __init__(self, experiment_file_path, experiment_name, root_folder, alpha=1, network_file='H_sapiens.net',
-                 create_similarity_matrix=True):
-        """
-        Initializes a task for gene score propagation.
-
-        This class sets up the necessary parameters and paths for performing gene score propagation in a network.
-
-        Parameters:
-        - experiment_name (str): Name of the experiment.
-        - alpha (float): Propagation parameter, controlling the influence of network structure on propagation.
-        - network_file (str): Name of the file containing the network data.
-        - create_similarity_matrix (bool): Flag to indicate whether to create a new similarity matrix.
-
-        Attributes:
-        - Various paths and parameters are set up based on the input parameters to facilitate gene score propagation.
-        """
-
-        # General Parameters
-        self.experiment_name = experiment_name
-        self.experiment_file_path = experiment_file_path
-        self.experiment_file = f'{experiment_name}.xlsx'
-        self.root_folder = root_folder
-        self.data_file = 'Data'
-        self.network_file = network_file
-        self.genes_names_file = 'H_sapiens.gene_info'
-        self.pathway_file = 'pathways'
-        self.date = datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
-        self.create_similarity_matrix = create_similarity_matrix
+    def __init__(self, general_args, test_name):
+        self.general_args = general_args
+        self.results = dict()
+        self.test_name = test_name
+        self.test_file = f'{test_name}.xlsx'
+        self.test_file_path = path.join(self.general_args.input_dir, self.test_file)
         #TODO: understand this flag
         self.remove_self_propagation = False
-
-        # Propagation Parameters
-        # for no propagation use alpha=1
-        self.alpha = alpha
-        self.results = dict()
-
-        # Derived Parameters (Initial placeholders)
-        self.data_dir = None
-        self.network_file_path = None
-        self.pathway_file_dir = None
-        self.genes_names_file_path = None
-        self.similarity_matrix_path = None
-        self.output_folder = None
-
-        # Initialize derived parameters
-        self.get_derived_parameters()
-
-    def get_derived_parameters(self):
-        """
-        Set derived parameters based on the initial parameters.
-        """
-        self.data_dir = path.join(self.root_folder, self.data_file)
-        self.genes_names_file_path = path.join(self.data_dir, 'H_sapiens', 'genes_names', self.genes_names_file)
-        self.network_file_path = path.join(self.data_dir, 'H_sapiens', 'network', self.network_file)
-        self.pathway_file_dir = path.join(self.data_dir, 'H_sapiens', 'pathways', self.pathway_file)
-        self.similarity_matrix_path = path.join(self.data_dir, 'H_sapiens', 'matrix',
-                                                f'similarity_matrix_{self.alpha}.npz')
-        self.output_folder = path.join(self.root_folder, 'Outputs', 'propagation_scores', self.experiment_name)
+        self.output_folder = path.join(self.general_args.propagation_folder, self.test_name)
 
 
 class EnrichTask:
-    def __init__(self, name, statistic_test, target_field, create_scores=True, propagation_file=None,
-                 propagation_folder=None):
+    def __init__(self, name, statistic_test, target_field, create_scores=True, propagation_file=None):
         """
         Initializes an enrichment task with specified parameters.
 
@@ -89,54 +38,58 @@ class EnrichTask:
         self.filtered_genes = set()
         self.filtered_pathways = dict()
         self.ks_significant_pathways_with_genes = dict()
+        self.propagation_file = propagation_file
         self.temp_output_folder = path.join(path.dirname(path.realpath(__file__)), 'Outputs', 'Temp')
-        # self.similarity_matrix_path = path.join(path.dirname(path.realpath(__file__)), 'Data',
-        #                                         'H_sapiens', 'matrix', f'similarity_matrix_{alpha}.npz')
 
 
 class GeneralArgs:
-    def __init__(self, network_path, genes_names_path, pathway_members_path, propagation_file, propagation_folder,
-                 FDR_threshold=0.05, figure_title='Pathway Enrichment'):
+    def __init__(self,alpha=1, FDR_threshold=0.05, figure_title='Pathway Enrichment', create_similarity_matrix=False,
+                 run_propagation=True):
         """
         Contains general arguments and settings for pathway enrichment analysis
         This class encapsulates various parameters and settings used across different stages of pathway enrichment analysis
         Parameters:
-        - network_path (str): Path to the network file.
-        - genes_names_path (str): Path to the genes names file.
-        - pathway_members_path (str): Path to the file containing pathway members.
         - FDR_threshold (float): False Discovery Rate threshold for statistical significance.
-        - output_folder_name (str, optional): Name of the output folder.
         - figure_title (str): Title for the figure or output
         Attributes:
         - Configurations like minimum and maximum genes per pathway, FDR threshold, and paths for output and figures.
         """
+        # General Parameters
         self.minimum_gene_per_pathway = 20
         self.maximum_gene_per_pathway = 200
         self.FDR_threshold = FDR_threshold
         self.JAC_THRESHOLD = 0.2
-        self.network_file_path = network_path
-        self.genes_names_file_path = genes_names_path
-        self.pathway_members_path = pathway_members_path
-        self.propagation_folder = propagation_folder
-        self.propagation_file = propagation_file
-        # maybe just combine the pathway to a full path
-        self.propagation_file_path = path.join(propagation_folder, propagation_file)
-        self.pathway_keywords = ['_']
-        self.output_path = path.join(path.dirname(path.realpath(__file__)), 'Outputs')
+        # for no propagation use alpha=1
+        self.alpha = alpha
+        self.run_propagation = run_propagation
+
+        self.Experiment_name = 'Parkinson'
+        self.date = datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
         self.figure_title = figure_title
 
+        # root directory
+        self.root_folder = path.dirname(path.abspath(__file__))
 
-class NewGeneralArgs:
-    def __init__(self, FDR_threshold=0.05, output_folder_name=None, figure_name=None, figure_title='Pathway Enrichment'):
-        self.minimum_gene_per_pathway = 20
-        self.maximum_gene_per_pathway = 60
-        self.FDR_threshold = FDR_threshold
-        if output_folder_name is None:
-            output_folder_name = 'Enrichment_maps'
-        self.output_path = path.join(get_root_path(), 'Outputs', output_folder_name)
-        self.figure_name = figure_name if figure_name is not None else 'figure'
-        self.figure_title = figure_title
-        self.use_gsea = False
+        # directory paths
+        self.data_dir = path.join(self.root_folder, 'Data', 'H_sapiens')
+        self.output_dir = path.join(self.root_folder, 'Outputs')
+        self.input_dir = path.join(self.root_folder, 'Inputs', 'experiments_data', self.Experiment_name)
+
+        # Data directory directories
+        self.network_file = 'H_sapiens.net'
+        self.network_file_path = path.join(self.data_dir, 'network', self.network_file)
+        self.genes_names_file = 'H_sapiens.gene_info'
+        self.genes_names_file_path = path.join(self.data_dir, 'genes_names', self.genes_names_file)
+        self.pathway_file = 'pathways'
+        self.pathway_file_dir = path.join(self.data_dir, 'pathways', self.pathway_file)
+        self.similarity_matrix_path = path.join(self.data_dir, 'matrix')
+        self.create_similarity_matrix = create_similarity_matrix
+        self.similarity_matrix_path = path.join(self.similarity_matrix_path,
+                                                f'similarity_matrix_{self.alpha}.npz')
+        # Output directory directories
+        self.temp_output_folder = path.join(self.output_dir, 'Temp')
+        makedirs(self.temp_output_folder, exist_ok=True)
+        self.propagation_folder = path.join(self.output_dir, 'propagation_scores')
 
 
 class PathwayResults:

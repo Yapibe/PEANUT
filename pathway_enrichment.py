@@ -1,11 +1,11 @@
-from statistic_methods import hypergeometric_sf, wilcoxon_rank_sums_test, jaccard_index , kolmogorov_smirnov_test, compute_mw_python
-from statsmodels.stats.multitest import multipletests
-from scipy.stats import rankdata
-from utils import shuffle_scores, load_network_and_pathways
-import numpy as np
 import pandas as pd
-import csv
 from os import path
+from args import EnrichTask
+from scipy.stats import rankdata
+from utils import load_network_and_pathways
+from statsmodels.stats.multitest import multipletests
+from visualization_tools import print_enriched_pathways_to_file
+from statistic_methods import hypergeometric_sf, wilcoxon_rank_sums_test, jaccard_index , kolmogorov_smirnov_test
 
 
 def perform_statist(task, general_args, genes_by_pathway, scores):
@@ -88,8 +88,8 @@ def perform_statist_mann_whitney(task, args, scores):
         background_genes = task.filtered_genes - pathway_genes
         background_scores = [scores[gene_id][0] for gene_id in background_genes]
 
-        pathway_ranks = [scores_rank[gene_id] for gene_id in pathway_genes]
-        background_ranks = [scores_rank[gene_id] for gene_id in background_genes]
+        # pathway_ranks = [scores_rank[gene_id] for gene_id in pathway_genes]
+        # background_ranks = [scores_rank[gene_id] for gene_id in background_genes]
 
         # Compute the Mann-Whitney U test p-value using scores
         mw_pval = wilcoxon_rank_sums_test(pathway_scores, background_scores)
@@ -121,40 +121,35 @@ def perform_statist_mann_whitney(task, args, scores):
             task.filtered_pathways[row['Pathway']] = row
 
 
-def print_enriched_pathways_to_file(task,FDR_threshold):
-    output_file_path = path.join(task.temp_output_folder, f'{task.name}.txt')
-    significant_count = 0  # Counter for significant pathways
-    with open(output_file_path, 'w') as file:
-        for pathway, details in task.filtered_pathways.items():
-            p_value = details.get('Adjusted_p_value')
-            if p_value is not None and p_value < FDR_threshold:
-                file.write(f"{pathway} {p_value:.5f}\n")  # Format p-value to 5 decimal places
-                significant_count += 1
-
-    print(f"Total significant pathways written: {significant_count}")
-
-
-def run(task, general_args):
+def perform_enrichment(test_name, general_args):
     """
-    Main function to run the pathway enrichment analysis.
-
-    Args:
-        task (Task): task to be processed.
-        general_args (GeneralArgs): General configuration settings.
-    Side Effects:
-        Executes the entire pathway enrichment analysis workflow, including data loading, processing,
-        analysis, and plotting results.
-
+    Executes the enrichment analysis on propagated gene scores.
+    This function sets up tasks for enrichment analysis, including defining parameters and file paths.
+    It then runs the enrichment analysis and processes the results.
+    Parameters:
+    - task (EnrichTask): An object containing parameters and file paths for running the enrichment analysis.
     Returns:
-        None
+    - None: This function does not return a value but may generate output files like plots or data summaries.
     """
-    print("uploding data")
-    genes_by_pathway, scores = load_network_and_pathways(general_args)
+    # run enrichment
+    print("running enrichment")
+    propagation_folder = path.join(general_args.propagation_folder, test_name)
+    if general_args.run_propagation_flag:
+        propagation_file = path.join(f'{propagation_folder}', '{}_{}_{}'.format(test_name, general_args.alpha, general_args.date))
+        enrich_task = EnrichTask(name=test_name, create_scores=True, target_field='gene_prop_scores',
+                                 statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)
+    else:
+        propagation_file = path.join(f'{propagation_folder}', f'{test_name}_1_27_05_2024__14_28_56')
+        enrich_task = EnrichTask(name=test_name, create_scores=True, target_field='gene_prop_scores',
+                                 statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)
+
+    print('running enrichment on {}'.format(test_name))
+    genes_by_pathway, scores = load_network_and_pathways(general_args, enrich_task.propagation_file)
 
     # Stage 1 - calculate nominal p-values and directions
-    perform_statist(task, general_args, genes_by_pathway, scores)
+    perform_statist(enrich_task, general_args, genes_by_pathway, scores)
     # Further statistical test using Mann-Whitney U test
-    perform_statist_mann_whitney(task, general_args, scores)
+    perform_statist_mann_whitney(enrich_task, general_args, scores)
     # Output the enriched pathways to files
-    print_enriched_pathways_to_file(task, general_args.FDR_threshold)
+    print_enriched_pathways_to_file(enrich_task, general_args.FDR_threshold)
 
