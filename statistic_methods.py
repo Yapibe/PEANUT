@@ -2,23 +2,7 @@ import numpy as np
 from scipy.stats import rankdata, norm, hypergeom
 
 
-
-class StatResults:
-    """
-    Class to store the results of a statistical test.
-    Attributes:
-        p_value (float): The p-value of the test.
-        directionality (bool): Indicates the direction of the difference (True if experiment > elements).
-        name (str): Name of the statistical test.
-    """
-
-    def __init__(self, p_value=None, directionality=None, name=None):
-        self.p_value = p_value
-        self.directionality = directionality
-        self.name = name
-
-
-def wilcoxon_rank_sums_test(experiment_scores, control_scores, alternative='two-sided'):
+def wilcoxon_rank_sums_test(experiment_scores: list, control_scores: list, alternative: str = 'two-sided') -> float:
     """
     Perform the Wilcoxon rank-sum test to compare two independent samples.
 
@@ -28,20 +12,22 @@ def wilcoxon_rank_sums_test(experiment_scores, control_scores, alternative='two-
     - alternative (str): Defines the alternative hypothesis ('two-sided', 'less', 'greater').
 
     Returns:
-    float: The P-value from the Wilcoxon rank-sum test.
+    - float: The P-value from the Wilcoxon rank-sum test.
     """
     from scipy.stats import ranksums
     p_vals = ranksums(experiment_scores, control_scores, alternative=alternative).pvalue
     return p_vals
 
 
-def bh_correction(p_values):
+def bh_correction(p_values: np.ndarray) -> np.ndarray:
     """
-    Applies the Benjamini-Hochberg procedure for controlling the false discovery rate in multiple hypothesis testing.
-    Args:
-        p_values (array_like): Array of p-values obtained from multiple statistical tests.
+    Apply the Benjamini-Hochberg procedure for controlling the false discovery rate in multiple hypothesis testing.
+
+    Parameters:
+    - p_values (array_like): Array of p-values obtained from multiple statistical tests.
+
     Returns:
-        numpy.ndarray: Array of adjusted p-values.
+    - numpy.ndarray: Array of adjusted p-values.
     """
     p_vals_rank = rankdata(p_values, 'max') - 1
     p_vals_rank_ord = rankdata(p_values, 'ordinal') - 1
@@ -53,7 +39,8 @@ def bh_correction(p_values):
     adj_p_vals_by_rank = p_vals[p_values_sorted]
 
     p_vals_ordered = np.minimum(adj_p_vals_by_rank, np.minimum.accumulate(adj_p_vals_by_rank[::-1])[::-1])
-    adj_p_vals = p_vals_ordered[p_vals_rank]
+    adj_p_vals = p_vals_ordered[p_values_sorted]
+
     return adj_p_vals
 
 
@@ -164,13 +151,23 @@ def compute_mw_python(experiment_ranks, control_ranks):
     return U, p_value
 
 
-def jaccard_index(set1, set2):
+def jaccard_index(set1: set, set2: set) -> float:
+    """
+    Calculate the Jaccard index, a measure of similarity between two sets.
+
+    Parameters:
+    - set1 (set): First set of elements.
+    - set2 (set): Second set of elements.
+
+    Returns:
+    - float: Jaccard index (intersection over union).
+    """
     intersection = len(set1.intersection(set2))
     union = len(set1.union(set2))
     return intersection / union
 
 
-def hypergeometric_sf(x, M, N, n):
+def hypergeometric_sf(x: int, M: int, N: int, n:int) -> float:
     """
     Calculate the survival function (complement of the CDF) for the hypergeometric distribution.
 

@@ -8,7 +8,19 @@ from visualization_tools import print_enriched_pathways_to_file
 from statistic_methods import hypergeometric_sf, wilcoxon_rank_sums_test, jaccard_index , kolmogorov_smirnov_test
 
 
-def perform_statist(task, general_args, genes_by_pathway, scores):
+def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scores: dict):
+    """
+    Perform statistical enrichment analysis on pathways.
+
+    Parameters:
+    - task (EnrichTask): Enrichment task containing task-specific settings.
+    - general_args (GeneralArgs): General arguments and settings.
+    - genes_by_pathway (dict): Mapping of pathways to their constituent genes.
+    - scores (dict): Mapping of gene IDs to their scores and p-values.
+
+    Returns:
+    - None
+    """
     # Identify genes with P-values below the significance threshold
     significant_p_vals = {gene_id: p_value for gene_id, (score, p_value) in scores.items()
                           if p_value < general_args.FDR_threshold}
@@ -69,7 +81,18 @@ def perform_statist(task, general_args, genes_by_pathway, scores):
     }
 
 
-def perform_statist_mann_whitney(task, args, scores):
+def perform_statist_mann_whitney(task: EnrichTask, args, scores: dict):
+    """
+    Perform Mann-Whitney U test on pathways that passed the KS test and filter significant pathways.
+
+    Parameters:
+    - task (EnrichTask): Enrichment task containing task-specific settings.
+    - args (GeneralArgs): General arguments and settings.
+    - scores (dict): Mapping of gene IDs to their scores and p-values.
+
+    Returns:
+    - None
+    """
     mw_p_values = []  # List to store Mann-Whitney p-values
 
     # Use filtered_genes for ranking and background scores
@@ -77,9 +100,9 @@ def perform_statist_mann_whitney(task, args, scores):
 
     # Rank the scores only for the filtered genes and reverse the ranks
     ranks = rankdata(filtered_scores)
-    scores_rank = {
-        gene_id: rank for gene_id, rank in zip(task.filtered_genes, ranks)
-    }
+    # scores_rank = {
+    #     gene_id: rank for gene_id, rank in zip(task.filtered_genes, ranks)
+    # }
 
     # Iterate over pathways that passed the KS test to perform the Mann-Whitney U test
     for pathway, genes_info in task.ks_significant_pathways_with_genes.items():
@@ -121,20 +144,21 @@ def perform_statist_mann_whitney(task, args, scores):
             task.filtered_pathways[row['Pathway']] = row
 
 
-def perform_enrichment(test_name, general_args):
+def perform_enrichment(test_name: str, general_args):
     """
-    Executes the enrichment analysis on propagated gene scores.
-    This function sets up tasks for enrichment analysis, including defining parameters and file paths.
-    It then runs the enrichment analysis and processes the results.
+    Perform pathway enrichment analysis for a given test.
+
     Parameters:
-    - task (EnrichTask): An object containing parameters and file paths for running the enrichment analysis.
+    - test_name (str): Name of the test for which enrichment analysis is performed.
+    - general_args (GeneralArgs): General arguments and settings.
+
     Returns:
-    - None: This function does not return a value but may generate output files like plots or data summaries.
+    - None
     """
     # run enrichment
     print("running enrichment")
     propagation_folder = path.join(general_args.propagation_folder, test_name)
-    if general_args.run_propagation_flag:
+    if general_args.run_propagation:
         propagation_file = path.join(f'{propagation_folder}', '{}_{}_{}'.format(test_name, general_args.alpha, general_args.date))
         enrich_task = EnrichTask(name=test_name, create_scores=True, target_field='gene_prop_scores',
                                  statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)

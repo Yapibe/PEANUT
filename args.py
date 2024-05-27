@@ -2,67 +2,51 @@ from os import path, makedirs
 from datetime import datetime
 
 
-class PropagationTask:
-    def __init__(self, general_args, test_name):
-        self.general_args = general_args
-        self.results = dict()
-        self.test_name = test_name
-        self.test_file = f'{test_name}.xlsx'
-        self.test_file_path = path.join(self.general_args.input_dir, self.test_file)
-        #TODO: understand this flag
-        self.remove_self_propagation = False
-        self.output_folder = path.join(self.general_args.propagation_folder, self.test_name)
-
-
-class EnrichTask:
-    def __init__(self, name, statistic_test, target_field, create_scores=True, propagation_file=None):
-        """
-        Initializes an enrichment task with specified parameters.
-
-        This class configures an enrichment analysis task, including setting file paths and statistical tests
-        Parameters:
-        - name (str): Name of the task.
-        - propagation_file (str): Filename of the propagated gene scores.
-        - propagation_folder (str): Folder path where the propagation file is located.
-        - statistic_test (function): Statistical test function to use for enrichment analysis.
-        - target_field (str): Field in the data to target for enrichment analysis.
-        - constrain_to_experiment_genes (bool): Flag to constrain analysis to experiment genes only
-        Attributes:
-        - Paths and parameters for running enrichment analysis.
-        """
-        self.name = name
-        self.statistic_test = statistic_test
-        self.target_field = target_field
-        self.results = dict()
-        self.create_scores = create_scores
-        self.filtered_genes = set()
-        self.filtered_pathways = dict()
-        self.ks_significant_pathways_with_genes = dict()
-        self.propagation_file = propagation_file
-        self.temp_output_folder = path.join(path.dirname(path.realpath(__file__)), 'Outputs', 'Temp')
-
-
 class GeneralArgs:
-    def __init__(self,alpha=1, FDR_threshold=0.05, figure_title='Pathway Enrichment', create_similarity_matrix=False,
-                 run_propagation=True):
+    def __init__(self, alpha: float = 1, FDR_threshold: float = 0.05, figure_title: str ='Pathway Enrichment',
+                 create_similarity_matrix: bool =False, run_propagation: bool =True):
         """
-        Contains general arguments and settings for pathway enrichment analysis
-        This class encapsulates various parameters and settings used across different stages of pathway enrichment analysis
+        Initializes general arguments used throughout the pipeline.
+
         Parameters:
-        - FDR_threshold (float): False Discovery Rate threshold for statistical significance.
-        - figure_title (str): Title for the figure or output
+        - alpha (float): Alpha value for similarity matrix (default: 1).
+        - FDR_threshold (float): False discovery rate threshold (default: 0.05).
+        - figure_title (str): Name of the experiment (default: 'Pathway Enrichment').
+        - create_similarity_matrix (bool): Flag to create similarity matrix (default: False).
+        - run_propagation (bool): Flag to run propagation (default: True).
+
         Attributes:
-        - Configurations like minimum and maximum genes per pathway, FDR threshold, and paths for output and figures.
+        - alpha (float): Alpha value.
+        - FDR_threshold (float): FDR threshold.
+        - minimum_gene_per_pathway (int): Minimum number of genes per pathway.
+        - maximum_gene_per_pathway (int): Maximum number of genes per pathway.
+        - JAC_THRESHOLD (float): Jaccard threshold.
+        - run_propagation (bool): Flag to run propagation.
+        - Experiment_name (str): Name of the experiment.
+        - date (str): Current date and time.
+        - figure_title (str): Name of the experiment to be displayed on figures.
+        - root_folder (str): Root directory of the script.
+        - data_dir (str): Directory for input data.
+        - output_dir (str): Directory for output data.
+        - input_dir (str): Directory for input experiment data.
+        - network_file (str): Network file name.
+        - network_file_path (str): Path to the network file.
+        - genes_names_file (str): Gene names file name.
+        - genes_names_file_path (str): Path to the gene names file.
+        - pathway_file (str): Pathway file name.
+        - pathway_file_dir (str): Directory for pathway files.
+        - similarity_matrix_path (str): Path to the similarity matrix file.
+        - create_similarity_matrix (bool): Flag to create similarity matrix.
+        - temp_output_folder (str): Directory for temporary outputs.
+        - propagation_folder (str): Directory for propagation scores.
         """
         # General Parameters
+        self.alpha = alpha  # for no propagation use alpha=1
+        self.FDR_threshold = FDR_threshold
         self.minimum_gene_per_pathway = 20
         self.maximum_gene_per_pathway = 200
-        self.FDR_threshold = FDR_threshold
         self.JAC_THRESHOLD = 0.2
-        # for no propagation use alpha=1
-        self.alpha = alpha
         self.run_propagation = run_propagation
-
         self.Experiment_name = 'Parkinson'
         self.date = datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
         self.figure_title = figure_title
@@ -92,19 +76,67 @@ class GeneralArgs:
         self.propagation_folder = path.join(self.output_dir, 'propagation_scores')
 
 
-class PathwayResults:
-    def __init__(self, p_value, direction, adj_p_value=None):
+class PropagationTask:
+    def __init__(self, general_args: GeneralArgs, test_name: str):
         """
-        Stores the results of pathway analysis
-        This class is used to hold the results of a pathway analysis, including the p-value, direction of change,
-        and adjusted p-value if available
+        Initialize a PropagationTask instance.
+
         Parameters:
-        - p_value (float): The p-value resulting from the statistical test.
-        - direction (bool): Indicates the direction of the effect (True for positive, False for negative).
-        - adj_p_value (float, optional): The adjusted p-value after correction for multiple testing
+        - general_args (GeneralArgs): General arguments and settings.
+        - test_name (str): Name of the test for which propagation is performed.
+
         Attributes:
-        - Holds the statistical results for a specific pathway.
+        - general_args (GeneralArgs): General arguments and settings.
+        - results (dict): Dictionary to store results.
+        - test_name (str): Name of the test.
+        - test_file (str): Name of the test file.
+        - test_file_path (str): Path to the test file.
+        - remove_self_propagation (bool): Flag to remove self propagation.
+        - output_folder (str): Directory for output files.
         """
-        self.p_value = p_value
-        self.direction = direction
-        self.adj_p_value = adj_p_value
+        self.general_args = general_args
+        self.results = {}
+        self.test_name = test_name
+        self.test_file = f'{test_name}.xlsx'
+        self.test_file_path = path.join(self.general_args.input_dir, self.test_file)
+        #TODO: understand this flag
+        self.remove_self_propagation = False
+        self.output_folder = path.join(self.general_args.propagation_folder, self.test_name)
+
+
+class EnrichTask:
+    def __init__(self, name: str, statistic_test: callable, target_field: str, create_scores: bool = True, propagation_file: str = None):
+        """
+        Initialize an EnrichTask instance.
+
+        This class configures an enrichment analysis task, including setting file paths and statistical tests.
+
+        Parameters:
+        - name (str): Name of the task.
+        - statistic_test (function): Statistical test function to use for enrichment analysis.
+        - target_field (str): Field in the data to target for enrichment analysis.
+        - create_scores (bool): Flag to determine whether to create scores (default: True).
+        - propagation_file (str): Filename of the propagated gene scores (default: None).
+
+        Attributes:
+        - name (str): Name of the task.
+        - statistic_test (function): Statistical test function.
+        - target_field (str): Field in the data to target.
+        - results (dict): Dictionary to store results.
+        - create_scores (bool): Flag to determine whether to create scores.
+        - filtered_genes (set): Set of filtered genes.
+        - filtered_pathways (dict): Dictionary of filtered pathways.
+        - ks_significant_pathways_with_genes (dict): Dictionary of significant pathways with genes.
+        - propagation_file (str): Filename of the propagated gene scores.
+        - temp_output_folder (str): Directory for temporary output files.
+        """
+        self.name = name
+        self.statistic_test = statistic_test
+        self.target_field = target_field
+        self.results = dict()
+        self.create_scores = create_scores
+        self.filtered_genes = set()
+        self.filtered_pathways = dict()
+        self.ks_significant_pathways_with_genes = dict()
+        self.propagation_file = propagation_file
+        self.temp_output_folder = path.join(path.dirname(path.realpath(__file__)), 'Outputs', 'Temp')

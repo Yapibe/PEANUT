@@ -3,39 +3,44 @@ import time
 import scipy as sp
 import numpy as np
 import networkx as nx
-from args import PropagationTask
+from args import GeneralArgs, PropagationTask
 from utils import save_propagation_score, read_prior_set, get_propagation_input, filter_network_by_prior_data
 
 
-def propagate_with_inverse(seeds, propagation_input, inverse_matrix, gene_indexes, num_genes):
+def propagate_with_inverse(seeds: list, propagation_input: dict, inverse_matrix: np.ndarray, gene_indexes: dict,
+                           num_genes: int) -> np.ndarray:
     """
     Propagates seed gene values through a precomputed inverse matrix for faster calculation.
-    Args:
-        seeds (list): List of seed gene IDs.
-        propagation_input (dict): Mapping of gene IDs to their initial values for propagation.
-        inverse_matrix (numpy.ndarray): Precomputed inverse matrix for propagation.
-        gene_indexes (dict): Mapping of gene IDs to their indices in the matrix.
-        num_genes (int): Total number of genes in the network.
+
+    Parameters:
+    - seeds (list): List of seed gene IDs.
+    - propagation_input (dict): Mapping of gene IDs to their initial values for propagation.
+    - inverse_matrix (np.ndarray): Precomputed inverse matrix for propagation.
+    - gene_indexes (dict): Mapping of gene IDs to their indices in the matrix.
+    - num_genes (int): Total number of genes in the network.
+
     Returns:
-        numpy.ndarray: Array containing the final propagated values for each gene.
+    - np.ndarray: Array containing the final propagated values for each gene.
     """
     F_0 = np.zeros((num_genes, 1))
     for seed in seeds:
         F_0[gene_indexes[seed]] = propagation_input[seed]
-    # change F_0 to a 2D array
     F_0 = F_0.reshape((F_0.shape[0], 1))
 
     F = inverse_matrix.dot(F_0)
     return F
 
 
-def generate_similarity_matrix(network, args):
+def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     """
     Generates and saves a similarity matrix for network propagation, based on the provided network graph.
-    Args:
-        network (networkx.Graph or scipy.sparse matrix): Network graph or sparse matrix.
+
+    Parameters:
+    - network (nx.Graph or sp.sparse matrix): Network graph or sparse matrix.
+    - args (GeneralArgs): Arguments related to the general configuration of the experiment.
+
     Returns:
-        tuple: A tuple containing the inverse of the similarity matrix and the list of genes.
+    - tuple: A tuple containing the inverse of the similarity matrix and the list of genes.
     """
     genes = sorted(network.nodes())
     gene_index = {gene: index for index, gene in enumerate(genes)}
@@ -51,6 +56,8 @@ def generate_similarity_matrix(network, args):
     # Normalize the matrix
     norm_matrix = sp.sparse.diags(1 / sp.sqrt(matrix.sum(0).ravel()), format="csr")
     matrix = norm_matrix * matrix * norm_matrix
+    print("Normalizing the matrix")
+    # inverse_matrix = sp.sparse.linalg.inv(matrix)
 
     print("Calculating the inverse")
     # First, let's get the shape of the matrix W
@@ -64,14 +71,14 @@ def generate_similarity_matrix(network, args):
 
     print("Inverting the matrix")
     # Use scipy's sparse linear solver to find the inverse
-    matrix_inverse = np.linalg.inv(matrix_to_invert.toarray())
+    inverse_matrix = np.linalg.inv(matrix_to_invert.toarray())
 
     # calculate alpha * (I - (1-alpha)*W)^-1
-    matrix_inverse = args.alpha * matrix_inverse
+    inverse_matrix = args.alpha * inverse_matrix
 
     print("Converting to CSR format")
     # Convert to CSR format before saving
-    matrix_inverse_csr = sp.sparse.csr_matrix(matrix_inverse)
+    matrix_inverse_csr = sp.sparse.csr_matrix(inverse_matrix)
 
     print("Saving the matrix")
     # Save the matrix in .npz format
@@ -82,51 +89,70 @@ def generate_similarity_matrix(network, args):
 
     end = time.time()
     print(f"Time elapsed: {end - start} seconds")
-    return matrix_inverse, gene_index
+    return inverse_matrix, gene_index
 
 
-def read_sparse_matrix_txt(network, similarity_matrix_path):
+def read_sparse_matrix_txt(network: nx.Graph, similarity_matrix_path: str) -> tuple:
     """
     Reads a precomputed sparse similarity matrix from a file.
-    Args:
-        network (networkx.Graph): Network graph used to generate the similarity matrix.
-        similarity_matrix_path (str): Path to the file containing the sparse matrix.
+
+    Parameters:
+    - network (nx.Graph): Network graph used to generate the similarity matrix.
+    - similarity_matrix_path (str): Path to the file containing the sparse matrix.
+
     Returns:
-        tuple: A tuple containing the sparse matrix and the list of genes.
+    - tuple: A tuple containing the sparse matrix and the list of genes.
     """
     genes = sorted(network.nodes())
-    gene_index = dict([(gene, index) for (index, gene) in enumerate(genes)])
+    gene_index = {gene: index for index, gene in enumerate(genes)}
+
     if not os.path.exists(similarity_matrix_path):
         raise FileNotFoundError(f"The specified file {similarity_matrix_path} does not exist.")
 
-    # Load the matrix in .npz format
     start = time.time()
     matrix = sp.sparse.load_npz(similarity_matrix_path)
     end = time.time()
     print(f"Time elapsed: {end - start} seconds")
+
     return matrix, gene_index
 
 
-def propagate_network(propagation_input, matrix, gene_index):
+def propagate_network(propagation_input: dict, matrix: sp.sparse.spmatrix, gene_index: dict) -> tuple:
     """
     Performs network propagation using a given input and similarity matrix.
-    Args:
-        propagation_input (dict): Mapping of gene IDs to their initial values for propagation.
-        matrix (numpy.ndarray or scipy.sparse matrix): Propagation matrix.
-        gene_index (dict): Mapping of gene IDs to their indices in the matrix.
+
+    Parameters:
+    - propagation_input (dict): Mapping of gene IDs to their initial values for propagation.
+    - matrix (sp.sparse.spmatrix): Propagation matrix.
+    - gene_index (dict): Mapping of gene IDs to their indices in the matrix.
+
     Returns:
-        tuple: A tuple containing a dictionary of gene indexes, the array of inverted gene scores,
-               and a dictionary of gene indexes to scores.
+    - tuple: A tuple containing a dictionary of gene indexes, the array of inverted gene scores,
+             and a dictionary of gene indexes to scores.
     """
-    inverted_gene_scores = propagate_with_inverse(list(propagation_input.keys()), propagation_input, matrix,
-                                                  gene_index, len(gene_index))
-    # return dictionary of gene indexes and inverted gene scores
-    gene_indexes_scores = dict([(gene_index[gene], inverted_gene_scores[gene_index[gene]])
-                                for gene in propagation_input.keys() if gene in gene_index])
+    inverted_gene_scores = propagate_with_inverse(
+        list(propagation_input.keys()), propagation_input, matrix, gene_index, len(gene_index)
+    )
+
+    gene_indexes_scores = {
+        gene_index[gene]: inverted_gene_scores[gene_index[gene]]
+        for gene in propagation_input.keys() if gene in gene_index
+    }
+
     return inverted_gene_scores, gene_indexes_scores
 
 
-def perform_propagation(test_name, general_args):
+def perform_propagation(test_name: str, general_args: GeneralArgs):
+    """
+    Performs the propagation of gene scores through the network.
+
+    Parameters:
+    - test_name (str): Name of the test for which propagation is performed.
+    - general_args (GeneralArgs): General arguments and settings.
+
+    Returns:
+    - None
+    """
     prop_task = PropagationTask(general_args=general_args, test_name=test_name)
 
     # Load and prepare prior set
@@ -147,11 +173,8 @@ def perform_propagation(test_name, general_args):
         propagation_input = {gene_id: score for gene_id, score in
                              zip(sorted_prior_data['GeneID'], sorted_prior_data['Score'])}
 
-        # Create gene_scores as a ndarray of scores
-        gene_scores = sorted_prior_data['Score'].values
-        # make gene_scores a 2 dimensional array
-        gene_scores = gene_scores.reshape((len(gene_scores), 1))
-
+        # Create gene_scores as a 2 dimensional ndarray of scores
+        gene_scores = sorted_prior_data['Score'].values.reshape((len(sorted_prior_data), 1))
         posterior_set = sorted_prior_data.copy()
         posterior_set['Score'] = gene_scores.flatten()
 

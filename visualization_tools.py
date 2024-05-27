@@ -1,10 +1,10 @@
-import matplotlib.pyplot as plt
 import numpy as np
-from os import path, makedirs
 import pandas as pd
+from args import EnrichTask
+from os import path, makedirs
+import matplotlib.pyplot as plt
 
-
-def print_aggregated_pathway_information(output_dir, experiment_name, all_pathways):
+def print_aggregated_pathway_information(output_dir: str, experiment_name: str, all_pathways: dict) -> None:
     """
     Print aggregated pathway information including P-values, trends, and significant genes
     for each pathway to a text file based on a given experiment.
@@ -12,6 +12,10 @@ def print_aggregated_pathway_information(output_dir, experiment_name, all_pathwa
     Parameters:
     - output_dir (str): Directory where the output text file will be saved.
     - experiment_name (str): Name of the experiment used to name the output file.
+    - all_pathways (dict): Dictionary containing pathway information across different conditions.
+
+    Returns:
+    - None
     """
     # Define the path for the output file
     file_path = path.join(output_dir, 'Text', f'{experiment_name}_aggregated.txt')
@@ -53,27 +57,41 @@ def print_aggregated_pathway_information(output_dir, experiment_name, all_pathwa
             file.write("\n")
 
 
-def print_enriched_pathways_to_file(task,FDR_threshold):
+def print_enriched_pathways_to_file(task: EnrichTask, FDR_threshold: float) -> None:
+    """
+    Write enriched pathways that pass the FDR threshold to a text file.
+
+    Parameters:
+    - task (EnrichTask): Enrichment task containing task-specific settings.
+    - FDR_threshold (float): False Discovery Rate threshold for significance.
+
+    Returns:
+    - None
+    """
     output_file_path = path.join(task.temp_output_folder, f'{task.name}.txt')
-    significant_count = 0  # Counter for significant pathways
+    significant_count = 0
+
     with open(output_file_path, 'w') as file:
         for pathway, details in task.filtered_pathways.items():
             p_value = details.get('Adjusted_p_value')
             if p_value is not None and p_value < FDR_threshold:
-                file.write(f"{pathway} {p_value:.5f}\n")  # Format p-value to 5 decimal places
+                file.write(f"{pathway} {p_value:.5f}\n")
                 significant_count += 1
 
     print(f"Total significant pathways written: {significant_count}")
 
-
-def plot_pathways_mean_scores(output_dir, experiment_name, all_pathways, P_VALUE_THRESHOLD=0.05):
+def plot_pathways_mean_scores(output_dir: str, experiment_name: str, all_pathways: dict, P_VALUE_THRESHOLD=0.05) -> None:
     """
-    Plots mean scores of pathways across different experimental conditions in a horizontal bar chart,
-    highlighting significant differences.
+    Plot mean scores of pathways across all conditions and save the plot as a PNG file.
 
     Parameters:
-    - output_dir (str): The directory where the plot will be saved.
-    - experiment_name (str): The name of the experiment to be used in naming the output file.
+    - output_dir (str): Directory where the output plot file will be saved.
+    - experiment_name (str): Name of the experiment used to name the output file.
+    - all_pathways (dict): Dictionary containing pathway information across different conditions.
+    - P_VALUE_THRESHOLD (float): Threshold for p-values to determine significance (default: 0.05).
+
+    Returns:
+    - None
     """
     # Initialize dictionaries to store mean scores and p-values for each condition
     mean_scores_data = {}

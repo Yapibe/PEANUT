@@ -247,9 +247,9 @@ def perform_statist_mann_whitney(passed_ks_pathway_dict, scores):
 
     # Rank the scores only for the filtered genes and reverse the ranks
     ranks = rankdata(filtered_scores)
-    scores_rank = {
-        gene_id: rank for gene_id, rank in zip(filtered_genes, ranks)
-    }
+    # scores_rank = {
+    #     gene_id: rank for gene_id, rank in zip(filtered_genes, ranks)
+    # }
 
     # Iterate over pathways that passed the KS test to perform the Mann-Whitney U test
     for pathway, genes_info in passed_ks_pathway_dict.items():
@@ -258,8 +258,8 @@ def perform_statist_mann_whitney(passed_ks_pathway_dict, scores):
         background_genes = filtered_genes - pathway_genes
         background_scores = [scores['Score'][gene_id] for gene_id in background_genes]
 
-        pathway_ranks = [scores_rank[gene_id] for gene_id in pathway_genes]
-        background_ranks = [scores_rank[gene_id] for gene_id in background_genes]
+        # pathway_ranks = [scores_rank[gene_id] for gene_id in pathway_genes]
+        # background_ranks = [scores_rank[gene_id] for gene_id in background_genes]
 
         # Compute the Mann-Whitney U test p-value using scores
         mw_pval = wilcoxon_rank_sums_test(pathway_scores, background_scores)

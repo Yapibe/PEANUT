@@ -4,18 +4,19 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 from os import path, makedirs
+from args import GeneralArgs, PropagationTask
 
 
-def filter_network_by_prior_data(network_filename, prior_data):
+def filter_network_by_prior_data(network_filename: str, prior_data: pd.DataFrame) -> nx.Graph:
     """
-    Filters a network to only include nodes present in the prior_data DataFrame.
+    Filter a network to only include nodes present in the prior_data DataFrame.
 
-    Args:
-        network_filename (str): Path to the network file.
-        prior_data (pd.DataFrame): DataFrame containing gene information.
+    Parameters:
+    - network_filename (str): Path to the network file.
+    - prior_data (pd.DataFrame): DataFrame containing gene information.
 
     Returns:
-        networkx.Graph: A filtered graph object.
+    - nx.Graph: A filtered graph object.
     """
     # Read the network
     network = read_network(network_filename)
@@ -33,27 +34,29 @@ def filter_network_by_prior_data(network_filename, prior_data):
 
 
 # noinspection PyTypeChecker
-def read_network(network_filename):
+def read_network(network_filename: str) -> nx.Graph:
     """
-    Reads a network from a file and returns a NetworkX graph.
+    Read a network from a file and return a NetworkX graph.
 
-    Args:
-        network_filename (str): Path to the file containing the network data.
+    Parameters:
+    - network_filename (str): Path to the file containing the network data.
 
     Returns:
-        networkx.Graph: A graph object representing the network.
+    - nx.Graph: A graph object representing the network.
     """
     network = pd.read_table(network_filename, header=None, usecols=[0, 1, 2])
     return nx.from_pandas_edgelist(network, 0, 1, 2)
 
 
-def read_prior_set(excel_dir):
+def read_prior_set(excel_dir: str) -> pd.DataFrame:
     """
-    Reads prior data set from an Excel file and applies preprocessing.
-    Args:
-        excel_dir (str): Path to the Excel file containing the prior data.
+    Read prior data set from an Excel file and apply preprocessing.
+
+    Parameters:
+    - excel_dir (str): Path to the Excel file containing the prior data.
+
     Returns:
-        pandas.DataFrame: DataFrame containing the preprocessed prior data.
+    - pd.DataFrame: DataFrame containing the preprocessed prior data.
     """
     prior_data = pd.read_excel(excel_dir, engine='openpyxl')
 
@@ -130,20 +133,23 @@ def save_file(obj, save_dir=None, compress=True):
     print('File was saved in {}'.format(save_dir))
 
 
-def save_propagation_score(propagation_scores, prior_set, propagation_input, genes_id_to_idx, task, general_args, save_dir=None):
+def save_propagation_score(propagation_scores: pd.DataFrame, prior_set: pd.DataFrame,
+                           propagation_input: dict, genes_id_to_idx: dict, task: PropagationTask,
+                           save_dir: str, general_args: GeneralArgs) -> None:
     """
-    Saves the propagation scores to a file.
+    Save the propagation scores to a compressed file.
 
-    Args:
-        propagation_scores (ndarray): The propagation scores.
-        prior_set (dataframe): The set of prior genes.
-        propagation_input (dict): The input used for propagation.
-        genes_id_to_idx (dict): Mapping from gene indices to gene IDs.
-        task (PropagationTask): The propagation task object containing program arguments.
-        save_dir (str, optional): Directory to save the results.
+    Parameters:
+    - propagation_scores (pd.DataFrame): DataFrame containing the propagated scores.
+    - prior_set (pd.DataFrame): DataFrame containing the prior set of gene scores.
+    - propagation_input (dict): Dictionary mapping gene IDs to their input scores.
+    - genes_id_to_idx (dict): Dictionary mapping gene IDs to their indices.
+    - task (PropagationTask): Propagation task containing task-specific settings.
+    - save_dir (str): Directory where the output file will be saved.
+    - general_args (GeneralArgs): General arguments and settings.
 
     Returns:
-        dict: A dictionary containing the saved data.
+    - None
     """
     file_name = f"{task.test_name}_{general_args.alpha}_{general_args.date}"
     save_dir = save_dir
