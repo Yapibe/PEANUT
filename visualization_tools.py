@@ -3,12 +3,6 @@ import numpy as np
 import seaborn as sns
 from matplotlib.patches import Rectangle, Patch
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from matplotlib.lines import Line2D
-from itertools import combinations
-import networkx as nx
-from matplotlib import colors
-from os import path
-
 
 def sort_y_ticks_by_dir_and_pvalue_of_one_column(enrichment_table, y_ticks, annotation_map, direction,
                                                  dir_column_to_sort_by=0):
