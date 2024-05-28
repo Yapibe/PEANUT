@@ -156,7 +156,6 @@ def perform_enrichment(test_name: str, general_args):
     - None
     """
     # run enrichment
-    print("running enrichment")
     propagation_folder = path.join(general_args.propagation_folder, test_name)
     if general_args.run_propagation:
         propagation_file = path.join(f'{propagation_folder}', '{}_{}_{}'.format(test_name, general_args.alpha, general_args.date))
@@ -167,7 +166,6 @@ def perform_enrichment(test_name: str, general_args):
         enrich_task = EnrichTask(name=test_name, create_scores=True, target_field='gene_prop_scores',
                                  statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)
 
-    print('running enrichment on {}'.format(test_name))
     genes_by_pathway, scores = load_network_and_pathways(general_args, enrich_task.propagation_file)
 
     # Stage 1 - calculate nominal p-values and directions

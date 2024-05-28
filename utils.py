@@ -61,9 +61,6 @@ def read_prior_set(excel_dir: str) -> pd.DataFrame:
     prior_data = pd.read_excel(excel_dir, engine='openpyxl')
 
     # Drop duplicate GeneID values
-    # print all duplicates
-    # print how many genes pre editing
-    print(f"Number of genes before editing: {len(prior_data)}")
     prior_data = prior_data.drop_duplicates(subset='GeneID')
     # remove any row with no value in Score column
     prior_data = prior_data[prior_data['Score'].notna()]
@@ -76,7 +73,6 @@ def read_prior_set(excel_dir: str) -> pd.DataFrame:
 
     # Reset the DataFrame index
     prior_data = prior_data.reset_index(drop=True)
-    print(f"Number of genes after editing: {len(prior_data)}")
     return prior_data
 
 
@@ -162,7 +158,6 @@ def save_propagation_score(propagation_scores: pd.DataFrame, prior_set: pd.DataF
     }
 
     save_file(save_dict, propagation_results_path)
-    return save_dict
 
 
 def load_pathways_genes(pathways_dir):
@@ -207,7 +202,7 @@ def load_file(file_path, decompress=True):
 
     Args:
         file_path (str): The path to the file to be loaded.
-
+        decompress (bool): Whether to decompress the file.
     Returns:
         dict: The loaded data containing propagation scores and other information.
     """
@@ -271,27 +266,6 @@ def get_scores(score_path):
         return {}
 
 
-def read_pathways(file_name):
-    """
-    Reads pathways from a file into a dictionary mapping each pathway to a list of gene IDs.
-
-    Parameters:
-    - file_name (str): Path to the file containing the pathways.
-
-    Returns:
-    dict: A dictionary mapping pathway names to lists of gene IDs.
-    """
-    try:
-        with open(file_name, 'r') as file:
-            return {line.split()[0]: [int(gene) for gene in line.split()[2:]] for line in file if line.strip()}
-    except FileNotFoundError:
-        print(f"File not found: {file_name}")
-        return {}
-    except Exception as e:
-        print(f"Error reading pathways from {file_name}: {e}")
-        return {}
-
-
 def read_temp_scores(file_name):
     """
     Read scores from a file into a dictionary.
@@ -336,7 +310,7 @@ def process_condition(condition_file, experiment_file, pathways_file, all_pathwa
     condition_name = path.basename(condition_file).split('.')[-2]
 
     # Load pathway data mapping pathway names to lists of gene IDs
-    homo_sapien_pathway_dict = read_pathways(pathways_file)
+    homo_sapien_pathway_dict = load_pathways_genes(pathways_file)
 
     # Dictionary to store enriched pathway genes
     enriched_pathway_genes = {}
