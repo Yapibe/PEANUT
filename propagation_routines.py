@@ -4,7 +4,7 @@ import scipy as sp
 import numpy as np
 import networkx as nx
 from args import GeneralArgs, PropagationTask
-from utils import save_propagation_score, read_prior_set, get_propagation_input, filter_network_by_prior_data
+from utils import save_propagation_score, read_prior_set, get_propagation_input, filter_network_by_prior_data, read_network
 
 
 def propagate_with_inverse(seeds: list, propagation_input: dict, inverse_matrix: np.ndarray, gene_indexes: dict,
@@ -56,8 +56,6 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     # Normalize the matrix
     norm_matrix = sp.sparse.diags(1 / sp.sqrt(matrix.sum(0).ravel()), format="csr")
     matrix = norm_matrix * matrix * norm_matrix
-    print("Normalizing the matrix")
-    # inverse_matrix = sp.sparse.linalg.inv(matrix)
 
     print("Calculating the inverse")
     # First, let's get the shape of the matrix W
@@ -71,10 +69,11 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
 
     print("Inverting the matrix")
     # Use scipy's sparse linear solver to find the inverse
-    inverse_matrix = np.linalg.inv(matrix_to_invert.toarray())
+    inverse_matrix_method_1 = sp.sparse.linalg.inv(matrix_to_invert)
+    # inverse_matrix_method_2 = np.linalg.inv(matrix_to_invert.toarray())
 
     # calculate alpha * (I - (1-alpha)*W)^-1
-    inverse_matrix = args.alpha * inverse_matrix
+    inverse_matrix = args.alpha * inverse_matrix_method_1
 
     print("Converting to CSR format")
     # Convert to CSR format before saving
@@ -183,31 +182,29 @@ def perform_propagation(test_name: str, general_args: GeneralArgs):
                                task=prop_task, save_dir=prop_task.output_folder, general_args=general_args)
 
         return
-
-    # reads the network graph from a file
-    filtered_network = filter_network_by_prior_data(general_args.network_file_path, prior_data)
-    # Intersection with network nodes
-    all_genes_ids = filtered_network.nodes()
-
-    # Filter prior_data to include only genes in the filtered network
+    # todo replace where we filter the network, for decoy, run only on decoy and expect to get 0, run covid and find innate immune, cell 2023 roded
+    # Read the network graph from a file
+    network = read_network(general_args.network_file_path)
+    all_genes_ids = set(network.nodes())
+    # Filter prior_data to include only genes in the network
     filtered_prior_data = prior_data[prior_data['GeneID'].isin(all_genes_ids)]
+    filtered_prior_gene_ids = set(filtered_prior_data['GeneID'])
 
     # create or upload similarity matrix
     if general_args.create_similarity_matrix:
         print("generating similarity matrix")
-        matrix, network_gene_index = generate_similarity_matrix(filtered_network, general_args)
+        matrix, network_gene_index = generate_similarity_matrix(network, general_args)
     else:
         print("reading similarity matrix")
-        matrix, network_gene_index = read_sparse_matrix_txt(filtered_network, general_args.similarity_matrix_path)
+        matrix, network_gene_index = read_sparse_matrix_txt(network, general_args.similarity_matrix_path)
         print("uploaded similarity matrix")
 
     # Propagate network
     print("propagating network")
-    propagation_input = get_propagation_input(all_genes_ids, prior_data)
+    propagation_input = get_propagation_input(filtered_prior_gene_ids, filtered_prior_data)
     propagation_score, gene_score_dict = propagate_network(propagation_input, matrix, network_gene_index)
 
-    # print("getting ones input")
-    ones_input = get_propagation_input(all_genes_ids, prior_data, 'ones')
+    ones_input = get_propagation_input(filtered_prior_gene_ids, filtered_prior_data, 'ones')
     ones_gene_scores_inverse, ones_gene_score_dict = propagate_network(ones_input, matrix, network_gene_index)
 
     del matrix
@@ -222,17 +219,22 @@ def perform_propagation(test_name: str, general_args: GeneralArgs):
 
     # Perform the normalization
     non_zero_indices = np.nonzero(propagation_score != 0)[0]
-    propagation_score[non_zero_indices] = propagation_score[non_zero_indices] / np.abs(ones_gene_scores_inverse[non_zero_indices])
+    propagation_score[non_zero_indices] = propagation_score[non_zero_indices] / np.abs(
+        ones_gene_scores_inverse[non_zero_indices])
+
+    # Filter the propagation score to include only genes in the prior data
+    filtered_propagation_scores = {gene_id: propagation_score[network_gene_index[gene_id]] for gene_id in filtered_prior_gene_ids
+                                   if gene_id in network_gene_index}
 
     # Create posterior set DataFrame
     posterior_set = filtered_prior_data.copy()
-    posterior_set['Score'] = propagation_score
+    posterior_set['Score'] = posterior_set['GeneID'].map(filtered_propagation_scores)
 
-    # save propagation score
+    # Save propagation score
     print("saving propagation score")
     save_propagation_score(propagation_scores=posterior_set, prior_set=prior_data, propagation_input=propagation_input,
-                           genes_id_to_idx=network_gene_index, task=prop_task, save_dir=prop_task.output_folder, general_args=general_args)
-
+                           genes_id_to_idx=network_gene_index, task=prop_task, save_dir=prop_task.output_folder,
+                           general_args=general_args)
 
 # def propagate(seeds, propagation_input, matrix, gene_indexes, num_genes, task: PropagationTask):
 #     """

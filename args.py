@@ -64,7 +64,7 @@ class GeneralArgs:
         self.network_file_path = path.join(self.data_dir, 'network', self.network_file)
         self.genes_names_file = 'H_sapiens.gene_info'
         self.genes_names_file_path = path.join(self.data_dir, 'genes_names', self.genes_names_file)
-        self.pathway_file = 'old_pathway_file'
+        self.pathway_file = 'new_pathway_file'
         self.pathway_file_dir = path.join(self.data_dir, 'pathways', self.pathway_file)
         self.similarity_matrix_path = path.join(self.data_dir, 'matrix')
         self.create_similarity_matrix = create_similarity_matrix
@@ -73,7 +73,7 @@ class GeneralArgs:
         # Output directory directories
         self.temp_output_folder = path.join(self.output_dir, 'Temp')
         makedirs(self.temp_output_folder, exist_ok=True)
-        self.propagation_folder = path.join(self.output_dir, 'propagation_scores')
+        self.propagation_folder = path.join(self.output_dir, 'Propagation_Scores')
 
 
 class PropagationTask:

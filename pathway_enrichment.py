@@ -5,7 +5,7 @@ from scipy.stats import rankdata
 from utils import load_network_and_pathways
 from statsmodels.stats.multitest import multipletests
 from visualization_tools import print_enriched_pathways_to_file
-from statistic_methods import hypergeometric_sf, wilcoxon_rank_sums_test, jaccard_index , kolmogorov_smirnov_test
+from statistic_methods import hypergeometric_sf, wilcoxon_rank_sums_test, jaccard_index , kolmogorov_smirnov_test, compute_mw_python
 
 
 def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scores: dict):
@@ -100,9 +100,9 @@ def perform_statist_mann_whitney(task: EnrichTask, args, scores: dict):
 
     # Rank the scores only for the filtered genes and reverse the ranks
     ranks = rankdata(filtered_scores)
-    # scores_rank = {
-    #     gene_id: rank for gene_id, rank in zip(task.filtered_genes, ranks)
-    # }
+    scores_rank = {
+        gene_id: rank for gene_id, rank in zip(task.filtered_genes, ranks)
+    }
 
     # Iterate over pathways that passed the KS test to perform the Mann-Whitney U test
     for pathway, genes_info in task.ks_significant_pathways_with_genes.items():
@@ -111,16 +111,18 @@ def perform_statist_mann_whitney(task: EnrichTask, args, scores: dict):
         background_genes = task.filtered_genes - pathway_genes
         background_scores = [scores[gene_id][0] for gene_id in background_genes]
 
-        # pathway_ranks = [scores_rank[gene_id] for gene_id in pathway_genes]
-        # background_ranks = [scores_rank[gene_id] for gene_id in background_genes]
+        pathway_ranks = [scores_rank[gene_id] for gene_id in pathway_genes]
+        background_ranks = [scores_rank[gene_id] for gene_id in background_genes]
 
         # Compute the Mann-Whitney U test p-value using scores
-        mw_pval = wilcoxon_rank_sums_test(pathway_scores, background_scores)
-        # _, rmw_pval = compute_mw_python(pathway_ranks, background_ranks)
-        mw_p_values.append(mw_pval)
+        # mw_pval = wilcoxon_rank_sums_test(pathway_scores, background_scores)
+        # mw_p_values.append(mw_pval)
+        _, rmw_pval = compute_mw_python(pathway_ranks, background_ranks)
+        mw_p_values.append(rmw_pval)
 
     # Apply Benjamini-Hochberg correction to adjust the p-values
     adjusted_mw_p_values = multipletests(mw_p_values, method='fdr_bh')[1]
+
 
     # Collect significant pathways after adjustment
     filtered_pathways = []
@@ -162,7 +164,7 @@ def perform_enrichment(test_name: str, general_args):
         enrich_task = EnrichTask(name=test_name, create_scores=True, target_field='gene_prop_scores',
                                  statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)
     else:
-        propagation_file = path.join(f'{propagation_folder}', f'{test_name}_1_27_05_2024__14_28_56')
+        propagation_file = path.join(f'{propagation_folder}', f'{test_name}_0.1_29_05_2024__15_03_46')
         enrich_task = EnrichTask(name=test_name, create_scores=True, target_field='gene_prop_scores',
                                  statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)
 
