@@ -79,6 +79,7 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     # Convert to CSR format before saving
     matrix_inverse_csr = sp.sparse.csr_matrix(inverse_matrix)
 
+
     print("Saving the matrix")
     # Save the matrix in .npz format
     # check if path exists, if not create it

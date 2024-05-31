@@ -69,7 +69,7 @@ class GeneralArgs:
         self.similarity_matrix_path = path.join(self.data_dir, 'matrix')
         self.create_similarity_matrix = create_similarity_matrix
         self.similarity_matrix_path = path.join(self.similarity_matrix_path,
-                                                f'similarity_matrix_{self.alpha}.npz')
+                                                f'new_similarity_matrix_{self.alpha}.npz')
         # Output directory directories
         self.temp_output_folder = path.join(self.output_dir, 'Temp')
         makedirs(self.temp_output_folder, exist_ok=True)
