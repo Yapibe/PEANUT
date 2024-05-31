@@ -69,11 +69,11 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
 
     print("Inverting the matrix")
     # Use scipy's sparse linear solver to find the inverse
-    inverse_matrix_method_1 = sp.sparse.linalg.inv(matrix_to_invert)
-    # inverse_matrix_method_2 = np.linalg.inv(matrix_to_invert.toarray())
+    inverse_matrix = sp.sparse.linalg.inv(matrix_to_invert)
+
 
     # calculate alpha * (I - (1-alpha)*W)^-1
-    inverse_matrix = args.alpha * inverse_matrix_method_1
+    inverse_matrix = args.alpha * inverse_matrix
 
     print("Converting to CSR format")
     # Convert to CSR format before saving
