@@ -23,7 +23,7 @@ def main(run_propagation: bool=True, run_enrichment: bool=True):
     Returns:
     - None
     """
-    general_args = GeneralArgs(run_propagation=run_propagation, alpha=0.1)
+    general_args = GeneralArgs(run_propagation=run_propagation, alpha=1)
 
     # List all .xlsx files in the input directory
     test_file_paths = [path.join(general_args.input_dir, file) for file in listdir(general_args.input_dir) if
@@ -59,10 +59,10 @@ def main(run_propagation: bool=True, run_enrichment: bool=True):
         process_condition(condition_file, experiment_file, general_args.pathway_file_dir, all_pathways)
 
         # Output aggregated pathway information
-    print_aggregated_pathway_information(general_args.output_dir, general_args.Experiment_name, all_pathways)
+    print_aggregated_pathway_information(general_args.output_dir, general_args.Experiment_name, general_args.alpha, all_pathways)
 
     # Visualize mean scores of pathways across all conditions
-    plot_pathways_mean_scores(general_args.output_dir, general_args.Experiment_name, all_pathways)
+    plot_pathways_mean_scores(general_args.output_dir, general_args.Experiment_name, general_args.alpha, all_pathways)
 
     # Clean up temporary output folder
     if path.exists(general_args.temp_output_folder):

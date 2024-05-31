@@ -56,8 +56,8 @@ def kolmogorov_smirnov_test(experiment_scores, control_scores):
     float: The P-value from the KS test indicating statistical difference.
     """
     # Convert lists to numpy arrays for efficient operations
-    experiment_scores = np.sort(experiment_scores)
-    control_scores = np.sort(control_scores)
+    experiment_scores = np.sort(experiment_scores).ravel()
+    control_scores = np.sort(control_scores).ravel()
 
     # Calculate the length of each sample
     en1 = len(experiment_scores)

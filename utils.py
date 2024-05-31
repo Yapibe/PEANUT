@@ -88,26 +88,32 @@ def get_propagation_input(prior_gene_ids, prior_data, input_type='Score'):
     Returns:
         dict: A dictionary mapping gene IDs to their corresponding input values.
     """
-    inputs = dict()
-    if input_type == 'ones' or input_type is None:
-        inputs = {int(x): 1 for x in prior_gene_ids}
-    elif input_type == 'abs_Score':
-        for id in prior_gene_ids:
-            try:
-                # Your original code for processing each id
-                inputs[int(id)] = np.abs(float(prior_data[prior_data.GeneID == id]['Score'].values[0]))
-            except TypeError:
-                print(f"Error processing ID: {id}")
-                print(f"Data for this ID: {prior_data[prior_data.GeneID == id]}")
-                # Optionally, you can break or continue based on your needs
-                break
+    inputs = {}
 
-    elif input_type == 'Score':
-        inputs = {int(id): float(prior_data[prior_data.GeneID == id]['Score'].values[0]) for id in prior_gene_ids}
-    else:
-        assert 0, '{} is not a valid input type'.format(input_type)
+    for gene_id in prior_gene_ids:
+        if gene_id not in prior_data['GeneID'].values:
+            print(f"Warning: GeneID {gene_id} not found in prior_data")
+            continue
 
-    inputs = {id: np.round(input_score, 3) for id, input_score in inputs.items()}
+        score = prior_data.loc[prior_data.GeneID == gene_id, 'Score']
+        if score.empty:
+            print(f"Warning: No score found for GeneID {gene_id}")
+            continue
+
+        score = float(score.values[0])
+
+        if input_type == 'ones':
+            inputs[int(gene_id)] = 1
+        elif input_type == 'abs_Score':
+            inputs[int(gene_id)] = np.abs(score)
+        elif input_type == 'Score':
+            inputs[int(gene_id)] = score
+        else:
+            raise ValueError(f'{input_type} is not a valid input type')
+
+    if not inputs:
+        raise ValueError(f'No valid inputs were generated for the specified input type: {input_type}')
+
     return inputs
 
 
@@ -170,40 +176,15 @@ def load_pathways_genes(pathways_dir):
     Returns:
         dict: A dictionary mapping pathway names to lists of genes in each pathway.
     """
-    # pathways = {}
-    # # Open the file containing pathway data
-    # try:
-    #     with open(pathways_dir, 'r') as file:
-    #         for line in file:
-    #             # Process each line, normalize case, and split by tab
-    #             parts = line.strip().upper().split('\t')
-    #             # Skip lines that don't have at least 3 parts or where the second part isn't a digit
-    #             if len(parts) < 3 or not parts[1].isdigit():
-    #                 continue
-    #
-    #             # Parse pathway name and expected size
-    #             pathway_name, pathway_size = parts[0], int(parts[1])
-    #
-    #             # Collect gene IDs ensuring they are numeric and don't exceed the pathway size
-    #             genes = [int(gene) for gene in parts[2].split()[:pathway_size] if gene.isdigit()]
-    #             pathways[pathway_name] = genes
-    #
-    # except FileNotFoundError:
-    #     print(f"File not found: {pathways_dir}")
-    # except Exception as e:
-    #     print(f"An error occurred while loading pathways: {e}")
-    #
-    # return pathways
-
     pathways = {}
     # Open the file containing pathway data
     try:
         with open(pathways_dir, 'r') as file:
             for line in file:
                 # Process each line, normalize case, and split by tab
-                parts = line.strip().split('\t')
-                # Skip lines that don't have at least 2 parts
-                if len(parts) < 2:
+                parts = line.strip().upper().split('\t')
+                # Skip lines that don't have at least 3 parts or where the second part isn't a digit
+                if len(parts) < 3 or not parts[1].isdigit():
                     continue
 
                 # Parse pathway name

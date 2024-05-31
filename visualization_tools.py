@@ -4,7 +4,7 @@ from args import EnrichTask
 from os import path, makedirs
 import matplotlib.pyplot as plt
 
-def print_aggregated_pathway_information(output_dir: str, experiment_name: str, all_pathways: dict) -> None:
+def print_aggregated_pathway_information(output_dir: str, experiment_name: str, alpha: float, all_pathways: dict) -> None:
     """
     Print aggregated pathway information including P-values, trends, and significant genes
     for each pathway to a text file based on a given experiment.
@@ -12,13 +12,14 @@ def print_aggregated_pathway_information(output_dir: str, experiment_name: str, 
     Parameters:
     - output_dir (str): Directory where the output text file will be saved.
     - experiment_name (str): Name of the experiment used to name the output file.
+    - alpha (float): RWR hyper-parameter
     - all_pathways (dict): Dictionary containing pathway information across different conditions.
 
     Returns:
     - None
     """
     # Define the path for the output file
-    file_path = path.join(output_dir, 'Text', f'{experiment_name}_aggregated.txt')
+    file_path = path.join(output_dir, 'Text', f'{experiment_name}_{alpha}_aggregated.txt')
 
     # Create a list of (pathway, best_p_value) tuples
     pathways_p_values = []
@@ -80,13 +81,14 @@ def print_enriched_pathways_to_file(task: EnrichTask, FDR_threshold: float) -> N
 
     print(f"Total significant pathways written: {significant_count}")
 
-def plot_pathways_mean_scores(output_dir: str, experiment_name: str, all_pathways: dict, P_VALUE_THRESHOLD=0.05) -> None:
+def plot_pathways_mean_scores(output_dir: str, experiment_name: str, alpha: float, all_pathways: dict, P_VALUE_THRESHOLD=0.05) -> None:
     """
     Plot mean scores of pathways across all conditions and save the plot as a PNG file.
 
     Parameters:
     - output_dir (str): Directory where the output plot file will be saved.
     - experiment_name (str): Name of the experiment used to name the output file.
+    - alpha (float): RWR hyper-parameter
     - all_pathways (dict): Dictionary containing pathway information across different conditions.
     - P_VALUE_THRESHOLD (float): Threshold for p-values to determine significance (default: 0.05).
 
@@ -163,7 +165,7 @@ def plot_pathways_mean_scores(output_dir: str, experiment_name: str, all_pathway
     plt.subplots_adjust(left=0.4)
 
     # Save the figure to a PDF file in the specified output directory
-    output_file_path = path.join(output_dir, 'Plots', f"{experiment_name}_pathway_scores.pdf")
+    output_file_path = path.join(output_dir, 'Plots', f"{experiment_name}_{alpha}_pathway_scores.pdf")
     makedirs(path.dirname(output_file_path), exist_ok=True)
     plt.savefig(output_file_path, format='pdf', bbox_inches='tight')
     plt.close()  # Close the plot to avoid displaying it in environments like Jupyter Notebooks
