@@ -23,7 +23,7 @@ def main(run_propagation: bool=True, run_enrichment: bool=True):
     Returns:
     - None
     """
-    general_args = GeneralArgs(run_propagation=run_propagation, alpha=1)
+    general_args = GeneralArgs(run_propagation=run_propagation, alpha=0.1)
 
     # List all .xlsx files in the input directory
     test_file_paths = [path.join(general_args.input_dir, file) for file in listdir(general_args.input_dir) if
