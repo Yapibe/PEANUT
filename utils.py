@@ -120,9 +120,9 @@ def load_propagation_scores(propagation_file_path):
     return propagation_result_dict
 
 
-def load_network_and_pathways(general_args, propagation_file_path):
+def load_pathways_and_propagation_scores(general_args, propagation_file_path):
     """
-    Loads the network graph and pathways based on the provided configuration.
+    Loads the pathways based on the provided configuration and the propagation scores.
     Returns:
         tuple: A tuple containing the network graph, a list of interesting pathways, and a dictionary mapping
                pathways to their genes.
@@ -337,7 +337,7 @@ def process_condition(condition_file, experiment_file, pathways_file, all_pathwa
     # Read scores for the condition, mapping pathways to their scores
     enriched_pathway_dict = read_temp_scores(condition_file)
 
-    # Load experiment data and filter out entries where the score is zero. experiment file is xlsx
+    # Load experiment data and filter out entries where the score is zero.
     condition_data_df = pd.read_excel(experiment_file)
     experiment_data_filtered_df = condition_data_df[condition_data_df['Score'] != 0]
 

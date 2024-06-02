@@ -21,6 +21,12 @@ def print_aggregated_pathway_information(output_dir: str, experiment_name: str, 
     # Define the path for the output file
     file_path = path.join(output_dir, 'Text', f'{experiment_name}_{alpha}_aggregated.txt')
 
+    if not all_pathways:
+        with open(file_path, 'w') as file:
+            file.write("No significant pathways found.\n")
+        print("No significant pathways found. File written with message.")
+        return
+
     # Create a list of (pathway, best_p_value) tuples
     pathways_p_values = []
     for pathway, conditions in all_pathways.items():
@@ -56,6 +62,7 @@ def print_aggregated_pathway_information(output_dir: str, experiment_name: str, 
                 file.write(f"    {gene_data['Symbol']}: {scores_str}\n")
 
             file.write("\n")
+    print(f"Aggregated pathway information written to {file_path}")
 
 
 def print_enriched_pathways_to_file(task: EnrichTask, FDR_threshold: float) -> None:
@@ -95,6 +102,10 @@ def plot_pathways_mean_scores(output_dir: str, experiment_name: str, alpha: floa
     Returns:
     - None
     """
+    if not all_pathways:
+        print("No pathways to plot. Exiting function.")
+        return
+
     # Initialize dictionaries to store mean scores and p-values for each condition
     mean_scores_data = {}
     p_values_data = {}
@@ -106,6 +117,10 @@ def plot_pathways_mean_scores(output_dir: str, experiment_name: str, alpha: floa
     # Create DataFrames from the dictionaries
     data_df = pd.DataFrame(mean_scores_data)
     p_values_df = pd.DataFrame(p_values_data)
+
+    if data_df.empty:
+        print("Data for plotting is empty. Exiting function.")
+        return
 
     # Sort pathways alphabetically
     sorted_pathways = sorted(data_df.index)

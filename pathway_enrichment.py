@@ -2,10 +2,10 @@ import pandas as pd
 from os import path
 from args import EnrichTask
 from scipy.stats import rankdata
-from utils import load_network_and_pathways
+from utils import load_pathways_and_propagation_scores
 from statsmodels.stats.multitest import multipletests
 from visualization_tools import print_enriched_pathways_to_file
-from statistic_methods import hypergeometric_sf, jaccard_index , kolmogorov_smirnov_test, compute_mw_python
+from statistical_methods import hypergeometric_sf, jaccard_index , kolmogorov_smirnov_test, compute_mw_python
 
 
 def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scores: dict):
@@ -70,6 +70,9 @@ def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scor
         background_scores = [scores[gene_id][0] for gene_id in background_genes]
         ks_p_values.append(kolmogorov_smirnov_test(pathway_scores, background_scores))
 
+    if not ks_p_values:
+        print("No significant pathways found after hypergeometric test. Skipping KS test.")
+        return
     # Apply Benjamini-Hochberg correction to the KS P-values
     adjusted_p_values = multipletests(ks_p_values, method='fdr_bh')[1]
 
@@ -79,6 +82,8 @@ def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scor
         for i, pathway in enumerate(significant_pathways)
         if adjusted_p_values[i] < 0.05
     }
+    if not task.ks_significant_pathways_with_genes:
+        print("No significant pathways found after KS test.")
 
 
 def perform_statist_mann_whitney(task: EnrichTask, args, scores: dict):
@@ -164,17 +169,20 @@ def perform_enrichment(test_name: str, general_args):
         enrich_task = EnrichTask(name=test_name, create_scores=True, target_field='gene_prop_scores',
                                  statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)
     else:
-        propagation_file = path.join(f'{propagation_folder}', f'{test_name}_0.1_29_05_2024__15_03_46')
+        propagation_file = path.join(f'{propagation_folder}', f'{test_name}_1_02_06_2024__13_37_54')
         enrich_task = EnrichTask(name=test_name, create_scores=True, target_field='gene_prop_scores',
                                  statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)
 
-    genes_by_pathway, scores = load_network_and_pathways(general_args, enrich_task.propagation_file)
+    genes_by_pathway, scores = load_pathways_and_propagation_scores(general_args, enrich_task.propagation_file)
 
     # Stage 1 - calculate nominal p-values and directions
     perform_statist(enrich_task, general_args, genes_by_pathway, scores)
+    # Check if there are significant pathways after the KS test
     if enrich_task.ks_significant_pathways_with_genes:
         # Further statistical test using Mann-Whitney U test
         perform_statist_mann_whitney(enrich_task, general_args, scores)
+    else:
+        print("Skipping Mann-Whitney test.")
     # Output the enriched pathways to files
     print_enriched_pathways_to_file(enrich_task, general_args.FDR_threshold)
 

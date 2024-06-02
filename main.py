@@ -23,7 +23,7 @@ def main(run_propagation: bool=True, run_enrichment: bool=True):
     Returns:
     - None
     """
-    general_args = GeneralArgs(run_propagation=run_propagation, alpha=0.1)
+    general_args = GeneralArgs(run_propagation=run_propagation, alpha=1)
 
     # List all .xlsx files in the input directory
     test_file_paths = [path.join(general_args.input_dir, file) for file in listdir(general_args.input_dir) if
@@ -73,7 +73,7 @@ if __name__ == '__main__':
     start_time = time.time()
 
     # Flags to control the tasks to run
-    run_propagation_flag = True
+    run_propagation_flag = False
     run_enrichment_flag = True
 
     main(run_propagation=run_propagation_flag, run_enrichment=run_enrichment_flag)
