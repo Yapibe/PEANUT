@@ -12,7 +12,7 @@ def print_aggregated_pathway_information(output_dir: str, experiment_name: str, 
     Parameters:
     - output_dir (str): Directory where the output text file will be saved.
     - experiment_name (str): Name of the experiment used to name the output file.
-    - alpha (float): RWR hyper-parameter
+    - alpha (float): RWR hyperparameter
     - all_pathways (dict): Dictionary containing pathway information across different conditions.
 
     Returns:
@@ -88,7 +88,7 @@ def plot_pathways_mean_scores(output_dir: str, experiment_name: str, alpha: floa
     Parameters:
     - output_dir (str): Directory where the output plot file will be saved.
     - experiment_name (str): Name of the experiment used to name the output file.
-    - alpha (float): RWR hyper-parameter
+    - alpha (float): RWR hyperparameter
     - all_pathways (dict): Dictionary containing pathway information across different conditions.
     - P_VALUE_THRESHOLD (float): Threshold for p-values to determine significance (default: 0.05).
 

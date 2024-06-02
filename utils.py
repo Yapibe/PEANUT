@@ -32,49 +32,108 @@ def filter_network_by_prior_data(network_filename: str, prior_data: pd.DataFrame
 
     return filtered_network
 
+####################################################################LOAD FUNCTIONS############################################################################
 
-# noinspection PyTypeChecker
-def read_network(network_filename: str) -> nx.Graph:
+def load_pathways_genes(pathways_dir):
     """
-    Read a network from a file and return a NetworkX graph.
+    Loads the pathways and their associated genes from a file.
 
-    Parameters:
-    - network_filename (str): Path to the file containing the network data.
+    Args:
+        pathways_dir (str): Path to the file containing the pathway data.
 
     Returns:
-    - nx.Graph: A graph object representing the network.
+        dict: A dictionary mapping pathway names to lists of genes in each pathway.
     """
-    network = pd.read_table(network_filename, header=None, usecols=[0, 1, 2])
-    return nx.from_pandas_edgelist(network, 0, 1, 2)
+    pathways = {}
+    # Open the file containing pathway data
+    try:
+        with open(pathways_dir, 'r') as file:
+            for line in file:
+                # Process each line, normalize case, and split by tab
+                parts = line.strip().upper().split('\t')
+                # Skip lines that don't have at least 3 parts or where the second part isn't a digit
+                if len(parts) < 3 or not parts[1].isdigit():
+                    continue
 
+                # Parse pathway name
+                pathway_name = parts[0]
 
-def read_prior_set(excel_dir: str) -> pd.DataFrame:
+                # Pathway does not include size, extract all parts starting from the second part as genes
+                genes = [int(gene) for gene in parts[1:] if gene.isdigit()]
+
+                pathways[pathway_name] = genes
+
+    except FileNotFoundError:
+        print(f"File not found: {pathways_dir}")
+    except Exception as e:
+        print(f"An error occurred while loading pathways: {e}")
+
+    return pathways
+
+    # pathways = {}
+    # # Open the file containing pathway data
+    # try:
+    #     with open(pathways_dir, 'r') as file:
+    #         for line in file:
+    #             # Process each line, normalize case, and split by tab
+    #             parts = line.strip().upper().split('\t')
+    #             # Skip lines that don't have at least 3 parts or where the second part isn't a digit
+    #             if len(parts) < 3 or not parts[1].isdigit():
+    #                 continue
+    #
+    #             # Parse pathway name and expected size
+    #             pathway_name, pathway_size = parts[0], int(parts[1])
+    #
+    #             # Collect gene IDs ensuring they are numeric and don't exceed the pathway size
+    #             genes = [int(gene) for gene in parts[2].split()[:pathway_size] if gene.isdigit()]
+    #             pathways[pathway_name] = genes
+    #
+    # except FileNotFoundError:
+    #     print(f"File not found: {pathways_dir}")
+    # except Exception as e:
+    #     print(f"An error occurred while loading pathways: {e}")
+    #
+    # return pathways
+
+def load_propagation_file(file_path, decompress=True):
     """
-    Read prior data set from an Excel file and apply preprocessing.
+    Loads the propagation score data from a file.
 
-    Parameters:
-    - excel_dir (str): Path to the Excel file containing the prior data.
-
+    Args:
+        file_path (str): The path to the file to be loaded.
+        decompress (bool): Whether to decompress the file.
     Returns:
-    - pd.DataFrame: DataFrame containing the preprocessed prior data.
+        dict: The loaded data containing propagation scores and other information.
     """
-    prior_data = pd.read_excel(excel_dir, engine='openpyxl')
+    with open(file_path, 'rb') as file:
+        decompressed_data = pickle.load(file)
+    if decompress:
+        try:
+            decompressed_data = pickle.loads(zlib.decompress(decompressed_data))
+        except zlib.error:
+            print('Entered an uncompressed file but asked to decompress it')
+    return decompressed_data
 
-    # Drop duplicate GeneID values
-    prior_data = prior_data.drop_duplicates(subset='GeneID')
-    # remove any row with no value in Score column
-    prior_data = prior_data[prior_data['Score'].notna()]
-    # remove any row with "?" in Score column
-    prior_data = prior_data[prior_data['Score'] != '?']
-    # Filter out GeneIDs that are not purely numeric (to exclude concatenated IDs)
-    prior_data = prior_data[prior_data['GeneID'].apply(lambda x: str(x).isdigit())]
-    # Convert GeneID to integer
-    prior_data['GeneID'] = prior_data['GeneID'].astype(int)
 
-    # Reset the DataFrame index
-    prior_data = prior_data.reset_index(drop=True)
-    return prior_data
+def load_propagation_scores(propagation_file_path):
+    propagation_result_dict: dict = load_propagation_file(propagation_file_path, decompress=True)
+    return propagation_result_dict
 
+
+def load_network_and_pathways(general_args, propagation_file_path):
+    """
+    Loads the network graph and pathways based on the provided configuration.
+    Returns:
+        tuple: A tuple containing the network graph, a list of interesting pathways, and a dictionary mapping
+               pathways to their genes.
+    """
+    # network_graph = read_network(general_args.network_file_path)
+    genes_by_pathway = load_pathways_genes(general_args.pathway_file_dir)
+    scores = get_scores(propagation_file_path)
+
+    return genes_by_pathway, scores
+
+####################################################################GET FUNCTIONS############################################################################
 
 def get_propagation_input(prior_gene_ids, prior_data, input_type='Score'):
     """
@@ -116,6 +175,102 @@ def get_propagation_input(prior_gene_ids, prior_data, input_type='Score'):
 
     return inputs
 
+
+def get_scores(score_path):
+    """
+        Loads gene scores and P-values from a file and returns a dictionary mapping gene IDs to their scores and P-values.
+
+        Args:
+            score_path (str): The path to the file containing the propagation scores.
+
+        Returns:
+            dict: A dictionary with gene IDs as keys and tuples of (Score, P-value) as values.
+        """
+    try:
+        # Load propagation results from the specified file
+        propagation_results = load_propagation_scores(score_path)
+
+        # Sort the propagation scores by GeneID
+        sorted_scores = propagation_results['gene_prop_scores'].sort_values(by='GeneID').reset_index(drop=True)
+
+        # Create a dictionary mapping gene IDs to tuples of (Score, P-value)
+        gene_scores = {gene_id: (score, pvalue) for gene_id, score, pvalue
+                       in zip(sorted_scores['GeneID'], sorted_scores['Score'], sorted_scores['P-value'])}
+
+        return gene_scores
+
+    except FileNotFoundError:
+        print(f"File not found: {score_path}")
+        return {}
+    except Exception as error:
+        print(f"An error occurred: {error}")
+        return {}
+
+####################################################################READ FUNCTIONS############################################################################
+
+def read_temp_scores(file_name):
+    """
+    Read scores from a file into a dictionary.
+
+    Parameters:
+    - file_name (str): Path to the file containing the scores.
+
+    Returns:
+    dict: A dictionary mapping pathways to their scores.
+    """
+    try:
+        scores = pd.read_csv(file_name, sep=' ', header=None, names=['Pathway', 'Score'], index_col='Pathway')
+        return scores['Score'].to_dict()
+    except FileNotFoundError:
+        print(f"File not found: {file_name}")
+        return {}
+    except Exception as e:
+        print(f"Error reading scores from {file_name}: {e}")
+        return {}
+
+
+def read_network(network_filename: str) -> nx.Graph:
+    """
+    Read a network from a file and return a NetworkX graph.
+
+    Parameters:
+    - network_filename (str): Path to the file containing the network data.
+
+    Returns:
+    - nx.Graph: A graph object representing the network.
+    """
+    network = pd.read_table(network_filename, header=None, usecols=[0, 1, 2])
+    return nx.from_pandas_edgelist(network, 0, 1, 2)
+
+
+def read_prior_set(excel_dir: str) -> pd.DataFrame:
+    """
+    Read prior data set from an Excel file and apply preprocessing.
+
+    Parameters:
+    - excel_dir (str): Path to the Excel file containing the prior data.
+
+    Returns:
+    - pd.DataFrame: DataFrame containing the preprocessed prior data.
+    """
+    prior_data = pd.read_excel(excel_dir, engine='openpyxl')
+
+    # Drop duplicate GeneID values
+    prior_data = prior_data.drop_duplicates(subset='GeneID')
+    # remove any row with no value in Score column
+    prior_data = prior_data[prior_data['Score'].notna()]
+    # remove any row with "?" in Score column
+    prior_data = prior_data[prior_data['Score'] != '?']
+    # Filter out GeneIDs that are not purely numeric (to exclude concatenated IDs)
+    prior_data = prior_data[prior_data['GeneID'].apply(lambda x: str(x).isdigit())]
+    # Convert GeneID to integer
+    prior_data['GeneID'] = prior_data['GeneID'].astype(int)
+
+    # Reset the DataFrame index
+    prior_data = prior_data.reset_index(drop=True)
+    return prior_data
+
+####################################################################SAVE FUNCTIONS############################################################################
 
 def save_file(obj, save_dir=None, compress=True):
     """
@@ -165,133 +320,7 @@ def save_propagation_score(propagation_scores: pd.DataFrame, prior_set: pd.DataF
 
     save_file(save_dict, propagation_results_path)
 
-
-def load_pathways_genes(pathways_dir):
-    """
-    Loads the pathways and their associated genes from a file.
-
-    Args:
-        pathways_dir (str): Path to the file containing the pathway data.
-
-    Returns:
-        dict: A dictionary mapping pathway names to lists of genes in each pathway.
-    """
-    pathways = {}
-    # Open the file containing pathway data
-    try:
-        with open(pathways_dir, 'r') as file:
-            for line in file:
-                # Process each line, normalize case, and split by tab
-                parts = line.strip().upper().split('\t')
-                # Skip lines that don't have at least 3 parts or where the second part isn't a digit
-                if len(parts) < 3 or not parts[1].isdigit():
-                    continue
-
-                # Parse pathway name
-                pathway_name = parts[0]
-
-                # Pathway does not include size, extract all parts starting from the second part as genes
-                genes = [int(gene) for gene in parts[1:] if gene.isdigit()]
-
-                pathways[pathway_name] = genes
-
-    except FileNotFoundError:
-        print(f"File not found: {pathways_dir}")
-    except Exception as e:
-        print(f"An error occurred while loading pathways: {e}")
-
-    return pathways
-
-def load_file(file_path, decompress=True):
-    """
-    Loads the propagation score data from a file.
-
-    Args:
-        file_path (str): The path to the file to be loaded.
-        decompress (bool): Whether to decompress the file.
-    Returns:
-        dict: The loaded data containing propagation scores and other information.
-    """
-    with open(file_path, 'rb') as file:
-        decompressed_data = pickle.load(file)
-    if decompress:
-        try:
-            decompressed_data = pickle.loads(zlib.decompress(decompressed_data))
-        except zlib.error:
-            print('Entered an uncompressed file but asked to decompress it')
-    return decompressed_data
-
-
-def load_propagation_scores(propagation_file_path):
-    propagation_result_dict: dict = load_file(propagation_file_path, decompress=True)
-    return propagation_result_dict
-
-
-def load_network_and_pathways(general_args, propagation_file_path):
-    """
-    Loads the network graph and pathways based on the provided configuration.
-    Returns:
-        tuple: A tuple containing the network graph, a list of interesting pathways, and a dictionary mapping
-               pathways to their genes.
-    """
-    # network_graph = read_network(general_args.network_file_path)
-    genes_by_pathway = load_pathways_genes(general_args.pathway_file_dir)
-    scores = get_scores(propagation_file_path)
-
-    return genes_by_pathway, scores
-
-
-def get_scores(score_path):
-    """
-        Loads gene scores and P-values from a file and returns a dictionary mapping gene IDs to their scores and P-values.
-
-        Args:
-            score_path (str): The path to the file containing the propagation scores.
-
-        Returns:
-            dict: A dictionary with gene IDs as keys and tuples of (Score, P-value) as values.
-        """
-    try:
-        # Load propagation results from the specified file
-        propagation_results = load_propagation_scores(score_path)
-
-        # Sort the propagation scores by GeneID
-        sorted_scores = propagation_results['gene_prop_scores'].sort_values(by='GeneID').reset_index(drop=True)
-
-        # Create a dictionary mapping gene IDs to tuples of (Score, P-value)
-        gene_scores = {gene_id: (score, pvalue) for gene_id, score, pvalue
-                       in zip(sorted_scores['GeneID'], sorted_scores['Score'], sorted_scores['P-value'])}
-
-        return gene_scores
-
-    except FileNotFoundError:
-        print(f"File not found: {score_path}")
-        return {}
-    except Exception as error:
-        print(f"An error occurred: {error}")
-        return {}
-
-
-def read_temp_scores(file_name):
-    """
-    Read scores from a file into a dictionary.
-
-    Parameters:
-    - file_name (str): Path to the file containing the scores.
-
-    Returns:
-    dict: A dictionary mapping pathways to their scores.
-    """
-    try:
-        scores = pd.read_csv(file_name, sep=' ', header=None, names=['Pathway', 'Score'], index_col='Pathway')
-        return scores['Score'].to_dict()
-    except FileNotFoundError:
-        print(f"File not found: {file_name}")
-        return {}
-    except Exception as e:
-        print(f"Error reading scores from {file_name}: {e}")
-        return {}
-
+##############################################################################################################################################
 
 def process_condition(condition_file, experiment_file, pathways_file, all_pathways, P_VALUE_THRESHOLD=0.05):
     """

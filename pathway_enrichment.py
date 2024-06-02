@@ -5,7 +5,7 @@ from scipy.stats import rankdata
 from utils import load_network_and_pathways
 from statsmodels.stats.multitest import multipletests
 from visualization_tools import print_enriched_pathways_to_file
-from statistic_methods import hypergeometric_sf, wilcoxon_rank_sums_test, jaccard_index , kolmogorov_smirnov_test, compute_mw_python
+from statistic_methods import hypergeometric_sf, jaccard_index , kolmogorov_smirnov_test, compute_mw_python
 
 
 def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scores: dict):
@@ -172,8 +172,9 @@ def perform_enrichment(test_name: str, general_args):
 
     # Stage 1 - calculate nominal p-values and directions
     perform_statist(enrich_task, general_args, genes_by_pathway, scores)
-    # Further statistical test using Mann-Whitney U test
-    perform_statist_mann_whitney(enrich_task, general_args, scores)
+    if enrich_task.ks_significant_pathways_with_genes:
+        # Further statistical test using Mann-Whitney U test
+        perform_statist_mann_whitney(enrich_task, general_args, scores)
     # Output the enriched pathways to files
     print_enriched_pathways_to_file(enrich_task, general_args.FDR_threshold)
 

@@ -76,7 +76,7 @@ that of other annotated genes. Pathways with FDR-corrected p-values smaller than
 2. **Filter Network:** Filter the PPI network to include only genes present in the prior data.
 3. **Create or Load Similarity Matrix:** Generate or load the similarity matrix for the network.
 4. **Propagate Scores:** Propagate the gene scores through the network.
-5. **Normalize Scores:** Normalize the propagated scores using a ones vector.
+5. **Normalize Scores:** Normalize the propagated scores using ones vector.
 6. **Save Results:** Save the propagated scores and the updated gene data.
 
 #### Enrichment Steps
@@ -110,7 +110,7 @@ that of other annotated genes. Pathways with FDR-corrected p-values smaller than
   - `Plots`: contains plots generated during the analysis.
   - `Text`: contains text files with the results of the analysis.
 
-### Statisical Methods
+### Statistical Methods
 - **Hypergeometric Test:** <br>
   Used to identify statistically significant pathways by comparing the observed number of genes in a pathway to the expected number under a null model.
 

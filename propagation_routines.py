@@ -4,10 +4,10 @@ import scipy as sp
 import numpy as np
 import networkx as nx
 from args import GeneralArgs, PropagationTask
-from utils import save_propagation_score, read_prior_set, get_propagation_input, filter_network_by_prior_data, read_network
+from utils import save_propagation_score, read_prior_set, get_propagation_input, read_network
 
 
-def propagate_with_inverse(seeds: list, propagation_input: dict, inverse_matrix: np.ndarray, gene_indexes: dict,
+def propagate_with_inverse(seeds: list, propagation_input: dict, inverse_matrix: sp.matrix, gene_indexes: dict,
                            num_genes: int) -> np.ndarray:
     """
     Propagates seed gene values through a precomputed inverse matrix for faster calculation.
@@ -15,7 +15,7 @@ def propagate_with_inverse(seeds: list, propagation_input: dict, inverse_matrix:
     Parameters:
     - seeds (list): List of seed gene IDs.
     - propagation_input (dict): Mapping of gene IDs to their initial values for propagation.
-    - inverse_matrix (np.ndarray): Precomputed inverse matrix for propagation.
+    - inverse_matrix (sp.matrix): Precomputed inverse matrix for propagation.
     - gene_indexes (dict): Mapping of gene IDs to their indices in the matrix.
     - num_genes (int): Total number of genes in the network.
 
@@ -183,7 +183,7 @@ def perform_propagation(test_name: str, general_args: GeneralArgs):
                                task=prop_task, save_dir=prop_task.output_folder, general_args=general_args)
 
         return
-    # todo replace where we filter the network, for decoy, run only on decoy and expect to get 0, run covid and find innate immune, cell 2023 roded
+    # todo for decoy, run only on decoy and expect to get 0, run covid and find innate immune, cell 2023 roded
     # Read the network graph from a file
     network = read_network(general_args.network_file_path)
     all_genes_ids = set(network.nodes())
