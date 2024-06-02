@@ -33,7 +33,7 @@ class GeneralArgs:
         - network_file_path (str): Path to the network file.
         - genes_names_file (str): Gene names file name.
         - genes_names_file_path (str): Path to the gene names file.
-        - pathway_file (str): Pathway file name.
+        - bio_pathways (str): Pathway file name.
         - pathway_file_dir (str): Directory for pathway files.
         - similarity_matrix_path (str): Path to the similarity matrix file.
         - create_similarity_matrix (bool): Flag to create similarity matrix.
@@ -64,7 +64,7 @@ class GeneralArgs:
         self.network_file_path = path.join(self.data_dir, 'network', self.network_file)
         self.genes_names_file = 'H_sapiens.gene_info'
         self.genes_names_file_path = path.join(self.data_dir, 'genes_names', self.genes_names_file)
-        self.pathway_file = 'pathway_file'
+        self.pathway_file = 'bio_pathways'
         self.pathway_file_dir = path.join(self.data_dir, 'pathways', self.pathway_file)
         self.similarity_matrix_path = path.join(self.data_dir, 'matrix')
         self.create_similarity_matrix = create_similarity_matrix

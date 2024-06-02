@@ -183,7 +183,7 @@ def perform_propagation(test_name: str, general_args: GeneralArgs):
                                task=prop_task, save_dir=prop_task.output_folder, general_args=general_args)
 
         return
-    # todo for decoy, run only on decoy and expect to get 0, run covid and find innate immune, cell 2023 roded
+    # todo  run covid and find innate immune, cell 2023 roded
     # Read the network graph from a file
     network = read_network(general_args.network_file_path)
     all_genes_ids = set(network.nodes())

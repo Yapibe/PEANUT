@@ -139,6 +139,10 @@ def perform_statist_mann_whitney(task: EnrichTask, args, scores: dict):
                 'Genes': genes[0]
             })
 
+    if not filtered_pathways:
+        print("No significant pathways found after Mann-Whitney U test.")
+        return
+
     # Convert the list of filtered pathways to a DataFrame and sort by p-value
     pathways_df = pd.DataFrame(filtered_pathways)
     pathways_df.sort_values(by='Adjusted_p_value', inplace=True)
@@ -169,7 +173,7 @@ def perform_enrichment(test_name: str, general_args):
         enrich_task = EnrichTask(name=test_name, create_scores=True, target_field='gene_prop_scores',
                                  statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)
     else:
-        propagation_file = path.join(f'{propagation_folder}', f'{test_name}_1_02_06_2024__13_37_54')
+        propagation_file = path.join(f'{propagation_folder}', f'{test_name}_0.1_02_06_2024__13_38_28')
         enrich_task = EnrichTask(name=test_name, create_scores=True, target_field='gene_prop_scores',
                                  statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)
 
