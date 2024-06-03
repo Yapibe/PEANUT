@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 from os import path, makedirs
-from args import GeneralArgs, PropagationTask
+from pipeline.args import GeneralArgs, PropagationTask
 
 
 def filter_network_by_prior_data(network_filename: str, prior_data: pd.DataFrame) -> nx.Graph:

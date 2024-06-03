@@ -3,7 +3,7 @@ import time
 import scipy as sp
 import numpy as np
 import networkx as nx
-from args import GeneralArgs, PropagationTask
+from pipeline.args import GeneralArgs, PropagationTask
 from utils import save_propagation_score, read_prior_set, get_propagation_input, read_network
 
 

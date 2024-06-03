@@ -61,8 +61,8 @@ def handle_duplicates(df):
 
 
 # Usage
-data_file_path = '../Inputs/experiments_data/Parkinson/Parkinson_t_v_n_500nm_v_t.xlsx'
-file_path_idmap = '../Data/H_sapiens/gene_names/ID_to_Name_Map.xlsx'
+data_file_path = '../pipeline/Inputs/experiments_data/Parkinson/Parkinson_t_v_n_500nm_v_t.xlsx'
+file_path_idmap = '../pipeline/Data/H_sapiens/gene_names/ID_to_Name_Map.xlsx'
 
 data_file = load_and_filter_data(data_file_path)
 

@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from os import path
-import utils
+from pipeline import utils
 
 main_dir = path.dirname(path.dirname(path.realpath(__file__)))
 
