@@ -4,7 +4,7 @@ from pipeline.args import EnrichTask, GeneralArgs
 from os import path, makedirs
 import matplotlib.pyplot as plt
 
-def print_aggregated_pathway_information(args: GeneralArgs, all_pathways: dict) -> None:
+def print_aggregated_pathway_information(args: GeneralArgs, all_pathways: dict) -> str:
     """
     Print aggregated pathway information including P-values, trends, and significant genes
     for each pathway to a text file based on a given experiment.
@@ -14,7 +14,7 @@ def print_aggregated_pathway_information(args: GeneralArgs, all_pathways: dict) 
     - all_pathways (dict): Dictionary containing pathway information across different conditions.
 
     Returns:
-    - None
+    - file_path (str): Path to the output file.
     """
     # Define the path for the output file
     file_path = path.join(args.output_dir, 'Text', f'{args.Experiment_name}_{args.pathway_file}'
@@ -62,7 +62,7 @@ def print_aggregated_pathway_information(args: GeneralArgs, all_pathways: dict) 
 
             file.write("\n")
     print(f"Aggregated pathway information written to {file_path}")
-
+    return file_path
 
 def print_enriched_pathways_to_file(task: EnrichTask, FDR_threshold: float) -> None:
     """
@@ -87,17 +87,16 @@ def print_enriched_pathways_to_file(task: EnrichTask, FDR_threshold: float) -> N
 
     print(f"Total significant pathways written: {significant_count}")
 
-def plot_pathways_mean_scores(args: GeneralArgs, all_pathways: dict, P_VALUE_THRESHOLD=0.05) -> None:
+def plot_pathways_mean_scores(args: GeneralArgs, all_pathways: dict) -> str:
     """
     Plot mean scores of pathways across all conditions and save the plot as a PNG file.
 
     Parameters:
     - general_args (GeneralArgs): General arguments and settings.
     - all_pathways (dict): Dictionary containing pathway information across different conditions.
-    - P_VALUE_THRESHOLD (float): Threshold for p-values to determine significance (default: 0.05).
 
     Returns:
-    - None
+    - output_file_path (str): Path to the output plot file.
     """
     if not all_pathways:
         print("No pathways to plot. Exiting function.")
@@ -150,7 +149,7 @@ def plot_pathways_mean_scores(args: GeneralArgs, all_pathways: dict, P_VALUE_THR
 
         # Plot bars with different styles based on p-value significance
         for j, (score, p_value) in enumerate(zip(mean_scores, p_values)):
-            bar_style = {"color": "white", "edgecolor": colors[i], "hatch": "//"} if p_value > P_VALUE_THRESHOLD else {
+            bar_style = {"color": "white", "edgecolor": colors[i], "hatch": "//"} if p_value > args.FDR_threshold else {
                 "color": colors[i]}
             ax.barh(positions[j] + bar_height * i, score, height=bar_height, **bar_style)
 
@@ -181,5 +180,6 @@ def plot_pathways_mean_scores(args: GeneralArgs, all_pathways: dict, P_VALUE_THR
                                                            f"_{args.alpha}_plot.pdf")
     makedirs(path.dirname(output_file_path), exist_ok=True)
     plt.savefig(output_file_path, format='pdf', bbox_inches='tight')
-    plt.close()  # Close the plot to avoid displaying it in environments like Jupyter Notebooks
+    plt.close()
+    return output_file_path
 

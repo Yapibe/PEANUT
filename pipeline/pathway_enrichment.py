@@ -2,10 +2,10 @@ import pandas as pd
 from os import path
 from pipeline.args import EnrichTask
 from scipy.stats import rankdata
-from utils import load_pathways_and_propagation_scores
+from pipeline.utils import load_pathways_and_propagation_scores
 from statsmodels.stats.multitest import multipletests
-from visualization_tools import print_enriched_pathways_to_file
-from statistical_methods import hypergeometric_sf, jaccard_index , kolmogorov_smirnov_test, compute_mw_python
+from pipeline.visualization_tools import print_enriched_pathways_to_file
+from pipeline.statistical_methods import hypergeometric_sf, jaccard_index , kolmogorov_smirnov_test, compute_mw_python
 
 
 def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scores: dict):

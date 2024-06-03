@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RNA-seq Analysis Pipeline</title>
+</head>
+<body>
+    <h1>RNA-seq Analysis Pipeline</h1>
+    <button id="run-button">Run Analysis</button>
+    <div id="result-message"></div>
+    <script>
+        document.getElementById("run-button").addEventListener("click", function() {
+            fetch('/run/', {
+                method: 'POST'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                // Create a link to download the result
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'results.zip';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.getElementById("result-message").innerText = "Analysis completed. Results downloaded.";
+            })
+            .catch(error => {
+                console.error('There was a problem with the fetch operation:', error);
+                document.getElementById("result-message").innerText = "An error occurred while running the analysis.";
+            });
+        });
+    </script>
+</body>
+</html>

@@ -9,7 +9,7 @@ from pipeline.visualization_tools import print_aggregated_pathway_information, p
 
 
 
-def main(run_propagation: bool=True, run_enrichment: bool=True):
+def main(run_propagation: bool=True):
     """
     Execute propagation and enrichment analysis based on specified flags.
 
@@ -18,7 +18,6 @@ def main(run_propagation: bool=True, run_enrichment: bool=True):
 
     Parameters:
     - run_propagation (bool): Flag to determine whether to run propagation (default: True).
-    - run_enrichment (bool): Flag to determine whether to run enrichment analysis (default: True).
 
     Returns:
     - None
@@ -36,10 +35,10 @@ def main(run_propagation: bool=True, run_enrichment: bool=True):
             print(f"Running propagation on {test_name}")
             perform_propagation(test_name, general_args)
 
-        if run_enrichment:
-            print(f"Running enrichment on {test_name}")
-            perform_enrichment(test_name, general_args)
-            print("-----------------------------------------")
+
+        print(f"Running enrichment on {test_name}")
+        perform_enrichment(test_name, general_args)
+        print("-----------------------------------------")
 
     print("Finished enrichment")
 
@@ -54,11 +53,11 @@ def main(run_propagation: bool=True, run_enrichment: bool=True):
             if pathway not in all_pathways:
                 all_pathways[pathway] = {}
 
-        # Process conditions and aggregate data
+    # Process conditions and aggregate data
     for condition_file, experiment_file in zip(condition_files, test_file_paths):
         process_condition(condition_file, experiment_file, general_args.pathway_file_dir, all_pathways)
 
-        # Output aggregated pathway information
+    # Output aggregated pathway information
     print_aggregated_pathway_information(general_args, all_pathways)
 
     # Visualize mean scores of pathways across all conditions
@@ -71,12 +70,6 @@ def main(run_propagation: bool=True, run_enrichment: bool=True):
 
 if __name__ == '__main__':
     start_time = time.time()
-
-    # Flags to control the tasks to run
-    run_propagation_flag = False
-    run_enrichment_flag = True
-
-    main(run_propagation=run_propagation_flag, run_enrichment=run_enrichment_flag)
-
+    main()
     end_time = time.time()
     print(f"Time elapsed: {end_time - start_time} seconds")

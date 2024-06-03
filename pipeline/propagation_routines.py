@@ -4,7 +4,7 @@ import scipy as sp
 import numpy as np
 import networkx as nx
 from pipeline.args import GeneralArgs, PropagationTask
-from utils import save_propagation_score, read_prior_set, get_propagation_input, read_network
+from pipeline.utils import save_propagation_score, read_prior_set, get_propagation_input, read_network
 
 
 def propagate_with_inverse(seeds: list, propagation_input: dict, inverse_matrix: sp.matrix, gene_indexes: dict,
