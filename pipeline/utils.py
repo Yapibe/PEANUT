@@ -44,22 +44,49 @@ def load_pathways_genes(pathways_dir):
     Returns:
         dict: A dictionary mapping pathway names to lists of genes in each pathway.
     """
+    # pathways = {}
+    # # Open the file containing pathway data
+    # try:
+    #     with open(pathways_dir, 'r') as file:
+    #         for line in file:
+    #             # Process each line, normalize case, and split by tab
+    #             parts = line.strip().split()
+    #             # Skip lines that don't have at least 3 parts or where the second part isn't a digit
+    #             if len(parts) < 3 or not parts[1].isdigit():
+    #                 continue
+    #
+    #             # Parse pathway name
+    #             pathway_name = parts[0]
+    #
+    #             # Pathway does not include size, extract all parts starting from the second part as genes
+    #             genes = [int(gene) for gene in parts[1:] if gene.isdigit()]
+    #
+    #             pathways[pathway_name] = genes
+    #
+    # except FileNotFoundError:
+    #     print(f"File not found: {pathways_dir}")
+    # except Exception as e:
+    #     print(f"An error occurred while loading pathways: {e}")
+    #
+    # return pathways
+
+    # gmt
     pathways = {}
     # Open the file containing pathway data
     try:
         with open(pathways_dir, 'r') as file:
             for line in file:
-                # Process each line, normalize case, and split by tab
-                parts = line.strip().upper().split('\t')
-                # Skip lines that don't have at least 3 parts or where the second part isn't a digit
-                if len(parts) < 3 or not parts[1].isdigit():
+                # Process each line, split by tab
+                parts = line.strip().split('\t')
+                # Skip lines that don't have at least 3 parts
+                if len(parts) < 3:
                     continue
 
                 # Parse pathway name
                 pathway_name = parts[0]
 
-                # Pathway does not include size, extract all parts starting from the second part as genes
-                genes = [int(gene) for gene in parts[1:] if gene.isdigit()]
+                # Extract all parts starting from the third part as genes
+                genes = [str(gene) for gene in parts[2:]]
 
                 pathways[pathway_name] = genes
 
@@ -69,31 +96,29 @@ def load_pathways_genes(pathways_dir):
         print(f"An error occurred while loading pathways: {e}")
 
     return pathways
-
+    #
     # pathways = {}
     # # Open the file containing pathway data
     # try:
     #     with open(pathways_dir, 'r') as file:
     #         for line in file:
-    #             # Process each line, normalize case, and split by tab
-    #             parts = line.strip().upper().split('\t')
-    #             # Skip lines that don't have at least 3 parts or where the second part isn't a digit
-    #             if len(parts) < 3 or not parts[1].isdigit():
+    #             # Process each line, normalize case (optional), and split by whitespace
+    #             parts = line.strip().split()
+    #             # Skip lines that don't have at least 2 parts
+    #             if len(parts) < 2:
     #                 continue
-    #
-    #             # Parse pathway name and expected size
-    #             pathway_name, pathway_size = parts[0], int(parts[1])
-    #
-    #             # Collect gene IDs ensuring they are numeric and don't exceed the pathway size
-    #             genes = [int(gene) for gene in parts[2].split()[:pathway_size] if gene.isdigit()]
+    #             # Parse pathway name
+    #             pathway_name = parts[0]
+    #             # Extract genes from the second part (string)
+    #             genes_str = parts[1]
+    #             genes = [int(gene) for gene in genes_str.split()]  # Split by space and convert to integers
     #             pathways[pathway_name] = genes
-    #
     # except FileNotFoundError:
     #     print(f"File not found: {pathways_dir}")
     # except Exception as e:
     #     print(f"An error occurred while loading pathways: {e}")
-    #
     # return pathways
+
 
 def load_propagation_file(file_path, decompress=True):
     """
@@ -357,6 +382,9 @@ def process_condition(condition_file, experiment_file, pathways_file, all_pathwa
 
         # List of genes associated with the current pathway
         pathway_genes = homo_sapien_pathway_dict[pathway]
+
+        # Ensure pathway_genes are integers
+        pathway_genes = [int(gene) for gene in pathway_genes]
 
         # Filter the experiment data to only include genes that are part of the current pathway
         pathway_filtered_genes = experiment_data_filtered_df[experiment_data_filtered_df['GeneID'].isin(pathway_genes)]

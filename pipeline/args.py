@@ -4,7 +4,7 @@ from datetime import datetime
 
 class GeneralArgs:
     def __init__(self, alpha: float = 1, FDR_threshold: float = 0.05, figure_title: str ='Pathway Enrichment',
-                 create_similarity_matrix: bool =False, run_propagation: bool =True):
+                 create_similarity_matrix: bool =False, run_propagation: bool =True, run_gse: bool =True):
         """
         Initializes general arguments used throughout the pipeline.
 
@@ -25,6 +25,7 @@ class GeneralArgs:
         - Experiment_name (str): Name of the experiment.
         - date (str): Current date and time.
         - figure_title (str): Name of the experiment to be displayed on figures.
+        - run_gsea (bool): Flag to run GSEA.
         - root_folder (str): Root directory of the script.
         - data_dir (str): Directory for input data.
         - output_dir (str): Directory for output data.
@@ -50,6 +51,7 @@ class GeneralArgs:
         self.Experiment_name = 'Parkinson'
         self.date = datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
         self.figure_title = figure_title
+        self.run_gsea = run_gse
 
         # root directory
         self.root_folder = path.dirname(path.abspath(__file__))
@@ -64,7 +66,7 @@ class GeneralArgs:
         self.network_file_path = path.join(self.data_dir, 'network', self.network_file)
         self.genes_names_file = 'H_sapiens.gene_info'
         self.genes_names_file_path = path.join(self.data_dir, 'genes_names', self.genes_names_file)
-        self.pathway_file = 'bio_pathways'
+        self.pathway_file = 'bio_pathways_gmt.gmt'
         self.pathway_file_dir = path.join(self.data_dir, 'pathways', self.pathway_file)
         self.similarity_matrix_path = path.join(self.data_dir, 'matrix')
         self.create_similarity_matrix = create_similarity_matrix
@@ -74,6 +76,7 @@ class GeneralArgs:
         self.temp_output_folder = path.join(self.output_dir, 'Temp')
         makedirs(self.temp_output_folder, exist_ok=True)
         self.propagation_folder = path.join(self.output_dir, 'Propagation_Scores')
+        self.gsea_out = path.join(self.output_dir, 'GSEA')
 
 
 class PropagationTask:
@@ -140,3 +143,10 @@ class EnrichTask:
         self.ks_significant_pathways_with_genes = dict()
         self.propagation_file = propagation_file
         self.temp_output_folder = path.join(path.dirname(path.realpath(__file__)), 'Outputs', 'Temp')
+
+
+class PathwayResults:
+    def __init__(self, p_value, direction, adj_p_value):
+        self.p_value = p_value
+        self.direction = direction
+        self.adj_p_value = adj_p_value

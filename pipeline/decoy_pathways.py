@@ -1,42 +1,44 @@
 import random
 from sklearn.metrics import roc_curve, auc
 import matplotlib.pyplot as plt
+from os import path
 
-def generate_and_save_combined_pathways(real_pathways, all_genes, output_file):
-    """
-    Generate decoy pathways by randomly selecting nodes while preserving the topological structure,
-    and save both real and decoy pathways to a file.
+def generate_decoy_pathways(pathway_file, output_file):
+  """
+  Generate decoy pathways by randomly shuffling genes in each pathway
+  from the given file and save them to a separate file.
 
-    Parameters:
-    - real_pathways (dict): Dictionary containing real pathways with their gene lists.
-    - all_genes (list): List of all possible genes.
-    - output_file (str): Path to the file where the combined pathways will be saved.
+  Parameters:
+    - pathway_file (str): Path to the two-tab text file containing pathways.
+    - output_file (str): Path to the file where decoy pathways will be saved.
 
-    Returns:
+  Returns:
     - None
-    """
-    # Convert all genes to integers
-    all_genes = list(map(int, all_genes))
+  """
 
-    # Generate decoy pathways
-    decoy_pathways = {}
-    for pathway, genes in real_pathways.items():
-        decoy_genes = random.sample(all_genes, len(genes))
-        decoy_pathways['Decoy_' + pathway] = decoy_genes
+  # Read pathways and genes
+  pathways = {}
+  genes_pool = set()  # Use set for faster membership checks
+  with open(pathway_file, 'r') as file:
+    for line in file:
+      pathway, *genes = line.strip().split('\t')
+      genes = [int(gene) for gene in genes]
+      pathways[pathway] = genes
+      genes_pool.update(genes)  # Add genes to the pool
 
-    # Combine real and decoy pathways
-    combined_pathways = {**real_pathways, **decoy_pathways}
+  # Generate decoy pathways
+  decoy_pathways = {}
+  for pathway, genes in pathways.items():
+    decoy_genes = random.sample(genes_pool, len(genes))  # Shuffle from the gene pool
+    decoy_pathways[f"Decoy_{pathway}"] = decoy_genes
 
-    # Prepare data for saving
-    with open(output_file, 'w') as file:
-        file.write("Pathway\tLength\tGenes\n")
-        for pathway, genes in combined_pathways.items():
-            genes = list(map(int, genes))  # Ensure genes are integers
-            length = len(genes)
-            genes_str = ' '.join(map(str, genes))
-            file.write(f"{pathway}\t{length}\t{genes_str}\n")
+  # Save decoy pathways
+  with open(output_file, 'w') as file:
+    for pathway, genes in decoy_pathways.items():
+      genes_str = ' '.join(map(str, genes))
+      file.write(f"{pathway}\t{genes_str}\n")
 
-    print(f"Combined pathways saved to {output_file}")
+  print(f"Decoy pathways saved to {output_file}")
 
 
 def evaluate_performance(real_results, decoy_results):
@@ -69,3 +71,9 @@ def evaluate_performance(real_results, decoy_results):
     plt.show()
 
     return roc_auc
+
+# Usage
+root_folder = path.dirname(path.abspath(__file__))
+pathway_file = path.join(root_folder, 'Data', 'H_sapiens', 'pathways', 'bio_pathways')
+output_file = path.join(root_folder, 'Data', 'H_sapiens', 'pathways', 'decoy_pathways')
+generate_decoy_pathways(pathway_file, output_file)

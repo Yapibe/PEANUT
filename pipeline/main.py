@@ -9,7 +9,7 @@ from pipeline.visualization_tools import print_aggregated_pathway_information, p
 
 
 
-def main(run_propagation: bool=True):
+def main(run_propagation: bool=False):
     """
     Execute propagation and enrichment analysis based on specified flags.
 
@@ -22,7 +22,7 @@ def main(run_propagation: bool=True):
     Returns:
     - None
     """
-    general_args = GeneralArgs(run_propagation=run_propagation, alpha=0.1)
+    general_args = GeneralArgs(run_propagation=run_propagation, alpha=1)
 
     # List all .xlsx files in the input directory
     test_file_paths = [path.join(general_args.input_dir, file) for file in listdir(general_args.input_dir) if
