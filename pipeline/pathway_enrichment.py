@@ -1,12 +1,12 @@
 import pandas as pd
 from os import path
-from pipeline.args import EnrichTask, GeneralArgs, PathwayResults
+from pipeline.args import EnrichTask, GeneralArgs
 from scipy.stats import rankdata
-from pipeline.gsea import run_gsea
+from gsea import run_gsea
 from pipeline.utils import load_pathways_and_propagation_scores
 from statsmodels.stats.multitest import multipletests
 from pipeline.visualization_tools import print_enriched_pathways_to_file
-from pipeline.statistical_methods import hypergeometric_sf, jaccard_index , kolmogorov_smirnov_test, compute_mw_python
+from pipeline.statistical_methods import jaccard_index , kolmogorov_smirnov_test, compute_mw_python, run_hyper
 
 
 def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scores: dict):
@@ -29,43 +29,19 @@ def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scor
     # Retrieve keys (gene IDs) with scores
     scores_keys = set(scores.keys())
 
-    # Filter pathways by those having gene counts within the specified range and that intersect with scored genes
-    pathways_with_many_genes = { pathway: set(genes).intersection(scores_keys)
-                                 for pathway, genes in genes_by_pathway.items()
-                                 if general_args.minimum_gene_per_pathway <=
-                                 len(set(genes).intersection(scores_keys)) <= general_args.maximum_gene_per_pathway}
-
     # Populate a set with all genes from the filtered pathways
-    for genes in pathways_with_many_genes.values():
+    for genes in genes_by_pathway.values():
         task.filtered_genes.update(genes)
 
-    # Total number of scored genes
-    M = len(scores_keys)
-    # Number of genes with significant P-values
-    n = len(significant_p_vals)
-
-    # Prepare lists to hold the hypergeometric P-values and corresponding pathway names
-    hypergeom_p_values = []
-    pathway_names = []
-
-    # Calculate hypergeometric P-values for each pathway with enough genes
-    for pathway_name, pathway_genes in pathways_with_many_genes.items():
-        N = len(pathway_genes)  # Number of genes in the current pathway
-        x = len(set(pathway_genes).intersection(significant_p_vals.keys()))  # Enriched genes in the pathway
-        # Apply hypergeometric test; if fewer than 5 enriched genes, assign a P-value of 1 (non-significant)
-        pval = hypergeometric_sf(x, M, N, n) if x >= 5 else 1
-        hypergeom_p_values.append(pval)
-        pathway_names.append(pathway_name)
-
-    # Identify pathways with significant hypergeometric P-values
-    significant_pathways = [
-        pathway for i, pathway in enumerate(pathway_names) if hypergeom_p_values[i] < 0.05
-    ]
+    if general_args.run_hyper:
+        significant_pathways = run_hyper(genes_by_pathway, scores_keys, significant_p_vals)
+    else:
+        significant_pathways = list(genes_by_pathway.keys())
 
     # Perform the Kolmogorov-Smirnov test to compare distributions of scores between pathway genes and background
     ks_p_values = []
     for pathway in significant_pathways:
-        genes = pathways_with_many_genes[pathway]
+        genes = genes_by_pathway[pathway]
         pathway_scores = [scores[gene_id][0] for gene_id in genes if gene_id in scores]
         background_genes = scores_keys - genes
         background_scores = [scores[gene_id][0] for gene_id in background_genes]
@@ -79,7 +55,7 @@ def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scor
 
     # Filter significant pathways based on adjusted KS P-values
     task.ks_significant_pathways_with_genes = {
-        pathway: (pathways_with_many_genes[pathway], adjusted_p_values[i])
+        pathway: (genes_by_pathway[pathway], adjusted_p_values[i])
         for i, pathway in enumerate(significant_pathways)
         if adjusted_p_values[i] < 0.05
     }
@@ -193,10 +169,8 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs):
         # Rank the data by logFC in descending order
         gene_expression_data = gene_expression_data.sort_values(by='logFC', ascending=False)
 
-        gene_sets_path = general_args.pathway_file_dir
-
         # Run GSEA
-        gsea_results = run_gsea(gene_expression_data, gene_sets_path, general_args.gsea_out)
+        gsea_results = run_gsea(gene_expression_data, genes_by_pathway, general_args.gsea_out)
 
         # Process GSEA results
         enrich_task.filtered_pathways = {}

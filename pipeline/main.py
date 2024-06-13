@@ -9,7 +9,7 @@ from pipeline.visualization_tools import print_aggregated_pathway_information, p
 
 
 
-def main(run_propagation: bool=False):
+def main(run_propagation: bool=True):
     """
     Execute propagation and enrichment analysis based on specified flags.
 
@@ -42,6 +42,9 @@ def main(run_propagation: bool=False):
 
     print("Finished enrichment")
 
+    if general_args.run_simulated:
+        print("Simulated data detected. Skipping aggregation and visualization.")
+        return
     # Aggregate enriched pathways
     condition_files = [path.join(general_args.temp_output_folder, file) for file in
                        listdir(general_args.temp_output_folder)]

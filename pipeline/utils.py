@@ -34,41 +34,42 @@ def filter_network_by_prior_data(network_filename: str, prior_data: pd.DataFrame
 
 ####################################################################LOAD FUNCTIONS############################################################################
 
-def load_pathways_genes(pathways_dir):
+def load_pathways_genes(pathways_dir, gmt=False):
     """
     Loads the pathways and their associated genes from a file.
 
     Args:
         pathways_dir (str): Path to the file containing the pathway data.
-
+        gmt (bool): Whether the file is in GMT format.
     Returns:
         dict: A dictionary mapping pathway names to lists of genes in each pathway.
     """
-    # pathways = {}
-    # # Open the file containing pathway data
-    # try:
-    #     with open(pathways_dir, 'r') as file:
-    #         for line in file:
-    #             # Process each line, normalize case, and split by tab
-    #             parts = line.strip().split()
-    #             # Skip lines that don't have at least 3 parts or where the second part isn't a digit
-    #             if len(parts) < 3 or not parts[1].isdigit():
-    #                 continue
-    #
-    #             # Parse pathway name
-    #             pathway_name = parts[0]
-    #
-    #             # Pathway does not include size, extract all parts starting from the second part as genes
-    #             genes = [int(gene) for gene in parts[1:] if gene.isdigit()]
-    #
-    #             pathways[pathway_name] = genes
-    #
-    # except FileNotFoundError:
-    #     print(f"File not found: {pathways_dir}")
-    # except Exception as e:
-    #     print(f"An error occurred while loading pathways: {e}")
-    #
-    # return pathways
+    if not gmt:
+        pathways = {}
+        # Open the file containing pathway data
+        try:
+            with open(pathways_dir, 'r') as file:
+                for line in file:
+                    # Process each line, normalize case, and split by tab
+                    parts = line.strip().split()
+                    # Skip lines that don't have at least 3 parts or where the second part isn't a digit
+                    if len(parts) < 3 or not parts[1].isdigit():
+                        continue
+
+                    # Parse pathway name
+                    pathway_name = parts[0]
+
+                    # Pathway does not include size, extract all parts starting from the second part as genes
+                    genes = [int(gene) for gene in parts[1:] if gene.isdigit()]
+
+                    pathways[pathway_name] = genes
+
+        except FileNotFoundError:
+            print(f"File not found: {pathways_dir}")
+        except Exception as e:
+            print(f"An error occurred while loading pathways: {e}")
+
+        return pathways
 
     # gmt
     pathways = {}
@@ -77,7 +78,9 @@ def load_pathways_genes(pathways_dir):
         with open(pathways_dir, 'r') as file:
             for line in file:
                 # Process each line, split by tab
-                parts = line.strip().split('\t')
+                # parts = line.strip().split('\t')
+                #decoy
+                parts = line.strip().split()
                 # Skip lines that don't have at least 3 parts
                 if len(parts) < 3:
                     continue
@@ -153,8 +156,27 @@ def load_pathways_and_propagation_scores(general_args, propagation_file_path):
                pathways to their genes.
     """
     # network_graph = read_network(general_args.network_file_path)
-    genes_by_pathway = load_pathways_genes(general_args.pathway_file_dir)
+    pathways_with_many_genes = load_pathways_genes(general_args.pathway_file_dir, general_args.run_gsea)
     scores = get_scores(propagation_file_path)
+    if general_args.run_gsea:
+        # Convert scores keys to strings for consistency
+        scores = {str(gene): value for gene, value in scores.items()}
+        scores_keys = set(scores.keys())
+
+        # Filter pathways by those having gene counts within the specified range and that intersect with scored genes
+        genes_by_pathway = {pathway: set(map(str, genes)).intersection(scores_keys)
+                            for pathway, genes in pathways_with_many_genes.items()
+                            if general_args.minimum_gene_per_pathway <=
+                            len(set(map(str, genes)).intersection(scores_keys)) <= general_args.maximum_gene_per_pathway}
+
+        return genes_by_pathway, scores
+    else:
+        scores_keys = set(scores.keys())
+        # Filter pathways by those having gene counts within the specified range and that intersect with scored genes
+        genes_by_pathway = {pathway: set(genes).intersection(scores_keys)
+                                for pathway, genes in pathways_with_many_genes.items()
+                                if general_args.minimum_gene_per_pathway <=
+                                len(set(genes).intersection(scores_keys)) <= general_args.maximum_gene_per_pathway}
 
     return genes_by_pathway, scores
 

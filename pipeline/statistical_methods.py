@@ -166,6 +166,43 @@ def jaccard_index(set1: set, set2: set) -> float:
     union = len(set1.union(set2))
     return intersection / union
 
+def run_hyper(genes_by_pathway: dict, scores_keys: set, significant_p_vals: dict) -> list:
+    """
+    Run the hypergeometric test to identify pathways with significant enrichment.
+
+    Parameters:
+    - genes_by_pathway (dict): Mapping of pathways to their constituent genes.
+    - scores_keys (set): Set of gene IDs with scores.
+    - significant_p_vals (dict): Mapping of gene IDs to significant P-values.
+
+    Returns:
+    - list: List of significant pathways identified by the hypergeometric test.
+    """
+    # Total number of scored genes
+    M = len(scores_keys)
+    # Number of genes with significant P-values
+    n = len(significant_p_vals)
+
+    # Prepare lists to hold the hypergeometric P-values and corresponding pathway names
+    hypergeom_p_values = []
+    pathway_names = []
+
+    # Calculate hypergeometric P-values for each pathway with enough genes
+    for pathway_name, pathway_genes in genes_by_pathway.items():
+        N = len(pathway_genes)  # Number of genes in the current pathway
+        x = len(set(pathway_genes).intersection(significant_p_vals.keys()))  # Enriched genes in the pathway
+        # Apply hypergeometric test; if fewer than 5 enriched genes, assign a P-value of 1 (non-significant)
+        pval = hypergeometric_sf(x, M, N, n) if x >= 5 else 1
+        hypergeom_p_values.append(pval)
+        pathway_names.append(pathway_name)
+
+    # Identify pathways with significant hypergeometric P-values
+    significant_pathways = [
+        pathway for i, pathway in enumerate(pathway_names) if hypergeom_p_values[i] < 0.05
+    ]
+
+    return significant_pathways
+
 
 def hypergeometric_sf(x: int, M: int, N: int, n:int) -> float:
     """

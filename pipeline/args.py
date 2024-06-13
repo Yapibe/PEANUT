@@ -4,7 +4,7 @@ from datetime import datetime
 
 class GeneralArgs:
     def __init__(self, alpha: float = 1, FDR_threshold: float = 0.05, figure_title: str ='Pathway Enrichment',
-                 create_similarity_matrix: bool =False, run_propagation: bool =True, run_gse: bool =True):
+                 create_similarity_matrix: bool =False, run_propagation: bool =True, run_gsea: bool =True):
         """
         Initializes general arguments used throughout the pipeline.
 
@@ -48,10 +48,13 @@ class GeneralArgs:
         self.maximum_gene_per_pathway = 200
         self.JAC_THRESHOLD = 0.2
         self.run_propagation = run_propagation
-        self.Experiment_name = 'Parkinson'
+        # self.Experiment_name = 'Parkinson'
+        self.Experiment_name = 'Simulated'
         self.date = datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
         self.figure_title = figure_title
-        self.run_gsea = run_gse
+        self.run_simulated = True
+        self.run_gsea = run_gsea
+        self.run_hyper = False
 
         # root directory
         self.root_folder = path.dirname(path.abspath(__file__))
@@ -59,14 +62,15 @@ class GeneralArgs:
         # directory paths
         self.data_dir = path.join(self.root_folder, 'Data', 'H_sapiens')
         self.output_dir = path.join(self.root_folder, 'Outputs')
-        self.input_dir = path.join(self.root_folder, 'Inputs', 'experiments_data', self.Experiment_name)
-
+        # self.input_dir = path.join(self.root_folder, 'Inputs', 'experiments_data', self.Experiment_name)
+        self.input_dir = path.join(self.root_folder, 'Inputs', 'Simulated')
+        self.pathway_file = 'bio_pathways_gmt.gmt'
         # Data directory directories
         self.network_file = 'H_sapiens.net'
         self.network_file_path = path.join(self.data_dir, 'network', self.network_file)
         self.genes_names_file = 'H_sapiens.gene_info'
         self.genes_names_file_path = path.join(self.data_dir, 'genes_names', self.genes_names_file)
-        self.pathway_file = 'bio_pathways_gmt.gmt'
+
         self.pathway_file_dir = path.join(self.data_dir, 'pathways', self.pathway_file)
         self.similarity_matrix_path = path.join(self.data_dir, 'matrix')
         self.create_similarity_matrix = create_similarity_matrix
