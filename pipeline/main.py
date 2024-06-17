@@ -9,7 +9,7 @@ from pipeline.visualization_tools import print_aggregated_pathway_information, p
 
 
 
-def main(run_propagation: bool=True):
+def main(alpha=1, run_propagation: bool=True):
     """
     Execute propagation and enrichment analysis based on specified flags.
 
@@ -18,11 +18,13 @@ def main(run_propagation: bool=True):
 
     Parameters:
     - run_propagation (bool): Flag to determine whether to run propagation (default: True).
+    - alpha (float): Random walk parameter for propagation.
 
     Returns:
     - None
     """
-    general_args = GeneralArgs(run_propagation=run_propagation, alpha=1)
+    general_args = GeneralArgs(run_propagation=run_propagation, alpha=alpha, run_simulated=True, run_gsea=False,
+                               input_type='Score')
 
     # List all .xlsx files in the input directory
     test_file_paths = [path.join(general_args.input_dir, file) for file in listdir(general_args.input_dir) if
@@ -32,7 +34,6 @@ def main(run_propagation: bool=True):
     # Perform propagation and enrichment based on flags
     for test_name in test_name_list:
         if run_propagation:
-            print(f"Running propagation on {test_name}")
             perform_propagation(test_name, general_args)
 
 
@@ -40,10 +41,7 @@ def main(run_propagation: bool=True):
         perform_enrichment(test_name, general_args)
         print("-----------------------------------------")
 
-    print("Finished enrichment")
-
     if general_args.run_simulated:
-        print("Simulated data detected. Skipping aggregation and visualization.")
         return
     # Aggregate enriched pathways
     condition_files = [path.join(general_args.temp_output_folder, file) for file in

@@ -6,7 +6,7 @@ from gsea import run_gsea
 from pipeline.utils import load_pathways_and_propagation_scores
 from statsmodels.stats.multitest import multipletests
 from pipeline.visualization_tools import print_enriched_pathways_to_file
-from pipeline.statistical_methods import jaccard_index , kolmogorov_smirnov_test, compute_mw_python, run_hyper
+from pipeline.statistical_methods import jaccard_index , kolmogorov_smirnov_test, compute_mw_python, run_hyper, global_gene_ranking, kolmogorov_smirnov_test_with_ranking
 
 
 def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scores: dict):
@@ -26,26 +26,37 @@ def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scor
     significant_p_vals = {gene_id: p_value for gene_id, (score, p_value) in scores.items()
                           if p_value < general_args.FDR_threshold}
 
-    # Retrieve keys (gene IDs) with scores
-    scores_keys = set(scores.keys())
-
     # Populate a set with all genes from the filtered pathways
     for genes in genes_by_pathway.values():
         task.filtered_genes.update(genes)
 
-    if general_args.run_hyper:
-        significant_pathways = run_hyper(genes_by_pathway, scores_keys, significant_p_vals)
-    else:
-        significant_pathways = list(genes_by_pathway.keys())
+    # Create a global ranking of genes
+    global_ranking = global_gene_ranking(scores)
 
-    # Perform the Kolmogorov-Smirnov test to compare distributions of scores between pathway genes and background
+    if general_args.run_hyper:
+        hyper_results_path = path.join(general_args.output_dir, f'hyper_results.txt')
+        significant_pathways_hyper = run_hyper(genes_by_pathway, set(scores.keys()), significant_p_vals)
+        # Save the significant pathways to a file
+        with open(hyper_results_path, 'w') as f:
+            for pathway in significant_pathways_hyper:
+                f.write(f"{pathway}\n")
+    else:
+        significant_pathways_hyper = list(genes_by_pathway.keys())
+
+    # # Perform the Kolmogorov-Smirnov test to compare distributions of scores between pathway genes and background
+    # ks_p_values = []
+    # for pathway in significant_pathways_hyper:
+    #     genes = genes_by_pathway[pathway]
+    #     pathway_scores = [scores[gene_id][0] for gene_id in genes if gene_id in scores]
+    #     background_genes = scores_keys - genes
+    #     background_scores = [scores[gene_id][0] for gene_id in background_genes]
+    #     ks_p_values.append(kolmogorov_smirnov_test(pathway_scores, background_scores))
+
+    # Perform the Kolmogorov-Smirnov test using global ranking
     ks_p_values = []
-    for pathway in significant_pathways:
+    for pathway in significant_pathways_hyper:
         genes = genes_by_pathway[pathway]
-        pathway_scores = [scores[gene_id][0] for gene_id in genes if gene_id in scores]
-        background_genes = scores_keys - genes
-        background_scores = [scores[gene_id][0] for gene_id in background_genes]
-        ks_p_values.append(kolmogorov_smirnov_test(pathway_scores, background_scores))
+        ks_p_values.append(kolmogorov_smirnov_test_with_ranking(genes, global_ranking))
 
     if not ks_p_values:
         print("No significant pathways found after hypergeometric test. Skipping KS test.")
@@ -56,7 +67,7 @@ def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scor
     # Filter significant pathways based on adjusted KS P-values
     task.ks_significant_pathways_with_genes = {
         pathway: (genes_by_pathway[pathway], adjusted_p_values[i])
-        for i, pathway in enumerate(significant_pathways)
+        for i, pathway in enumerate(significant_pathways_hyper)
         if adjusted_p_values[i] < 0.05
     }
     if not task.ks_significant_pathways_with_genes:

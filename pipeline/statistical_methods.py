@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from scipy.stats import rankdata, norm, hypergeom
 
 
@@ -220,3 +221,55 @@ def hypergeometric_sf(x: int, M: int, N: int, n:int) -> float:
     # Calculate the survival function using hypergeometric distribution
     probability = hypergeom.sf(x - 1, M, N, n)
     return probability
+
+
+def global_gene_ranking(scores: dict):
+    """
+    Rank all genes globally based on their scores.
+
+    Parameters:
+    - scores (dict): Mapping of gene IDs to their scores and p-values.
+
+    Returns:
+    - pd.Series: A series with gene IDs as index and their global ranks as values.
+    """
+    # Extract scores and rank them
+    gene_ids = list(scores.keys())
+    gene_scores = [score[0] for score in scores.values()]
+
+    # Rank the scores (higher scores get lower rank numbers)
+    ranks = rankdata(gene_scores, method='average')
+    global_ranking = pd.Series(ranks, index=gene_ids)
+
+    return global_ranking
+
+
+def kolmogorov_smirnov_test_with_ranking(pathway_genes, global_ranking):
+    """
+    Perform the Kolmogorov-Smirnov test using global ranking.
+
+    Parameters:
+    - pathway_genes (list): List of gene IDs in the pathway.
+    - global_ranking (pd.Series): Global ranking of all genes.
+
+    Returns:
+    - float: The P-value from the KS test indicating statistical difference.
+    """
+    # Convert pathway genes to a list if it's a set
+    pathway_genes = list(pathway_genes)
+
+    # Get the ranks for pathway genes
+    pathway_ranks = global_ranking[pathway_genes].sort_values().values
+    background_ranks = global_ranking.drop(pathway_genes).values
+
+    # Calculate the KS statistic
+    en1 = len(pathway_ranks)
+    en2 = len(background_ranks)
+    cdf_pathway = np.searchsorted(pathway_ranks, global_ranking, side='right') / en1
+    cdf_background = np.searchsorted(background_ranks, global_ranking, side='right') / en2
+    D = np.max(np.abs(cdf_pathway - cdf_background))
+
+    en = np.sqrt(en1 * en2 / (en1 + en2))
+    p_value = ks((en + 0.12 + 0.11 / en) * D)
+
+    return p_value

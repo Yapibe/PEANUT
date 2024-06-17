@@ -109,10 +109,7 @@ def read_sparse_matrix_txt(network: nx.Graph, similarity_matrix_path: str) -> tu
     if not os.path.exists(similarity_matrix_path):
         raise FileNotFoundError(f"The specified file {similarity_matrix_path} does not exist.")
 
-    start = time.time()
     matrix = sp.sparse.load_npz(similarity_matrix_path)
-    end = time.time()
-    print(f"Time elapsed: {end - start} seconds")
 
     return matrix, gene_index
 
@@ -157,7 +154,6 @@ def perform_propagation(test_name: str, general_args: GeneralArgs):
 
     # Load and prepare prior set
     prior_data = read_prior_set(prop_task.test_file_path)
-    print("loaded prior data")
 
     if general_args.alpha == 1:
         print("Skipping propagation, saving sorted scores directly")
@@ -183,7 +179,7 @@ def perform_propagation(test_name: str, general_args: GeneralArgs):
                                task=prop_task, save_dir=prop_task.output_folder, general_args=general_args)
 
         return
-    # todo  run covid and find innate immune, cell 2023 roded
+
     # Read the network graph from a file
     network = read_network(general_args.network_file_path)
     all_genes_ids = set(network.nodes())
@@ -196,13 +192,11 @@ def perform_propagation(test_name: str, general_args: GeneralArgs):
         print("generating similarity matrix")
         matrix, network_gene_index = generate_similarity_matrix(network, general_args)
     else:
-        print("reading similarity matrix")
         matrix, network_gene_index = read_sparse_matrix_txt(network, general_args.similarity_matrix_path)
-        print("uploaded similarity matrix")
 
     # Propagate network
     print("propagating network")
-    propagation_input = get_propagation_input(filtered_prior_gene_ids, filtered_prior_data)
+    propagation_input = get_propagation_input(filtered_prior_gene_ids, filtered_prior_data, general_args.input_type)
     propagation_score, gene_score_dict = propagate_network(propagation_input, matrix, network_gene_index)
 
     ones_input = get_propagation_input(filtered_prior_gene_ids, filtered_prior_data, 'ones')
@@ -232,7 +226,6 @@ def perform_propagation(test_name: str, general_args: GeneralArgs):
     posterior_set['Score'] = posterior_set['GeneID'].map(filtered_propagation_scores)
 
     # Save propagation score
-    print("saving propagation score")
     save_propagation_score(propagation_scores=posterior_set, prior_set=prior_data, propagation_input=propagation_input,
                            genes_id_to_idx=network_gene_index, task=prop_task, save_dir=prop_task.output_folder,
                            general_args=general_args)

@@ -3,17 +3,17 @@ from datetime import datetime
 
 
 class GeneralArgs:
-    def __init__(self, alpha: float = 1, FDR_threshold: float = 0.05, figure_title: str ='Pathway Enrichment',
-                 create_similarity_matrix: bool =False, run_propagation: bool =True, run_gsea: bool =True):
+    def __init__(self, alpha: float = 1, run_propagation: bool =True, run_gsea: bool =False, run_simulated: bool =False,
+                 input_type: str = 'Score', run_hyper: bool = True):
         """
         Initializes general arguments used throughout the pipeline.
 
         Parameters:
         - alpha (float): Alpha value for similarity matrix (default: 1).
-        - FDR_threshold (float): False discovery rate threshold (default: 0.05).
-        - figure_title (str): Name of the experiment (default: 'Pathway Enrichment').
-        - create_similarity_matrix (bool): Flag to create similarity matrix (default: False).
         - run_propagation (bool): Flag to run propagation (default: True).
+        - run_gsea (bool): Flag to run GSEA (default: False).
+        - run_simulated (bool): Flag to run simulated data (default: False).
+        - input_type (str): Type of input data (default: 'Score').
 
         Attributes:
         - alpha (float): Alpha value.
@@ -42,45 +42,58 @@ class GeneralArgs:
         - propagation_folder (str): Directory for propagation scores.
         """
         # General Parameters
-        self.alpha = alpha  # for no propagation use alpha=1
-        self.FDR_threshold = FDR_threshold
+        self.alpha = alpha
+        self.FDR_threshold = 0.5
         self.minimum_gene_per_pathway = 20
         self.maximum_gene_per_pathway = 200
         self.JAC_THRESHOLD = 0.2
         self.run_propagation = run_propagation
-        # self.Experiment_name = 'Parkinson'
-        self.Experiment_name = 'Simulated'
-        self.date = datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
-        self.figure_title = figure_title
-        self.run_simulated = True
+        self.run_simulated = run_simulated
         self.run_gsea = run_gsea
-        self.run_hyper = False
+        self.run_hyper = run_hyper
+        self.input_type = input_type
 
-        # root directory
+        # Experiment and output settings
+        self.Experiment_name = 'Simulated' if self.run_simulated else 'Parkinson'
+        self.date = datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
+        self.figure_title = 'Pathway Enrichment'
+
+        # Directories and file paths
         self.root_folder = path.dirname(path.abspath(__file__))
-
-        # directory paths
         self.data_dir = path.join(self.root_folder, 'Data', 'H_sapiens')
         self.output_dir = path.join(self.root_folder, 'Outputs')
-        # self.input_dir = path.join(self.root_folder, 'Inputs', 'experiments_data', self.Experiment_name)
-        self.input_dir = path.join(self.root_folder, 'Inputs', 'Simulated')
-        self.pathway_file = 'bio_pathways_gmt.gmt'
-        # Data directory directories
+        self.input_dir = self._set_input_dir()
+        self.temp_output_folder = self._create_output_subdir('Temp')
+        self.propagation_folder = self._create_output_subdir('Propagation_Scores')
+        self.gsea_out = self._create_output_subdir('GSEA') if self.run_gsea else None
+
+        # Network and pathway files
         self.network_file = 'H_sapiens.net'
         self.network_file_path = path.join(self.data_dir, 'network', self.network_file)
         self.genes_names_file = 'H_sapiens.gene_info'
         self.genes_names_file_path = path.join(self.data_dir, 'genes_names', self.genes_names_file)
-
+        self.pathway_file = 'bio_pathways_gmt.gmt' if self.run_gsea else 'bio_pathways'
         self.pathway_file_dir = path.join(self.data_dir, 'pathways', self.pathway_file)
-        self.similarity_matrix_path = path.join(self.data_dir, 'matrix')
-        self.create_similarity_matrix = create_similarity_matrix
-        self.similarity_matrix_path = path.join(self.similarity_matrix_path,
-                                                f'similarity_matrix_{self.alpha}.npz')
-        # Output directory directories
-        self.temp_output_folder = path.join(self.output_dir, 'Temp')
-        makedirs(self.temp_output_folder, exist_ok=True)
-        self.propagation_folder = path.join(self.output_dir, 'Propagation_Scores')
-        self.gsea_out = path.join(self.output_dir, 'GSEA')
+
+        # Similarity matrix
+        self.create_similarity_matrix = False
+        self.similarity_matrix_path = path.join(self.data_dir, 'matrix', f'similarity_matrix_{self.alpha}.npz')
+
+    def _set_input_dir(self):
+        """
+        Determine the input directory based on whether the simulation is run.
+        """
+        if self.run_simulated:
+            return path.join(self.root_folder, 'Inputs', 'Simulated')
+        return path.join(self.root_folder, 'Inputs', 'experiments_data', self.Experiment_name)
+
+    def _create_output_subdir(self, subdir_name):
+        """
+        Create and return a subdirectory in the output directory.
+        """
+        subdir_path = path.join(self.output_dir, subdir_name)
+        makedirs(subdir_path, exist_ok=True)
+        return subdir_path
 
 
 class PropagationTask:
