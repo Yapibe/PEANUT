@@ -156,8 +156,6 @@ def perform_propagation(test_name: str, general_args: GeneralArgs):
     prior_data = read_prior_set(prop_task.test_file_path)
 
     if general_args.alpha == 1:
-        print("Skipping propagation, saving sorted scores directly")
-
         # Sort prior_data by GeneID
         sorted_prior_data = prior_data.sort_values(by='GeneID').reset_index(drop=True)
 

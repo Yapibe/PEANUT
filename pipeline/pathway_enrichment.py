@@ -36,10 +36,10 @@ def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scor
     if general_args.run_hyper:
         hyper_results_path = path.join(general_args.output_dir, f'hyper_results.txt')
         significant_pathways_hyper = run_hyper(genes_by_pathway, set(scores.keys()), significant_p_vals)
-        # Save the significant pathways to a file
-        with open(hyper_results_path, 'w') as f:
-            for pathway in significant_pathways_hyper:
-                f.write(f"{pathway}\n")
+        # # Save the significant pathways to a file
+        # with open(hyper_results_path, 'w') as f:
+        #     for pathway in significant_pathways_hyper:
+        #         f.write(f"{pathway}\n")
     else:
         significant_pathways_hyper = list(genes_by_pathway.keys())
 

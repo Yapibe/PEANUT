@@ -47,9 +47,9 @@ def simulate_scores(pathways, delta=1.0, percentage=0.5, num_decoy_pathways=10, 
 
     return gene_score_pvalue_dict, selected_pathways
 
-def run_pipeline(alpha):
+def run_pipeline(alpha, run_propagation: bool=True, run_gsea: bool=False, run_simulated: bool=True):
     from pipeline.main import main
-    main(run_propagation=True, alpha=alpha)
+    main(run_propagation=run_propagation, alpha=alpha, run_gsea=run_gsea, run_simulated=run_simulated)
 
 # Function to calculate precision, recall, and AUPR
 def calculate_metrics(true_decoys, identified_pathways, all_pathways):
@@ -73,11 +73,11 @@ root_dir = path.dirname(path.abspath(__file__))
 pathways_file = path.join(root_dir, 'pipeline', 'Data', 'H_sapiens', 'pathways', 'bio_pathways')
 pathways = load_pathways_genes(pathways_file)
 
-deltas = [0.3, 1, 3, 10]
-percentages = [0.1, 0.3, 0.75, 1]  # Percentages of genes to change
-alphas = [1]  # Different alpha values to loop through
-num_decoy_pathways_list = [10, 30, 100]  # Different numbers of decoy pathways to loop through
-n_runs = 10  # Number of runs for each combination
+deltas = [1]
+percentages = [1]  # Percentages of genes to change
+alphas = [0.1, 1]  # Different alpha values to loop through
+num_decoy_pathways_list = [30]  # Different numbers of decoy pathways to loop through
+n_runs = 1  # Number of runs for each combination
 
 results_dict = {
     'delta': [],
@@ -159,22 +159,26 @@ for delta in deltas:
 results_df = pd.DataFrame(results_dict)
 
 # Plot the results for each combination separately
-for percentage in percentages:
-    for alpha in alphas:
-        for num_decoy_pathways in num_decoy_pathways_list:
-            subset = results_df[(results_df['percentage'] == percentage) & (results_df['alpha'] == alpha) & (results_df['num_decoy_pathways'] == num_decoy_pathways)]
+for alpha in alphas:
+    for num_decoy_pathways in num_decoy_pathways_list:
+        for percentage in percentages:
+            subset = results_df[(results_df['alpha'] == alpha) & (results_df['num_decoy_pathways'] == num_decoy_pathways) & (results_df['percentage'] == percentage)]
             plt.figure(figsize=(15, 10))
-            plt.plot(subset['delta'].values, subset['precision'].values, marker='o', label='Precision')
-            plt.plot(subset['delta'].values, subset['recall'].values, marker='o', label='Recall')
-            plt.plot(subset['delta'].values, subset['aupr'].values, marker='o', label='AUPR')
-            plt.plot(subset['delta'].values, subset['aupr_hyper'].values, marker='o', label='AUPR Hyper')
+
+            for run_gsea in run_gsea_options:
+                sub_subset = subset[subset['run_gsea'] == run_gsea]
+                label = 'GSEA' if run_gsea else 'No GSEA'
+                plt.plot(sub_subset['delta'].values, sub_subset['precision'].values, marker='o', label=f'Precision ({label})')
+                plt.plot(sub_subset['delta'].values, sub_subset['recall'].values, marker='o', label=f'Recall ({label})')
+                plt.plot(sub_subset['delta'].values, sub_subset['aupr'].values, marker='o', label=f'AUPR ({label})')
+
             plt.xlabel('Delta')
             plt.ylabel('Value')
-            plt.title(f'Precision, Recall, and AUPR (Percentage: {percentage*100}%, Alpha: {alpha}, Decoy Pathways: {num_decoy_pathways})')
+            plt.title(f'Precision, Recall, and AUPR (Alpha: {alpha}, Decoy Pathways: {num_decoy_pathways}, Percentage: {percentage*100}%)')
             plt.xticks(deltas)
             plt.legend()
             plt.grid(True)
-            plt.savefig(path.join(root_dir, f'precision_recall_aupr_chart_{percentage}_{alpha}_{num_decoy_pathways}.png'))
+            plt.savefig(path.join(root_dir, f'precision_recall_aupr_chart_alpha_{alpha}_decoy_{num_decoy_pathways}_percentage_{percentage}.png'))
             plt.show()
 
 print(results_df)

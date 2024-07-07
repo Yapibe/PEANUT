@@ -334,7 +334,6 @@ def save_file(obj, save_dir=None, compress=True):
         obj = zlib.compress(obj)
     with open(save_dir, 'wb') as f:
         pickle.dump(obj, f)
-    print('File was saved in {}'.format(save_dir))
 
 
 def save_propagation_score(propagation_scores: pd.DataFrame, prior_set: pd.DataFrame,
