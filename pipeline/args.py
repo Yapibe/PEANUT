@@ -43,7 +43,7 @@ class GeneralArgs:
         """
         # General Parameters
         self.alpha = alpha
-        self.FDR_threshold = 0.5
+        self.FDR_threshold = 0.05
         self.minimum_gene_per_pathway = 20
         self.maximum_gene_per_pathway = 200
         self.JAC_THRESHOLD = 0.2
@@ -54,7 +54,7 @@ class GeneralArgs:
         self.input_type = input_type
 
         # Experiment and output settings
-        self.Experiment_name = 'Simulated' if self.run_simulated else 'Parkinson'
+        self.Experiment_name = 'Simulated' if self.run_simulated else 'Metabolic'
         self.date = datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
         self.figure_title = 'Pathway Enrichment'
 
@@ -70,7 +70,7 @@ class GeneralArgs:
         # Network and pathway files
         self.network_file = 'H_sapiens.net'
         self.network_file_path = path.join(self.data_dir, 'network', self.network_file)
-        self.genes_names_file = 'H_sapiens.gene_info'
+        self.genes_names_file = 'gene_info.json'
         self.genes_names_file_path = path.join(self.data_dir, 'genes_names', self.genes_names_file)
         self.pathway_file = 'bio_pathways_gmt.gmt' if self.run_gsea else 'bio_pathways'
         self.pathway_file_dir = path.join(self.data_dir, 'pathways', self.pathway_file)

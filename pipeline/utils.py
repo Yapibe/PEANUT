@@ -178,6 +178,12 @@ def load_pathways_and_propagation_scores(general_args, propagation_file_path):
                                 if general_args.minimum_gene_per_pathway <=
                                 len(set(genes).intersection(scores_keys)) <= general_args.maximum_gene_per_pathway}
 
+    DEG_genes = read_prior_set('/mnt/c/Users/pickh/PycharmProjects/Yair_propagation/pipeline/Inputs/experiments_data/after_filter.xlsx')
+    DEG_genes = set(DEG_genes['GeneID'].values)
+    # filter genes by pathways to include pathways with at least 1 DEG
+    genes_by_pathway = {pathway: genes for pathway, genes in genes_by_pathway.items() if len(genes.intersection(DEG_genes)) > 0}
+
+
     return genes_by_pathway, scores
 
 ####################################################################GET FUNCTIONS############################################################################
@@ -334,7 +340,6 @@ def save_file(obj, save_dir=None, compress=True):
         obj = zlib.compress(obj)
     with open(save_dir, 'wb') as f:
         pickle.dump(obj, f)
-    print('File was saved in {}'.format(save_dir))
 
 
 def save_propagation_score(propagation_scores: pd.DataFrame, prior_set: pd.DataFrame,
@@ -397,6 +402,44 @@ def process_condition(condition_file, experiment_file, pathways_file, all_pathwa
     # Dictionary to store enriched pathway genes
     enriched_pathway_genes = {}
 
+    # # Loop through each pathway
+    # for pathway in all_pathways:
+    #     # Initialize a dictionary for the pathway under the current condition
+    #     all_pathways[pathway][condition_name] = {}
+    #
+    #     # List of genes associated with the current pathway
+    #     pathway_genes = homo_sapien_pathway_dict[pathway]
+    #
+    #     # Ensure pathway_genes are integers
+    #     pathway_genes = [int(gene) for gene in pathway_genes]
+    #
+    #     # Filter the experiment data to only include genes that are part of the current pathway
+    #     pathway_filtered_genes = experiment_data_filtered_df[experiment_data_filtered_df['GeneID'].isin(pathway_genes)]
+    #
+    #     # Store details of filtered genes in a dictionary
+    #     enriched_pathway_genes[pathway] = pathway_filtered_genes.set_index('GeneID')[['Symbol', 'Score', 'P-value']].to_dict(
+    #         orient='index')
+    #
+    #     # Filter to find significant genes based on the P-value threshold
+    #     significant_genes = {gene_id: gene_details for gene_id, gene_details in
+    #                          enriched_pathway_genes[pathway].items() if
+    #                          gene_details['P-value'] <= P_VALUE_THRESHOLD}
+    #
+    #     # Calculate the mean score of significant genes or set to 0 if none are significant
+    #     mean_score = np.mean(
+    #         [gene_details['Score'] for gene_details in significant_genes.values()]) if significant_genes else 0
+    #
+    #     # Store the mean score and significant genes for the pathway under the condition
+    #     all_pathways[pathway][condition_name]['Mean'] = mean_score
+    #     all_pathways[pathway][condition_name]['significant_genes'] = significant_genes
+    #
+    #     # Check if the pathway is in the enriched pathway dictionary to assign a P-value and trend
+    #     if pathway in enriched_pathway_dict:
+    #         all_pathways[pathway][condition_name]['P-value'] = enriched_pathway_dict[pathway]
+    #         all_pathways[pathway][condition_name]['Trend'] = "Up*" if mean_score > 0 else "Down*"
+    #     else:
+    #         all_pathways[pathway][condition_name]['P-value'] = 1  # Default P-value if not in enriched dictionary
+    #         all_pathways[pathway][condition_name]['Trend'] = "Up" if mean_score > 0 else "Down"
     # Loop through each pathway
     for pathway in all_pathways:
         # Initialize a dictionary for the pathway under the current condition
@@ -412,21 +455,15 @@ def process_condition(condition_file, experiment_file, pathways_file, all_pathwa
         pathway_filtered_genes = experiment_data_filtered_df[experiment_data_filtered_df['GeneID'].isin(pathway_genes)]
 
         # Store details of filtered genes in a dictionary
-        enriched_pathway_genes[pathway] = pathway_filtered_genes.set_index('GeneID')[['Symbol', 'Score', 'P-value']].to_dict(
+        enriched_pathway_genes[pathway] = pathway_filtered_genes.set_index('GeneID')[['Symbol', 'Score']].to_dict(
             orient='index')
 
-        # Filter to find significant genes based on the P-value threshold
-        significant_genes = {gene_id: gene_details for gene_id, gene_details in
-                             enriched_pathway_genes[pathway].items() if
-                             gene_details['P-value'] <= P_VALUE_THRESHOLD}
+        # Calculate the mean score of all genes in the pathway
+        mean_score = np.mean([gene_details['Score'] for gene_details in enriched_pathway_genes[pathway].values()])
 
-        # Calculate the mean score of significant genes or set to 0 if none are significant
-        mean_score = np.mean(
-            [gene_details['Score'] for gene_details in significant_genes.values()]) if significant_genes else 0
-
-        # Store the mean score and significant genes for the pathway under the condition
+        # Store the mean score and all genes for the pathway under the condition
         all_pathways[pathway][condition_name]['Mean'] = mean_score
-        all_pathways[pathway][condition_name]['significant_genes'] = significant_genes
+        all_pathways[pathway][condition_name]['genes'] = enriched_pathway_genes[pathway]
 
         # Check if the pathway is in the enriched pathway dictionary to assign a P-value and trend
         if pathway in enriched_pathway_dict:

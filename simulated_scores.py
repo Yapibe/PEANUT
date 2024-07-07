@@ -47,9 +47,10 @@ def simulate_scores(pathways, delta=1.0, percentage=0.5, num_decoy_pathways=10, 
 
     return gene_score_pvalue_dict, selected_pathways
 
-def run_pipeline(alpha):
+def run_pipeline(alpha, run_propagation: bool=True, run_gsea: bool=False, run_simulated: bool=True):
     from pipeline.main import main
-    main(run_propagation=True, alpha=alpha)
+    main(run_propagation=run_propagation, alpha=alpha, run_gsea=run_gsea, run_simulated=run_simulated)
+
 
 # Function to calculate precision, recall, and AUPR
 def calculate_metrics(true_decoys, identified_pathways, all_pathways):
@@ -73,108 +74,103 @@ root_dir = path.dirname(path.abspath(__file__))
 pathways_file = path.join(root_dir, 'pipeline', 'Data', 'H_sapiens', 'pathways', 'bio_pathways')
 pathways = load_pathways_genes(pathways_file)
 
-deltas = [0.3, 1, 3, 10]
-percentages = [0.1, 0.3, 0.75, 1]  # Percentages of genes to change
-alphas = [1]  # Different alpha values to loop through
-num_decoy_pathways_list = [10, 30, 100]  # Different numbers of decoy pathways to loop through
+deltas = [0.3, 1, 3]
+percentages = [1]  # Percentages of genes to change
+alphas = [0.1, 1]  # Different alpha values to loop through
+num_decoy_pathways_list = [50, 100, 500]  # Different numbers of decoy pathways to loop through
 n_runs = 10  # Number of runs for each combination
+run_gsea_options = [True, False]  # Run GSEA and non-GSEA options
 
 results_dict = {
     'delta': [],
     'percentage': [],
     'alpha': [],
     'num_decoy_pathways': [],
+    'run_gsea': [],
     'precision': [],
     'recall': [],
     'aupr': [],
-    'aupr_hyper': []
 }
 
 for delta in deltas:
     for percentage in percentages:
         for alpha in alphas:
             for num_decoy_pathways in num_decoy_pathways_list:
-                precision_values = []
-                recall_values = []
-                aupr_values = []
-                aupr_hyper_values = []
+                for run_gsea in run_gsea_options:
+                    precision_values = []
+                    recall_values = []
+                    aupr_values = []
 
-                for _ in range(n_runs):
-                    gene_score_pvalue_dict, true_decoys = simulate_scores(pathways, delta=delta, percentage=percentage, num_decoy_pathways=num_decoy_pathways, seed=None)
-                    simulated_scores_path = path.join(root_dir, 'pipeline', 'Inputs', 'Simulated', f'simulated_scores_{delta}_{percentage}_{alpha}_{num_decoy_pathways}.xlsx')
-                    result_file_path = path.join(root_dir, 'pipeline', 'Outputs', 'Temp', f'simulated_scores_{delta}_{percentage}_{alpha}_{num_decoy_pathways}.txt')
-                    hyper_results_path = path.join(root_dir, 'pipeline', 'Outputs', 'hyper_results.txt')
+                    for _ in range(n_runs):
+                        gene_score_pvalue_dict, true_decoys = simulate_scores(pathways, delta=delta, percentage=percentage, num_decoy_pathways=num_decoy_pathways, seed=None)
+                        simulated_scores_path = path.join(root_dir, 'pipeline', 'Inputs', 'Simulated', f'simulated_scores_{delta}_{percentage}_{alpha}_{num_decoy_pathways}_{run_gsea}.xlsx')
+                        result_file_path = path.join(root_dir, 'pipeline', 'Outputs', 'Temp', f'simulated_scores_{delta}_{percentage}_{alpha}_{num_decoy_pathways}_{run_gsea}.txt')
 
-                    # Save the simulated scores
-                    results = pd.DataFrame.from_dict(gene_score_pvalue_dict, orient='index', columns=['Score', 'P-value'])
-                    results.reset_index(inplace=True)
-                    results.rename(columns={'index': 'GeneID'}, inplace=True)
-                    results.to_excel(simulated_scores_path, index=False)
+                        # Save the simulated scores
+                        results = pd.DataFrame.from_dict(gene_score_pvalue_dict, orient='index', columns=['Score', 'P-value'])
+                        results.reset_index(inplace=True)
+                        results.rename(columns={'index': 'GeneID'}, inplace=True)
+                        results.to_excel(simulated_scores_path, index=False)
 
-                    # Run the pipeline
-                    run_pipeline(alpha=alpha)
+                        # Run the pipeline
+                        run_pipeline(alpha=alpha, run_gsea=run_gsea)
 
-                    with open(result_file_path, 'r') as f:
-                        identified_pathways = [line.split()[0] for line in f.readlines()]
+                        with open(result_file_path, 'r') as f:
+                            identified_pathways = [line.split()[0] for line in f.readlines()]
 
-                    # Calculate metrics for the whole run
-                    precision, recall, aupr = calculate_metrics(true_decoys, identified_pathways, list(pathways.keys()))
-                    precision_values.append(precision)
-                    recall_values.append(recall)
-                    aupr_values.append(aupr)
+                        # Calculate metrics for the whole run
+                        precision, recall, aupr = calculate_metrics(true_decoys, identified_pathways, list(pathways.keys()))
+                        precision_values.append(precision)
+                        recall_values.append(recall)
+                        aupr_values.append(aupr)
 
-                    # Read hypergeometric test results from the file
-                    with open(hyper_results_path, 'r') as f:
-                        significant_pathways_hyper = [line.strip() for line in f.readlines()]
+                        # Delete temporary files
+                        if path.exists(simulated_scores_path):
+                            remove(simulated_scores_path)
+                        if path.exists(result_file_path):
+                            remove(result_file_path)
+                        # Erase each folder and its contents in Outputs/Propagation_Scores that start with simulated_scores
+                        for folder in [f for f in listdir(path.join(root_dir, 'pipeline', 'Outputs', 'Propagation_Scores')) if f.startswith('simulated_scores')]:
+                            folder_path = path.join(root_dir, 'pipeline', 'Outputs', 'Propagation_Scores', folder)
+                            for file in listdir(folder_path):
+                                remove(path.join(folder_path, file))
+                            rmdir(folder_path)
 
-                    # Calculate AUPR for hypergeometric test
-                    _, _, aupr_hyper = calculate_metrics(true_decoys, significant_pathways_hyper, list(pathways.keys()))
-                    aupr_hyper_values.append(aupr_hyper)
-
-                    # Delete temporary files
-                    if path.exists(simulated_scores_path):
-                        remove(simulated_scores_path)
-                    if path.exists(hyper_results_path):
-                        remove(hyper_results_path)
-                    if path.exists(result_file_path):
-                        remove(result_file_path)
-                    # Erase each folder and its contents in Outputs/Propagation_Scores that start with simulated_scores
-                    for folder in [f for f in listdir(path.join(root_dir, 'pipeline', 'Outputs', 'Propagation_Scores')) if f.startswith('simulated_scores')]:
-                        folder_path = path.join(root_dir, 'pipeline', 'Outputs', 'Propagation_Scores', folder)
-                        for file in listdir(folder_path):
-                            remove(path.join(folder_path, file))
-                        rmdir(folder_path)
-
-                # Average the precision, recall, and AUPR values
-                results_dict['delta'].append(delta)
-                results_dict['percentage'].append(percentage)
-                results_dict['alpha'].append(alpha)
-                results_dict['num_decoy_pathways'].append(num_decoy_pathways)
-                results_dict['precision'].append(np.mean(precision_values))
-                results_dict['recall'].append(np.mean(recall_values))
-                results_dict['aupr'].append(np.mean(aupr_values))
-                results_dict['aupr_hyper'].append(np.mean(aupr_hyper_values))
+                    # Average the precision, recall, and AUPR values
+                    results_dict['delta'].append(delta)
+                    results_dict['percentage'].append(percentage)
+                    results_dict['alpha'].append(alpha)
+                    results_dict['num_decoy_pathways'].append(num_decoy_pathways)
+                    results_dict['run_gsea'].append(run_gsea)
+                    results_dict['precision'].append(np.mean(precision_values))
+                    results_dict['recall'].append(np.mean(recall_values))
+                    results_dict['aupr'].append(np.mean(aupr_values))
 
 # Convert results to DataFrame
 results_df = pd.DataFrame(results_dict)
 
 # Plot the results for each combination separately
-for percentage in percentages:
-    for alpha in alphas:
-        for num_decoy_pathways in num_decoy_pathways_list:
-            subset = results_df[(results_df['percentage'] == percentage) & (results_df['alpha'] == alpha) & (results_df['num_decoy_pathways'] == num_decoy_pathways)]
+for alpha in alphas:
+    for num_decoy_pathways in num_decoy_pathways_list:
+        for percentage in percentages:
+            subset = results_df[(results_df['alpha'] == alpha) & (results_df['num_decoy_pathways'] == num_decoy_pathways) & (results_df['percentage'] == percentage)]
             plt.figure(figsize=(15, 10))
-            plt.plot(subset['delta'].values, subset['precision'].values, marker='o', label='Precision')
-            plt.plot(subset['delta'].values, subset['recall'].values, marker='o', label='Recall')
-            plt.plot(subset['delta'].values, subset['aupr'].values, marker='o', label='AUPR')
-            plt.plot(subset['delta'].values, subset['aupr_hyper'].values, marker='o', label='AUPR Hyper')
+
+            for run_gsea in run_gsea_options:
+                sub_subset = subset[subset['run_gsea'] == run_gsea]
+                label = 'GSEA' if run_gsea else 'No GSEA'
+                plt.plot(sub_subset['delta'].values, sub_subset['precision'].values, marker='o', label=f'Precision ({label})')
+                plt.plot(sub_subset['delta'].values, sub_subset['recall'].values, marker='o', label=f'Recall ({label})')
+                plt.plot(sub_subset['delta'].values, sub_subset['aupr'].values, marker='o', label=f'AUPR ({label})')
+
             plt.xlabel('Delta')
             plt.ylabel('Value')
-            plt.title(f'Precision, Recall, and AUPR (Percentage: {percentage*100}%, Alpha: {alpha}, Decoy Pathways: {num_decoy_pathways})')
+            plt.title(f'Precision, Recall, and AUPR (Alpha: {alpha}, Decoy Pathways: {num_decoy_pathways}, Percentage: {percentage*100}%)')
             plt.xticks(deltas)
             plt.legend()
             plt.grid(True)
-            plt.savefig(path.join(root_dir, f'precision_recall_aupr_chart_{percentage}_{alpha}_{num_decoy_pathways}.png'))
+            plt.savefig(path.join(root_dir, f'precision_recall_aupr_chart_alpha_{alpha}_decoy_{num_decoy_pathways}_percentage_{percentage}.png'))
             plt.show()
 
 print(results_df)
+
