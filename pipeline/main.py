@@ -9,7 +9,7 @@ from pipeline.visualization_tools import print_aggregated_pathway_information, p
 
 
 
-def main(alpha=1, run_propagation: bool=True, run_gsea: bool=False, run_simulated: bool=False, input_type: str='Score'):
+def main(alpha=0.1, run_propagation: bool=True, run_gsea: bool=False, run_simulated: bool=False, input_type: str='Score'):
     """
     Execute propagation and enrichment analysis based on specified flags.
 

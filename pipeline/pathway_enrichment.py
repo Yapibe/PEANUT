@@ -2,7 +2,7 @@ import pandas as pd
 from os import path
 from pipeline.args import EnrichTask, GeneralArgs
 from scipy.stats import rankdata
-from gsea import run_gsea
+from pipeline.scripts.gsea import run_gsea
 from pipeline.utils import load_pathways_and_propagation_scores
 from statsmodels.stats.multitest import multipletests
 from pipeline.visualization_tools import print_enriched_pathways_to_file

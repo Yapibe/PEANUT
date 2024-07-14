@@ -1,6 +1,6 @@
 import os
 import time
-import scipy as sp
+import scipy as sp, scipy.linalg
 import numpy as np
 import networkx as nx
 from pipeline.args import GeneralArgs, PropagationTask
@@ -25,7 +25,6 @@ def propagate_with_inverse(seeds: list, propagation_input: dict, inverse_matrix:
     F_0 = np.zeros((num_genes, 1))
     for seed in seeds:
         F_0[gene_indexes[seed]] = propagation_input[seed]
-    F_0 = F_0.reshape((F_0.shape[0], 1))
 
     F = inverse_matrix.dot(F_0)
     return F
@@ -52,7 +51,7 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
 
     # use timer to measure time
     start = time.time()
-    print("Normalizing the matrix")
+    print("Weight normalization")
     # Normalize the matrix
     norm_matrix = sp.sparse.diags(1 / sp.sqrt(matrix.sum(0).ravel()), format="csr")
     matrix = norm_matrix * matrix * norm_matrix
@@ -130,6 +129,7 @@ def propagate_network(propagation_input: dict, matrix: sp.sparse.spmatrix, gene_
     inverted_gene_scores = propagate_with_inverse(
         list(propagation_input.keys()), propagation_input, matrix, gene_index, len(gene_index)
     )
+
 
     gene_indexes_scores = {
         gene_index[gene]: inverted_gene_scores[gene_index[gene]]
@@ -228,31 +228,40 @@ def perform_propagation(test_name: str, general_args: GeneralArgs):
                            genes_id_to_idx=network_gene_index, task=prop_task, save_dir=prop_task.output_folder,
                            general_args=general_args)
 
-# def propagate(seeds, propagation_input, matrix, gene_indexes, num_genes, task: PropagationTask):
-#     """
-#     Propagates the influence of seed genes through the network using the specified propagation matrix.
-#     Args:
-#         seeds (list): List of seed gene IDs.
-#         propagation_input (dict): Mapping of gene IDs to their initial propagation values.
-#         matrix (numpy.ndarray or scipy.sparse matrix): Propagation matrix.
-#         gene_indexes (dict): Mapping of gene IDs to their indices in the matrix.
-#         num_genes (int): Total number of genes in the network.
-#         task (PropagationTask): Propagation task object containing propagation parameters.
-#     Returns:
-#         numpy.ndarray: Array containing the final propagated values for each gene.
-#     """
+
+# def propagate(seeds, propagation_input, matrix, gene_indexes, num_genes, inverted_scores, alpha=0.1, n_max_iterations=100000,
+#               convergence_th=1e-6):
+#     # Initialize the vector F_t with zeros, with a shape of (num_genes,)
 #     F_t = np.zeros(num_genes)
+#
+#     # If no propagation_input is given, set it to 1 for all seed genes
 #     if not propagation_input:
 #         propagation_input = {x: 1 for x in seeds}
+#
+#     # Set the initial propagation values
 #     for seed in seeds:
 #         if seed in gene_indexes:
 #             F_t[gene_indexes[seed]] = propagation_input[seed]
-#     Y = task.alpha * F_t
-#     matrix = (1 - task.alpha) * matrix
-#     for _ in range(task.n_max_iterations):
-#         F_t_1 = F_t
+#
+#     # Calculate Y = alpha * F_t (initial values scaled by alpha)
+#     Y = alpha * F_t
+#
+#     # Initialize F_t with Y
+#     F_t = Y.copy()
+#
+#     iterations_to_similarity = -1
+#
+#     # Iterate to propagate values through the network
+#     for iteration in range(n_max_iterations):
+#         # Save the previous F_t for convergence check
+#         F_t_1 = F_t.copy()
+#
+#         # Update F_t using the inverse matrix
 #         F_t = matrix.dot(F_t_1) + Y
 #
-#         if scipy.linalg.norm(F_t_1 - F_t) < task.convergence_th:
+#         # Check for similarity with inverted_scores
+#         if np.linalg.norm(F_t - inverted_scores) < convergence_th:
+#             print(f"Converged after {iteration} iterations")
 #             break
+#
 #     return F_t
