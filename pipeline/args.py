@@ -68,7 +68,7 @@ class GeneralArgs:
         self.gsea_out = self._create_output_subdir('GSEA') if self.run_gsea else None
 
         # Network and pathway files
-        self.network_file = 'small_graph'
+        self.network_file = 'H_sapiens.net'
         self.network_file_path = path.join(self.data_dir, 'network', self.network_file)
         self.genes_names_file = 'gene_info.json'
         self.genes_names_file_path = path.join(self.data_dir, 'genes_names', self.genes_names_file)
@@ -76,7 +76,7 @@ class GeneralArgs:
         self.pathway_file_dir = path.join(self.data_dir, 'pathways', self.pathway_file)
 
         # Similarity matrix
-        self.create_similarity_matrix = True
+        self.create_similarity_matrix = False
         self.similarity_matrix_path = path.join(self.data_dir, 'matrix', f'similarity_matrix_{self.alpha}.npz')
 
     def _set_input_dir(self):
