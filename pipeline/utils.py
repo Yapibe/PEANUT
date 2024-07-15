@@ -158,6 +158,7 @@ def load_pathways_and_propagation_scores(general_args, propagation_file_path):
     # network_graph = read_network(general_args.network_file_path)
     pathways_with_many_genes = load_pathways_genes(general_args.pathway_file_dir, general_args.run_gsea)
     scores = get_scores(propagation_file_path)
+
     if general_args.run_gsea:
         # Convert scores keys to strings for consistency
         scores = {str(gene): value for gene, value in scores.items()}
@@ -167,22 +168,25 @@ def load_pathways_and_propagation_scores(general_args, propagation_file_path):
         genes_by_pathway = {pathway: set(map(str, genes)).intersection(scores_keys)
                             for pathway, genes in pathways_with_many_genes.items()
                             if general_args.minimum_gene_per_pathway <=
-                            len(set(map(str, genes)).intersection(scores_keys)) <= general_args.maximum_gene_per_pathway}
-
-        return genes_by_pathway, scores
+                            len(set(map(str, genes)).intersection(
+                                scores_keys)) <= general_args.maximum_gene_per_pathway}
     else:
         scores_keys = set(scores.keys())
         # Filter pathways by those having gene counts within the specified range and that intersect with scored genes
         genes_by_pathway = {pathway: set(genes).intersection(scores_keys)
-                                for pathway, genes in pathways_with_many_genes.items()
-                                if general_args.minimum_gene_per_pathway <=
-                                len(set(genes).intersection(scores_keys)) <= general_args.maximum_gene_per_pathway}
+                            for pathway, genes in pathways_with_many_genes.items()
+                            if general_args.minimum_gene_per_pathway <=
+                            len(set(genes).intersection(scores_keys)) <= general_args.maximum_gene_per_pathway}
 
-    DEG_genes = read_prior_set('/mnt/c/Users/pickh/PycharmProjects/Yair_propagation/pipeline/Inputs/experiments_data/after_filter.xlsx')
+    DEG_genes = read_prior_set(
+        '/mnt/c/Users/pickh/PycharmProjects/Yair_propagation/pipeline/Inputs/experiments_data/after_filter.xlsx')
     DEG_genes = set(DEG_genes['GeneID'].values)
     # filter genes by pathways to include pathways with at least 1 DEG
-    genes_by_pathway = {pathway: genes for pathway, genes in genes_by_pathway.items() if len(genes.intersection(DEG_genes)) > 0}
+    genes_by_pathway = {pathway: genes for pathway, genes in genes_by_pathway.items() if
+                        len(genes.intersection(DEG_genes)) > 0}
 
+    # Convert sets to lists
+    genes_by_pathway = {pathway: list(genes) for pathway, genes in genes_by_pathway.items()}
 
     return genes_by_pathway, scores
 

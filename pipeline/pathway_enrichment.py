@@ -161,7 +161,7 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs):
         enrich_task = EnrichTask(name=test_name, create_scores=True, target_field='gene_prop_scores',
                                  statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)
     else:
-        propagation_file = path.join(f'{propagation_folder}', f'{test_name}_1_02_06_2024__13_37_54')
+        propagation_file = path.join(f'{propagation_folder}', f'{test_name}_1_15_07_2024__15_08_43')
         enrich_task = EnrichTask(name=test_name, create_scores=True, target_field='gene_prop_scores',
                                  statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)
 

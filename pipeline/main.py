@@ -9,7 +9,7 @@ from pipeline.visualization_tools import print_aggregated_pathway_information, p
 
 
 
-def main(alpha=1, run_propagation: bool=True, run_gsea: bool=False, run_simulated: bool=False, input_type: str='Score'):
+def main(alpha=1, run_propagation: bool=False, run_gsea: bool=False, run_simulated: bool=False, input_type: str='Score'):
     """
     Execute propagation and enrichment analysis based on specified flags.
 
@@ -24,7 +24,7 @@ def main(alpha=1, run_propagation: bool=True, run_gsea: bool=False, run_simulate
     - None
     """
     general_args = GeneralArgs(run_propagation=run_propagation, alpha=alpha, run_simulated=run_simulated, run_gsea=run_gsea,
-                               input_type=input_type)
+                               input_type=input_type, run_hyper=False)
 
     # List all .xlsx files in the input directory
     test_file_paths = [path.join(general_args.input_dir, file) for file in listdir(general_args.input_dir) if
