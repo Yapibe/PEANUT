@@ -1,4 +1,4 @@
-# Network Propagation to Enhance Biological Data
+# PEANUT: Pathway Enrichment Analysis through Network UTilization
 
 ## Overview
 
