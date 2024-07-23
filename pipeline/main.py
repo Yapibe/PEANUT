@@ -1,11 +1,11 @@
 import time
 import shutil
 from os import path, listdir
-from pipeline.args import GeneralArgs
-from pipeline.pathway_enrichment import perform_enrichment
-from pipeline.propagation_routines import perform_propagation
-from pipeline.utils import read_temp_scores, process_condition
-from pipeline.visualization_tools import print_aggregated_pathway_information, plot_pathways_mean_scores
+from args import GeneralArgs
+from pathway_enrichment import perform_enrichment
+from propagation_routines import perform_propagation
+from utils import read_temp_scores, process_condition
+from visualization_tools import print_aggregated_pathway_information, plot_pathways_mean_scores
 
 
 

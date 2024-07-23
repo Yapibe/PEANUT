@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from pipeline.args import EnrichTask, GeneralArgs
+from args import EnrichTask, GeneralArgs
 from os import path, makedirs
 import matplotlib.pyplot as plt
 
