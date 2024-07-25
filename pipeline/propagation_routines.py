@@ -229,6 +229,7 @@ def perform_propagation(test_name: str, general_args: GeneralArgs):
                            general_args=general_args)
 
 
+
 # def propagate(seeds, propagation_input, matrix, gene_indexes, num_genes, inverted_scores, alpha=0.1, n_max_iterations=100000,
 #               convergence_th=1e-6):
 #     # Initialize the vector F_t with zeros, with a shape of (num_genes,)
