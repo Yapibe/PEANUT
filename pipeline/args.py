@@ -3,8 +3,8 @@ from datetime import datetime
 
 
 class GeneralArgs:
-    def __init__(self, alpha: float = 1, run_propagation: bool =True, run_gsea: bool =False, run_simulated: bool =False,
-                 input_type: str = 'Score', run_hyper: bool = True):
+    def __init__(self, alpha: float = 1, run_NGSEA=False, run_propagation: bool =True, run_gsea: bool =False, run_simulated: bool =False,
+                 input_type: str = 'Score', run_hyper: bool = False):
         """
         Initializes general arguments used throughout the pipeline.
 
@@ -44,17 +44,18 @@ class GeneralArgs:
         # General Parameters
         self.alpha = alpha
         self.FDR_threshold = 0.05
-        self.minimum_gene_per_pathway = 20
-        self.maximum_gene_per_pathway = 200
+        self.minimum_gene_per_pathway = 15
+        self.maximum_gene_per_pathway = 500
         self.JAC_THRESHOLD = 0.2
         self.run_propagation = run_propagation
         self.run_simulated = run_simulated
         self.run_gsea = run_gsea
         self.run_hyper = run_hyper
         self.input_type = input_type
+        self.run_NGSEA = run_NGSEA
 
         # Experiment and output settings
-        self.Experiment_name = 'Simulated' if self.run_simulated else 'Parkinson'
+        self.Experiment_name = 'Simulated' if self.run_simulated else 'NGSEA'
         self.date = datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
         self.figure_title = 'Pathway Enrichment'
 
@@ -68,16 +69,16 @@ class GeneralArgs:
         self.gsea_out = self._create_output_subdir('GSEA') if self.run_gsea else None
 
         # Network and pathway files
-        self.network_file = 'H_sapiens.net'
+        self.network_file = 'HumanNet-FN.net'
         self.network_file_path = path.join(self.data_dir, 'network', self.network_file)
         self.genes_names_file = 'gene_info.json'
         self.genes_names_file_path = path.join(self.data_dir, 'genes_names', self.genes_names_file)
-        self.pathway_file = 'bio_pathways_gmt.gmt' if self.run_gsea else 'bio_pathways'
+        self.pathway_file = 'c2.gmt' if self.run_gsea else 'bio_pathways'
         self.pathway_file_dir = path.join(self.data_dir, 'pathways', self.pathway_file)
 
         # Similarity matrix
         self.create_similarity_matrix = True
-        self.similarity_matrix_path = path.join(self.data_dir, 'matrix', f'test_similarity_matrix_{self.alpha}.npz')
+        self.similarity_matrix_path = path.join(self.data_dir, 'matrix', f'HumanNet-FN2_similarity_matrix_{self.alpha}.npz')
 
     def _set_input_dir(self):
         """
@@ -85,7 +86,7 @@ class GeneralArgs:
         """
         if self.run_simulated:
             return path.join(self.root_folder, 'Inputs', 'Simulated')
-        return path.join(self.root_folder, 'Inputs', 'experiments_data', self.Experiment_name)
+        return path.join(self.root_folder, 'Inputs', 'experiments_data', self.Experiment_name,'XLSX')
 
     def _create_output_subdir(self, subdir_name):
         """

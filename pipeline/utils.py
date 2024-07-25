@@ -159,17 +159,7 @@ def load_pathways_and_propagation_scores(general_args, propagation_file_path):
     pathways_with_many_genes = load_pathways_genes(general_args.pathway_file_dir, general_args.run_gsea)
     scores = get_scores(propagation_file_path)
     if general_args.run_gsea:
-        # Convert scores keys to strings for consistency
-        scores = {str(gene): value for gene, value in scores.items()}
-        scores_keys = set(scores.keys())
-
-        # Filter pathways by those having gene counts within the specified range and that intersect with scored genes
-        genes_by_pathway = {pathway: set(map(str, genes)).intersection(scores_keys)
-                            for pathway, genes in pathways_with_many_genes.items()
-                            if general_args.minimum_gene_per_pathway <=
-                            len(set(map(str, genes)).intersection(scores_keys)) <= general_args.maximum_gene_per_pathway}
-
-        return genes_by_pathway, scores
+        return pathways_with_many_genes, scores
     else:
         scores_keys = set(scores.keys())
         # Filter pathways by those having gene counts within the specified range and that intersect with scored genes
@@ -182,45 +172,29 @@ def load_pathways_and_propagation_scores(general_args, propagation_file_path):
 
 ####################################################################GET FUNCTIONS############################################################################
 
-def get_propagation_input(prior_gene_ids, prior_data, input_type='Score'):
+def set_input_type(prior_data, input_type='Score'):
     """
-    Generates propagation inputs based on specified type and network.
+    Modifies the 'Score' column based on the specified input type.
 
     Args:
-        prior_gene_ids (set): List of gene IDs for the prior set.
         prior_data (pandas.DataFrame): DataFrame containing all experimental data.
         input_type (str): Type of input to generate (e.g., 'ones', 'abs_Score', etc.).
 
     Returns:
-        dict: A dictionary mapping gene IDs to their corresponding input values.
+        pandas.DataFrame: DataFrame with the modified 'Score' column.
     """
-    inputs = {}
+    if input_type not in {'ones', 'abs_Score', 'Score'}:
+        raise ValueError(f'{input_type} is not a valid input type')
 
-    for gene_id in prior_gene_ids:
-        if gene_id not in prior_data['GeneID'].values:
-            print(f"Warning: GeneID {gene_id} not found in prior_data")
-            continue
+    modified_prior_data = prior_data.copy()
 
-        score = prior_data.loc[prior_data.GeneID == gene_id, 'Score']
-        if score.empty:
-            print(f"Warning: No score found for GeneID {gene_id}")
-            continue
+    if input_type == 'ones':
+        modified_prior_data['Score'] = 1
+    elif input_type == 'abs_Score':
+        modified_prior_data['Score'] = prior_data['Score'].abs()
+    # If input_type is 'Score', we don't need to do anything as we want to keep the original scores
 
-        score = float(score.values[0])
-
-        if input_type == 'ones':
-            inputs[int(gene_id)] = 1
-        elif input_type == 'abs_Score':
-            inputs[int(gene_id)] = np.abs(score)
-        elif input_type == 'Score':
-            inputs[int(gene_id)] = score
-        else:
-            raise ValueError(f'{input_type} is not a valid input type')
-
-    if not inputs:
-        raise ValueError(f'No valid inputs were generated for the specified input type: {input_type}')
-
-    return inputs
+    return modified_prior_data
 
 
 def get_scores(score_path):

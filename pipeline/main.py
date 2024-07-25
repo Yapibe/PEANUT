@@ -25,10 +25,6 @@ def main(alpha=0.1, run_propagation: bool=True, run_gsea: bool=True, run_simulat
     """
     general_args = GeneralArgs(run_propagation=run_propagation, alpha=alpha, run_simulated=run_simulated, run_gsea=run_gsea,
                                input_type=input_type)
-
-    # List all .xlsx files in the input directory
-    test_file_paths = [path.join(general_args.input_dir, file) for file in listdir(general_args.input_dir) if
-                       file.endswith('.xlsx')]
     test_name_list = [path.splitext(file)[0] for file in listdir(general_args.input_dir) if file.endswith('.xlsx')]
 
     # Perform propagation and enrichment based on flags
@@ -39,6 +35,7 @@ def main(alpha=0.1, run_propagation: bool=True, run_gsea: bool=True, run_simulat
         print(f"Running enrichment on {test_name}")
         perform_enrichment(test_name, general_args)
         print("-----------------------------------------")
+    return
 
     if general_args.run_simulated:
         return

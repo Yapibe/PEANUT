@@ -2,7 +2,7 @@ import pandas as pd
 from os import path
 from args import EnrichTask, GeneralArgs
 from scipy.stats import rankdata
-from scripts.gsea import run_gsea
+import gseapy as gp
 from utils import load_pathways_and_propagation_scores
 from statsmodels.stats.multitest import multipletests
 from visualization_tools import print_enriched_pathways_to_file
@@ -143,7 +143,7 @@ def perform_statist_mann_whitney(task: EnrichTask, args, scores: dict):
             task.filtered_pathways[row['Pathway']] = row
 
 
-def perform_enrichment(test_name: str, general_args: GeneralArgs):
+def perform_enrichment(test_name: str, general_args: GeneralArgs, gsea_output_path: str = None):
     """
     Perform pathway enrichment analysis for a given test.
 
@@ -156,52 +156,29 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs):
     """
     # run enrichment
     propagation_folder = path.join(general_args.propagation_folder, test_name)
-    if general_args.run_propagation:
-        propagation_file = path.join(f'{propagation_folder}', '{}_{}_{}'.format(test_name, general_args.alpha, general_args.date))
-        enrich_task = EnrichTask(name=test_name, create_scores=True, target_field='gene_prop_scores',
-                                 statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)
-    else:
-        propagation_file = path.join(f'{propagation_folder}', f'{test_name}_1_02_06_2024__13_37_54')
-        enrich_task = EnrichTask(name=test_name, create_scores=True, target_field='gene_prop_scores',
+
+    propagation_file = path.join(f'{propagation_folder}', '{}_{}_{}'.format(test_name, general_args.alpha, general_args.date))
+    enrich_task = EnrichTask(name=test_name, create_scores=True, target_field='gene_prop_scores',
                                  statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)
 
     genes_by_pathway, scores = load_pathways_and_propagation_scores(general_args, enrich_task.propagation_file)
 
-    if general_args.run_gsea:
-        # Prepare data for GSEA
-        # Unpack the scores dictionary into separate lists for GeneID and Score
-        gene_ids = list(scores.keys())
-        logfc_scores = [score[0] for score in scores.values()]
 
-        # Create DataFrame for GSEA with string gene identifiers
-        gene_expression_data = pd.DataFrame({'gene': gene_ids, 'logFC': logfc_scores})
-        gene_expression_data['gene'] = gene_expression_data['gene'].astype(str)
+    # print("Running GSEA on {}".format(test_name))
+    # # Prepare data for GSEA
+    # # Unpack the scores dictionary into separate lists for GeneID and Score
+    # gene_ids = list(scores.keys())
+    # logfc_scores = [score[0] for score in scores.values()]
+    # # Create DataFrame for GSEA with string gene identifiers
+    # gene_expression_data = pd.DataFrame({'gene': gene_ids, 'logFC': logfc_scores})
+    # gene_expression_data['gene'] = gene_expression_data['gene'].astype(str)
+    # # Rank the data by logFC in descending order
+    # gene_expression_data = gene_expression_data.sort_values(by='logFC', ascending=False)
+    # # Run GSEA
+    # gsea_results = gp.prerank(rnk=gene_expression_data, gene_sets=genes_by_pathway, outdir=general_args.gsea_out, verbose=True, permutation_num=1000, no_plot=True)
 
-        # Rank the data by logFC in descending order
-        gene_expression_data = gene_expression_data.sort_values(by='logFC', ascending=False)
 
-        # Run GSEA
-        gsea_results = run_gsea(gene_expression_data, genes_by_pathway, general_args.gsea_out)
+    # # save csv
+    # gsea_results.res2d.to_csv(gsea_output_path)
 
-        # Process GSEA results
-        enrich_task.filtered_pathways = {}
-        for index, row in gsea_results.res2d.iterrows():
-            adj_p_value = row['FDR q-val']
-            if adj_p_value < general_args.FDR_threshold:
-                pathway_name = row['Term']
-                genes = genes_by_pathway[pathway_name]
-                genes = [int(gene) for gene in genes]
-                enrich_task.filtered_pathways[pathway_name] = pd.Series(
-                    {'Pathway': pathway_name, 'Adjusted_p_value': adj_p_value, 'Genes': genes})
-    else:
-        # Stage 1 - calculate nominal p-values and directions
-        perform_statist(enrich_task, general_args, genes_by_pathway, scores)
-        # Check if there are significant pathways after the KS test
-        if enrich_task.ks_significant_pathways_with_genes:
-            # Further statistical test using Mann-Whitney U test
-            perform_statist_mann_whitney(enrich_task, general_args, scores)
-        else:
-            print("Skipping Mann-Whitney test.")
-    # Output the enriched pathways to files
-    print_enriched_pathways_to_file(enrich_task, general_args.FDR_threshold)
-
+    return scores
