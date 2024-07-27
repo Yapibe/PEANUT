@@ -72,7 +72,7 @@ class GeneralArgs:
         self.network_file = 'HumanNet-FN.net'
         self.network_file_path = path.join(self.data_dir, 'network', self.network_file)
         self.genes_names_file = 'gene_info.json'
-        self.genes_names_file_path = path.join(self.data_dir, 'genes_names', self.genes_names_file)
+        self.genes_names_file_path = path.join(self.data_dir, 'gene_names', self.genes_names_file)
         self.pathway_file = 'c2.gmt' if self.run_gsea else 'bio_pathways.gmt'
         self.pathway_file_dir = path.join(self.data_dir, 'pathways', self.pathway_file)
 
