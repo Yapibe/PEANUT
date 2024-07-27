@@ -2,7 +2,7 @@ import os
 import time
 import scipy.sparse as sp
 from scipy.sparse.linalg import inv
-from numpy import sqrt
+import json
 import numpy as np
 import networkx as nx
 from args import GeneralArgs, PropagationTask
@@ -295,7 +295,7 @@ def handle_no_propagation_cases(prior_data, prop_task, general_args, network):
         _handle_no_propagation_case(prior_data, prop_task, general_args, network)
 
 
-def perform_propagation(test_name: str, general_args, network, prior_data, gene_name_dict):
+def perform_propagation(test_name: str, general_args, network, prior_data):
     """
     Performs the propagation of gene scores through the network.
 
@@ -304,7 +304,6 @@ def perform_propagation(test_name: str, general_args, network, prior_data, gene_
     - general_args: General arguments and settings.
     - network (networkx.Graph): The network graph.
     - prior_data (pandas.DataFrame): DataFrame containing prior gene scores.
-    - gene_name_dict (dict): Dictionary mapping GeneID to their symbols.
 
     Returns:
     - None
@@ -339,6 +338,9 @@ def perform_propagation(test_name: str, general_args, network, prior_data, gene_
         non_network_genes[['GeneID', 'Score']]
     ], ignore_index=True)
 
+    # Load the gene_info.json file
+    with open(general_args.genes_names_file_path, 'r') as f:
+        gene_name_dict = json.load(f)
     full_propagated_scores_df = merge_with_prior_data(final_propagation_results, prior_data, gene_name_dict)
 
     # Print the number of scores different from the original scores
