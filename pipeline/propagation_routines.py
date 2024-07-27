@@ -77,9 +77,6 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     else:
         matrix = network
 
-    print("Initial matrix shape:", matrix.shape)
-    print("Initial non-zero elements:", matrix.nnz)
-
     print("Weight normalization")
     degrees = np.array(matrix.sum(axis=1)).flatten()
     # Replace zero degrees with 1 to avoid division by zero
@@ -88,15 +85,11 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     norm_matrix = sp.diags(inv_sqrt_degrees)
     matrix = norm_matrix @ matrix @ norm_matrix
 
-    print("Normalized matrix shape:", matrix.shape)
-    print("Normalized non-zero elements:", matrix.nnz)
-
     print("Calculating the inverse")
     n = matrix.shape[0]
     identity_matrix = sp.eye(n)
 
     matrix_to_invert = identity_matrix - (1 - args.alpha) * matrix
-    print(f"Matrix to invert shape: {matrix_to_invert.shape}")
     print(f"Matrix to invert non-zero elements: {matrix_to_invert.nnz}")
 
     # Convert to CSC format for efficient inversion
@@ -108,8 +101,6 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     print("Inverting the matrix")
     inverse_matrix = inv(matrix_to_invert_csc)
     inverse_matrix = args.alpha * inverse_matrix
-
-    print("Inverse matrix shape:", inverse_matrix.shape)
     print("Inverse matrix non-zero elements:", inverse_matrix.nnz)
 
     # Print densities for debugging
