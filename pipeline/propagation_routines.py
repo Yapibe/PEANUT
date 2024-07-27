@@ -65,19 +65,19 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     # Convert network to a sparse matrix if it isn't one already
     if not sp.isspmatrix(network):
         row, col, data = [], [], []
-        for edge in network.edges():
+        for edge in network.edges(data=True):
+            weight = edge[2].get(2, 1.0)  # Use the edge weight if provided, otherwise default to 1.0
             row.append(gene_index[edge[0]])
             col.append(gene_index[edge[1]])
-            data.append(1.0)  # Unweighted graph, so weight is 1.0 for both directions
-            # Add the reverse edge since the graph is unweighted and assumed undirected
+            data.append(weight)
+            # Add the reverse edge since the graph is undirected
             row.append(gene_index[edge[1]])
             col.append(gene_index[edge[0]])
-            data.append(1.0)
+            data.append(weight)
         matrix = sp.csr_matrix((data, (row, col)), shape=(len(genes), len(genes)))
     else:
         matrix = network
 
-    print("Weight normalization")
     degrees = np.array(matrix.sum(axis=1)).flatten()
     # Replace zero degrees with 1 to avoid division by zero
     degrees[degrees == 0] = 1
@@ -85,23 +85,18 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     norm_matrix = sp.diags(inv_sqrt_degrees)
     matrix = norm_matrix @ matrix @ norm_matrix
 
-    print("Calculating the inverse")
     n = matrix.shape[0]
     identity_matrix = sp.eye(n)
-
     matrix_to_invert = identity_matrix - (1 - args.alpha) * matrix
-    print(f"Matrix to invert non-zero elements: {matrix_to_invert.nnz}")
-
-    # Convert to CSC format for efficient inversion
     matrix_to_invert_csc = matrix_to_invert.tocsc()
-    # save the matrix to disk
-    save_pre_inverse_path = os.path.join(args.data_dir, 'matrix', 'pre_inverse_matrix.npz')
-    sp.save_npz(save_pre_inverse_path, matrix_to_invert_csc)
 
     print("Inverting the matrix")
     inverse_matrix = inv(matrix_to_invert_csc)
     inverse_matrix = args.alpha * inverse_matrix
-    print("Inverse matrix non-zero elements:", inverse_matrix.nnz)
+
+    # Extract the upper triangular part of the inverse matrix
+    upper_tri_indices = np.triu_indices(n)
+    upper_tri_inverse_matrix = inverse_matrix[upper_tri_indices]
 
     # Print densities for debugging
     original_density = matrix.nnz / (matrix.shape[0] * matrix.shape[1])
@@ -113,19 +108,23 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     if not os.path.exists(os.path.dirname(args.similarity_matrix_path)):
         os.makedirs(os.path.dirname(args.similarity_matrix_path))
     sp.save_npz(args.similarity_matrix_path, inverse_matrix)
+    save_upper_path = os.path.join(args.data_dir, 'matrix', 'HumanNet_tri_0.1')
+    np.save(save_upper_path, upper_tri_inverse_matrix)
 
     end = time.time()
     print(f"Time elapsed: {end - start} seconds")
-    return inverse_matrix, gene_index
+    return inverse_matrix, upper_tri_inverse_matrix, gene_index
 
 
-def read_sparse_matrix_txt(network: nx.Graph, similarity_matrix_path: str) -> tuple:
+def read_sparse_matrix_txt(network: nx.Graph, similarity_matrix_path: str, tri_matrix_path: str, debug: bool) -> tuple:
     """
     Reads a precomputed sparse similarity matrix from a file.
 
     Parameters:
     - network (nx.Graph): Network graph used to generate the similarity matrix.
     - similarity_matrix_path (str): Path to the file containing the sparse matrix.
+    - tri_matrix_path (str): Path to the file containing the upper triangular part of the sparse matrix.
+    - debug (bool): Flag to indicate whether to use the full matrix or the upper triangular part.
 
     Returns:
     - tuple: A tuple containing the sparse matrix and the list of genes.
@@ -133,35 +132,75 @@ def read_sparse_matrix_txt(network: nx.Graph, similarity_matrix_path: str) -> tu
     genes = sorted(network.nodes())
     gene_index = {gene: index for index, gene in enumerate(genes)}
 
-    if not os.path.exists(similarity_matrix_path):
-        raise FileNotFoundError(f"The specified file {similarity_matrix_path} does not exist.")
+    if not os.path.exists(similarity_matrix_path) and not os.path.exists(tri_matrix_path):
+        raise FileNotFoundError(f"Neither specified file {similarity_matrix_path} nor {tri_matrix_path} exists.")
 
-    matrix = sp.load_npz(similarity_matrix_path)
+    if debug:
+        upper_tri_inverse_matrix = np.load(tri_matrix_path)
+        return upper_tri_inverse_matrix, gene_index
+    else:
+        matrix = sp.load_npz(similarity_matrix_path)
+        return matrix, gene_index
 
-    return matrix, gene_index
+def symmetric_matrix_vector_multiply(upper_tri_matrix: np.ndarray, F_0: np.ndarray) -> np.ndarray:
+    """
+    Performs matrix-vector multiplication using only the upper triangular part of a symmetric matrix.
 
-def matrix_prop(propagation_input: dict, inverse_matrix: sp.spmatrix, gene_indexes: dict) -> np.ndarray:
+    Parameters:
+    - upper_tri_matrix (np.ndarray): The upper triangular part of the symmetric matrix stored as a 2D array with dimensions (1, number of cells in the upper triangle).
+    - F_0 (np.ndarray): The vector to be multiplied.
+
+    Returns:
+    - np.ndarray: The result of the matrix-vector multiplication.
+    """
+    num_genes = F_0.size
+    result = np.zeros(num_genes)
+    index = 0
+
+    upper_tri_matrix = upper_tri_matrix.flatten()  # Ensure it is a 1D array
+
+    for i in range(num_genes):
+        for j in range(i, num_genes):
+            result[i] += upper_tri_matrix[index] * F_0[j]
+            if i != j:
+                result[j] += upper_tri_matrix[index] * F_0[i]
+            index += 1
+
+    return result
+
+def matrix_prop(propagation_input: dict, gene_indexes: dict, debug: bool, inverse_matrix: sp.spmatrix=None, upper_tri_inverse_matrix: np.ndarray=None) -> np.ndarray:
     """
     Propagates seed gene values through a precomputed inverse matrix for faster calculation.
 
     Parameters:
-    - seeds (list): List of seed gene IDs.
     - propagation_input (dict): Mapping of gene IDs to their initial values for propagation.
     - inverse_matrix (sp.spmatrix): Precomputed inverse matrix for propagation.
+    - upper_tri_inverse_matrix (np.ndarray): Upper triangular part of the inverse matrix.
     - gene_indexes (dict): Mapping of gene IDs to their indices in the matrix.
-    - num_genes (int): Total number of genes in the network.
+    - debug (bool): Flag to indicate whether to use the full matrix or the upper triangular part.
 
     Returns:
     - np.ndarray: Array containing the final propagated values for each gene.
     """
-    seeds = list(propagation_input.keys())
     num_genes = len(gene_indexes)
     F_0 = np.zeros(num_genes)  # Changed to a 1D array
-    for seed in seeds:
-        F_0[gene_indexes[seed]] = propagation_input[seed]
+    for gene_id, value in propagation_input.items():
+        F_0[gene_indexes[gene_id]] = value
 
-    F = inverse_matrix @ F_0
+    if debug:
+        F = symmetric_matrix_vector_multiply(upper_tri_inverse_matrix, F_0)
+    else:
+        F = inverse_matrix @ F_0
+    # # Compare F_full and F_upper_tri
+    # difference = np.abs(F_full - F_upper_tri)
+    # threshold = 1e-5  # Define a small threshold for floating-point comparison
+    # num_differences = np.sum(difference > threshold)
+    #
+    # print(f"Number of different elements: {num_differences}")
+    # print(f"Differences: {difference[difference > threshold]}")
+
     return F
+
 
 
 def _handle_ngsea_case(prior_data, prop_task, general_args, network):
@@ -179,7 +218,8 @@ def _handle_ngsea_case(prior_data, prop_task, general_args, network):
     gene_scores = calculate_gene_scores(network, prior_data)
     posterior_set = prior_data.copy()
     posterior_set['Score'] = posterior_set['GeneID'].map(gene_scores)
-
+    # print how many genes are being saved to scores
+    print(f"Number of genes being saved to scores: {len(posterior_set)}")
     save_propagation_score(
         prior_set=prior_data,
         propagation_input={gene_id: score for gene_id, score in zip(posterior_set['GeneID'], posterior_set['Score'])},
@@ -195,6 +235,8 @@ def _handle_no_propagation_case(prior_data, prop_task, general_args):
     sorted_prior_data = prior_data.sort_values(by='GeneID').reset_index(drop=True)
     gene_scores = sorted_prior_data['Score'].values.reshape((len(sorted_prior_data), 1))
     sorted_prior_data['Score'] = gene_scores.flatten()
+    # print how many genes are being saved to scores
+    print(f"Number of genes being saved to scores: {len(sorted_prior_data)}")
     save_propagation_score(
         prior_set=sorted_prior_data,
         propagation_input={gene_id: score for gene_id, score in
@@ -207,15 +249,16 @@ def _handle_no_propagation_case(prior_data, prop_task, general_args):
     )
 
 
-def _normalize_prop_scores(matrix, network_gene_index, propagation_score, filtered_prior_data):
+def _normalize_prop_scores(matrix, network_gene_index, propagation_score, filtered_prior_data, debug: bool) -> pd.DataFrame:
     """
     Normalize the propagation scores.
 
     Parameters:
-    - matrix (sp.sparse.spmatrix): The similarity matrix.
+    - matrix (sp.sparse.spmatrix or np.ndarray): The similarity matrix or upper triangular matrix.
     - network_gene_index (dict): Mapping of gene IDs to their indices in the matrix.
     - propagation_score (np.ndarray): Array of propagation scores.
     - filtered_prior_data (pd.DataFrame): DataFrame containing prior gene scores.
+    - debug (bool): Flag to indicate whether to use the full matrix or the upper triangular part.
 
     Returns:
     - pd.DataFrame: DataFrame containing GeneID and normalized Scores.
@@ -227,7 +270,7 @@ def _normalize_prop_scores(matrix, network_gene_index, propagation_score, filter
     ones_input = {gene_id: score for gene_id, score in zip(ones_input_df['GeneID'], ones_input_df['Score'])}
 
     # Perform propagation with ones input
-    ones_gene_scores_inverse = matrix_prop(ones_input, matrix, network_gene_index)
+    ones_gene_scores_inverse = matrix_prop(ones_input, network_gene_index, debug, inverse_matrix=matrix)
 
     # Identify zero normalization and zero propagation genes
     zero_normalization_genes = np.nonzero(ones_gene_scores_inverse == 0)[0]
@@ -263,10 +306,13 @@ def _save_propagation_results(propagation_input_df, full_propagated_scores_df, p
     Returns:
     - None
     """
+    # print how many genes are being saved to scores
+    print(f"Number of genes being saved to scores: {len(full_propagated_scores_df)}")
     save_propagation_score(
-        propagation_scores=full_propagated_scores_df,
         prior_set=propagation_input_df,
-        propagation_input={gene_id: score for gene_id, score in zip(full_propagated_scores_df['GeneID'], full_propagated_scores_df['Score'])},
+        propagation_input={gene_id: score for gene_id, score in
+                           zip(full_propagated_scores_df['GeneID'], full_propagated_scores_df['Score'])},
+        propagation_scores=full_propagated_scores_df,
         genes_id_to_idx={gene_id: idx for idx, gene_id in enumerate(full_propagated_scores_df['GeneID'])},
         task=prop_task,
         save_dir=prop_task.output_folder,
@@ -291,7 +337,7 @@ def get_similarity_matrix(network, general_args):
     if general_args.create_similarity_matrix:
         return generate_similarity_matrix(network, general_args)
     else:
-        return read_sparse_matrix_txt(network, general_args.similarity_matrix_path)
+        return read_sparse_matrix_txt(network, general_args.similarity_matrix_path, general_args.tri_similarity_matrix_path, general_args.debug)
 
 
 def handle_no_propagation_cases(prior_data, prop_task, general_args, network):
@@ -325,6 +371,7 @@ def perform_propagation(test_name: str, general_args, network, prior_data):
     print(f"Running propagation with scores '{general_args.input_type}'")
 
     matrix, network_gene_index = get_similarity_matrix(network, general_args)
+
     # Modify prior_data based on the input type
     propagation_input_df = set_input_type(prior_data, general_args.input_type)
 
@@ -332,10 +379,12 @@ def perform_propagation(test_name: str, general_args, network, prior_data):
     network_genes_df, filtered_propagation_input = filter_network_genes(propagation_input_df, network)
 
     # Perform network propagation
-    propagation_score = matrix_prop(filtered_propagation_input, matrix, network_gene_index)
+    propagation_score = matrix_prop(filtered_propagation_input, network_gene_index, general_args.debug,
+                                    inverse_matrix=matrix)
 
     # Normalize the propagation scores and create DataFrame within the function
-    normalized_df = _normalize_prop_scores(matrix, network_gene_index, propagation_score, network_genes_df)
+    normalized_df = _normalize_prop_scores(matrix, network_gene_index, propagation_score, network_genes_df,
+                                           general_args.debug)
 
     # Handle genes not in the network
     non_network_genes = propagation_input_df[~propagation_input_df['GeneID'].isin(network.nodes())].copy()
@@ -350,10 +399,6 @@ def perform_propagation(test_name: str, general_args, network, prior_data):
     with open(general_args.genes_names_file_path, 'r') as f:
         gene_name_dict = json.load(f)
     full_propagated_scores_df = merge_with_prior_data(final_propagation_results, prior_data, gene_name_dict)
-
-    # Print the number of scores different from the original scores
-    different_scores = propagation_input_df[propagation_input_df['Score'] != final_propagation_results['Score']]
-    print(f"Number of scores different from the original scores: {len(different_scores)}")
 
     # Save the results
     _save_propagation_results(propagation_input_df, full_propagated_scores_df, prop_task, general_args)

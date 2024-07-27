@@ -53,6 +53,7 @@ class GeneralArgs:
         self.run_hyper = run_hyper
         self.input_type = input_type
         self.run_NGSEA = run_NGSEA
+        self.debug = False
 
         # Experiment and output settings
         self.Experiment_name = 'Simulated' if self.run_simulated else 'NGSEA'
@@ -69,7 +70,7 @@ class GeneralArgs:
         self.gsea_out = self._create_output_subdir('GSEA') if self.run_gsea else None
 
         # Network and pathway files
-        self.network_file = 'HumanNet-FN.net'
+        self.network_file = 'HumanNet'
         self.network_file_path = path.join(self.data_dir, 'network', self.network_file)
         self.genes_names_file = 'gene_info.json'
         self.genes_names_file_path = path.join(self.data_dir, 'gene_names', self.genes_names_file)
@@ -78,7 +79,8 @@ class GeneralArgs:
 
         # Similarity matrix
         self.create_similarity_matrix = False
-        self.similarity_matrix_path = path.join(self.data_dir, 'matrix', f'HumanNet_similarity_matrix_{self.alpha}.npz')
+        self.similarity_matrix_path = path.join(self.data_dir, 'matrix', f'HumanNet_{self.alpha}.npz')
+        self.tri_similarity_matrix_path = path.join(self.data_dir, 'matrix', f'HumanNet_tri_{self.alpha}.npy')
 
     def _set_input_dir(self):
         """
