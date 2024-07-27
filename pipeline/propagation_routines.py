@@ -65,10 +65,14 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     # Convert network to a sparse matrix if it isn't one already
     if not sp.isspmatrix(network):
         row, col, data = [], [], []
-        for edge in network.edges(data=True):
+        for edge in network.edges():
             row.append(gene_index[edge[0]])
             col.append(gene_index[edge[1]])
-            data.append(edge[2].get('weight', 1.0))  # Assuming weight=1 if not provided
+            data.append(1.0)  # Unweighted graph, so weight is 1.0 for both directions
+            # Add the reverse edge since the graph is unweighted and assumed undirected
+            row.append(gene_index[edge[1]])
+            col.append(gene_index[edge[0]])
+            data.append(1.0)
         matrix = sp.csr_matrix((data, (row, col)), shape=(len(genes), len(genes)))
     else:
         matrix = network
@@ -97,12 +101,22 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
 
     # Convert to CSC format for efficient inversion
     matrix_to_invert_csc = matrix_to_invert.tocsc()
+    # save the matrix to disk
+    save_pre_inverse_path = os.path.join(args.data_dir, 'matrix', 'pre_inverse_matrix.npz')
+    sp.save_npz(save_pre_inverse_path, matrix_to_invert_csc)
+
     print("Inverting the matrix")
     inverse_matrix = inv(matrix_to_invert_csc)
     inverse_matrix = args.alpha * inverse_matrix
 
     print("Inverse matrix shape:", inverse_matrix.shape)
     print("Inverse matrix non-zero elements:", inverse_matrix.nnz)
+
+    # Print densities for debugging
+    original_density = matrix.nnz / (matrix.shape[0] * matrix.shape[1])
+    inverse_density = inverse_matrix.nnz / (inverse_matrix.shape[0] * inverse_matrix.shape[1])
+    print(f"Original matrix density: {original_density}")
+    print(f"Inverse matrix density: {inverse_density}")
 
     print("Saving the matrix")
     if not os.path.exists(os.path.dirname(args.similarity_matrix_path)):
