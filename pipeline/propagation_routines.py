@@ -190,7 +190,7 @@ def _handle_ngsea_case(prior_data, prop_task, general_args, network):
     )
 
 
-def _handle_no_propagation_case(prior_data, prop_task, general_args, network):
+def _handle_no_propagation_case(prior_data, prop_task, general_args):
     sorted_prior_data = prior_data.sort_values(by='GeneID').reset_index(drop=True)
     gene_scores = sorted_prior_data['Score'].values.reshape((len(sorted_prior_data), 1))
     sorted_prior_data['Score'] = gene_scores.flatten()
@@ -292,7 +292,7 @@ def handle_no_propagation_cases(prior_data, prop_task, general_args, network):
         _handle_ngsea_case(prior_data, prop_task, general_args, network)
     else:
         print("Running GSEA")
-        _handle_no_propagation_case(prior_data, prop_task, general_args, network)
+        _handle_no_propagation_case(prior_data, prop_task, general_args)
 
 
 def perform_propagation(test_name: str, general_args, network, prior_data):
