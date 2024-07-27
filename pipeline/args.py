@@ -67,7 +67,7 @@ class GeneralArgs:
         self.propagation_folder = self._create_output_subdir('Propagation_Scores')
         self.gsea_out = self._create_output_subdir('GSEA') if self.run_gsea else None
 
-        # Network and pathway files
+        # Network, pathway and gene name files
         self.network_file = 'H_sapiens.net'
         self.network_file_path = path.join(self.data_dir, 'network', self.network_file)
         self.genes_names_file = 'gene_info.json'
