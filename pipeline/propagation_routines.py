@@ -193,13 +193,13 @@ def merge_with_prior_data(final_propagation_results, prior_data, gene_name_dict)
 
 
 
-def _save_propagation_results(prior_data, propagation_results, prop_task, general_args):
+def _save_propagation_results(propagation_input_df, full_propagated_scores_df, prop_task, general_args):
     """
     Save the results of the propagation process.
 
     Parameters:
-    - prior_data (pd.DataFrame): The original prior data.
-    - propagation_results (pd.DataFrame): DataFrame containing propagation results.
+    - propagation_input_df (pandas.DataFrame): DataFrame containing the modified input data.
+    - full_propagated_scores_df (pandas.DataFrame): DataFrame containing full propagated scores.
     - prop_task (PropagationTask): The propagation task object.
     - general_args (GeneralArgs): General arguments and settings.
 
@@ -207,11 +207,10 @@ def _save_propagation_results(prior_data, propagation_results, prop_task, genera
     - None
     """
     save_propagation_score(
-        prior_set=prior_data,
-        propagation_input={gene_id: score for gene_id, score in
-                           zip(propagation_results['GeneID'], propagation_results['PropagatedScore'])},
-        propagation_scores=propagation_results,
-        genes_id_to_idx={gene_id: idx for idx, gene_id in enumerate(propagation_results['GeneID'])},
+        propagation_scores=full_propagated_scores_df,
+        prior_set=propagation_input_df,
+        propagation_input={gene_id: score for gene_id, score in zip(full_propagated_scores_df['GeneID'], full_propagated_scores_df['Score'])},
+        genes_id_to_idx={gene_id: idx for idx, gene_id in enumerate(full_propagated_scores_df['GeneID'])},
         task=prop_task,
         save_dir=prop_task.output_folder,
         general_args=general_args
