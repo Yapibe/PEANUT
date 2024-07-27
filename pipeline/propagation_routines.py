@@ -139,6 +139,19 @@ def propagate_network(propagation_input: dict, matrix: sp.sparse.spmatrix, gene_
     return inverted_gene_scores, gene_indexes_scores
 
 
+def handle_no_propagation_cases(prior_data, prop_task, general_args):
+    # Sort prior_data by GeneID
+    sorted_prior_data = prior_data.sort_values(by='GeneID').reset_index(drop=True)
+    gene_scores = sorted_prior_data['Score'].values.reshape((len(sorted_prior_data), 1))
+    sorted_prior_data['Score'] = gene_scores.flatten()
+    save_propagation_score(prior_set=sorted_prior_data, propagation_input={gene_id: score for gene_id, score in
+                                                                           zip(sorted_prior_data['GeneID'],
+                                                                               sorted_prior_data['Score'])},
+                           propagation_scores=sorted_prior_data,
+                           genes_id_to_idx={gene_id: idx for idx, gene_id in enumerate(sorted_prior_data['GeneID'])},
+                           task=prop_task, save_dir=prop_task.output_folder, general_args=general_args)
+
+
 def perform_propagation(test_name: str, general_args: GeneralArgs):
     """
     Performs the propagation of gene scores through the network.
@@ -156,26 +169,7 @@ def perform_propagation(test_name: str, general_args: GeneralArgs):
     prior_data = read_prior_set(prop_task.test_file_path)
 
     if general_args.alpha == 1:
-        # Sort prior_data by GeneID
-        sorted_prior_data = prior_data.sort_values(by='GeneID').reset_index(drop=True)
-
-        # Create experiment_gene_index based on sorted GeneID
-        genes = sorted_prior_data['GeneID']
-        experiment_gene_index = {gene_id: idx for idx, gene_id in enumerate(genes)}
-
-        # Create propagation_input as a dictionary
-        propagation_input = {gene_id: score for gene_id, score in
-                             zip(sorted_prior_data['GeneID'], sorted_prior_data['Score'])}
-
-        # Create gene_scores as a 2 dimensional ndarray of scores
-        gene_scores = sorted_prior_data['Score'].values.reshape((len(sorted_prior_data), 1))
-        posterior_set = sorted_prior_data.copy()
-        posterior_set['Score'] = gene_scores.flatten()
-
-        save_propagation_score(propagation_scores=posterior_set, prior_set=sorted_prior_data,
-                               propagation_input=propagation_input, genes_id_to_idx=experiment_gene_index,
-                               task=prop_task, save_dir=prop_task.output_folder, general_args=general_args)
-
+        handle_no_propagation_cases(prior_data, prop_task, general_args)
         return
 
     # Read the network graph from a file
