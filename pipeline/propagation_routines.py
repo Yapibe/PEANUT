@@ -140,7 +140,7 @@ def read_sparse_matrix_txt(network: nx.Graph, similarity_matrix_path: str) -> tu
 
     return matrix, gene_index
 
-def matrix_prop(propagation_input: dict, inverse_matrix: sp.spmatrix, gene_indexes: dict, num_genes: int) -> np.ndarray:
+def matrix_prop(propagation_input: dict, inverse_matrix: sp.spmatrix, gene_indexes: dict) -> np.ndarray:
     """
     Propagates seed gene values through a precomputed inverse matrix for faster calculation.
 
@@ -155,11 +155,12 @@ def matrix_prop(propagation_input: dict, inverse_matrix: sp.spmatrix, gene_index
     - np.ndarray: Array containing the final propagated values for each gene.
     """
     seeds = list(propagation_input.keys())
+    num_genes = len(gene_indexes)
     F_0 = np.zeros(num_genes)  # Changed to a 1D array
     for seed in seeds:
         F_0[gene_indexes[seed]] = propagation_input[seed]
 
-    F = inverse_matrix.dot(F_0)
+    F = inverse_matrix @ F_0
     return F
 
 
@@ -220,7 +221,7 @@ def _normalize_prop_scores(matrix, network_gene_index, propagation_score, filter
     - pd.DataFrame: DataFrame containing GeneID and normalized Scores.
     """
     ones_input = set_input_type(filtered_prior_data, 'ones')
-    ones_gene_scores_inverse = matrix_prop(ones_input, matrix, network_gene_index, len(network_gene_index))
+    ones_gene_scores_inverse = matrix_prop(ones_input, matrix, network_gene_index)
 
     zero_normalization_genes = np.nonzero(ones_gene_scores_inverse == 0)[0]
     zero_propagation_genes = np.nonzero(propagation_score == 0)[0]
@@ -324,7 +325,7 @@ def perform_propagation(test_name: str, general_args, network, prior_data):
     network_genes_df, filtered_propagation_input = filter_network_genes(propagation_input_df, network)
 
     # Perform network propagation
-    propagation_score = matrix_prop(filtered_propagation_input, matrix, network_gene_index, len(network_gene_index))
+    propagation_score = matrix_prop(filtered_propagation_input, matrix, network_gene_index)
 
     # Normalize the propagation scores and create DataFrame within the function
     normalized_df = _normalize_prop_scores(matrix, network_gene_index, propagation_score, network_genes_df)
