@@ -1,7 +1,8 @@
 import os
 import time
 import json
-import scipy as sp, scipy.linalg
+import scipy.sparse as sp
+from scipy.sparse.linalg import inv
 import pandas as pd
 import numpy as np
 import networkx as nx
@@ -29,7 +30,7 @@ def matrix_prop(propagation_input: dict, inverse_matrix: sp.spmatrix, gene_index
     for seed in seeds:
         F_0[gene_indexes[seed]] = propagation_input[seed]
 
-    F = inverse_matrix.dot(F_0)
+    F = inverse_matrix @ F_0
     return F
 
 
@@ -47,7 +48,7 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     genes = sorted(network.nodes())
     gene_index = {gene: index for index, gene in enumerate(genes)}
 
-    if not sp.sparse.issparse(network):
+    if not sp.issparse(network):
         matrix = nx.to_scipy_sparse_array(network, nodelist=genes, weight=2)
     else:
         matrix = network
@@ -56,7 +57,7 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     start = time.time()
     print("Weight normalization")
     # Normalize the matrix
-    norm_matrix = sp.sparse.diags(1 / sp.sqrt(matrix.sum(0).ravel()), format="csr")
+    norm_matrix = sp.diags(1 / np.sqrt(matrix.sum(0).ravel()), format="csr")
     matrix = norm_matrix * matrix * norm_matrix
 
     print("Calculating the inverse")
@@ -64,14 +65,14 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     n = matrix.shape[0]
 
     # Create an identity matrix of the same shape as W
-    Identity = sp.sparse.eye(n)
+    Identity = sp.eye(n)
 
     # Calculate (I - (1-alpha)*W)
     matrix_to_invert = Identity - (1 - args.alpha) * matrix
 
     print("Inverting the matrix")
     # Use scipy's sparse linear solver to find the inverse
-    inverse_matrix = sp.sparse.linalg.inv(matrix_to_invert)
+    inverse_matrix = inv(matrix_to_invert)
 
 
     # calculate alpha * (I - (1-alpha)*W)^-1
@@ -79,7 +80,7 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
 
     print("Converting to CSR format")
     # Convert to CSR format before saving
-    matrix_inverse_csr = sp.sparse.csr_matrix(inverse_matrix)
+    matrix_inverse_csr = sp.csr_matrix(inverse_matrix)
 
 
     print("Saving the matrix")
@@ -87,7 +88,7 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     # check if path exists, if not create it
     if not os.path.exists(os.path.dirname(args.similarity_matrix_path)):
         os.makedirs(os.path.dirname(args.similarity_matrix_path))
-    sp.sparse.save_npz(args.similarity_matrix_path, matrix_inverse_csr)
+    sp.save_npz(args.similarity_matrix_path, matrix_inverse_csr)
 
     end = time.time()
     print(f"Time elapsed: {end - start} seconds")
@@ -111,7 +112,7 @@ def read_sparse_matrix_txt(network: nx.Graph, similarity_matrix_path: str) -> tu
     if not os.path.exists(similarity_matrix_path):
         raise FileNotFoundError(f"The specified file {similarity_matrix_path} does not exist.")
 
-    matrix = sp.sparse.load_npz(similarity_matrix_path)
+    matrix = sp.load_npz(similarity_matrix_path)
 
     return matrix, gene_index
 

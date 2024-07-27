@@ -76,7 +76,7 @@ class GeneralArgs:
         self.pathway_file_dir = path.join(self.data_dir, 'pathways', self.pathway_file)
 
         # Similarity matrix
-        self.create_similarity_matrix = True
+        self.create_similarity_matrix = False
         self.similarity_matrix_path = path.join(self.data_dir, 'matrix', f'test_similarity_matrix_{self.alpha}.npz')
 
     def _set_input_dir(self):
