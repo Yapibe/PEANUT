@@ -156,13 +156,21 @@ def _normalize_prop_scores(matrix, network_gene_index, propagation_score, filter
     Returns:
     - pd.DataFrame: DataFrame containing GeneID and normalized Scores.
     """
-    ones_input = set_input_type(filtered_prior_data, 'ones')
+    # Set input type to 'ones'
+    ones_input_df = set_input_type(filtered_prior_data, 'ones')
+
+    # Convert DataFrame to dictionary format
+    ones_input = {gene_id: score for gene_id, score in zip(ones_input_df['GeneID'], ones_input_df['Score'])}
+
+    # Perform propagation with ones input
     ones_gene_scores_inverse = matrix_prop(ones_input, matrix, network_gene_index)
 
+    # Identify zero normalization and zero propagation genes
     zero_normalization_genes = np.nonzero(ones_gene_scores_inverse == 0)[0]
     zero_propagation_genes = np.nonzero(propagation_score == 0)[0]
     genes_to_delete = list(set(zero_normalization_genes).difference(zero_propagation_genes))
 
+    # Adjust the normalization scores
     ones_gene_scores_inverse[genes_to_delete] = 1
     non_zero_indices = np.nonzero(propagation_score != 0)[0]
     propagation_score[non_zero_indices] = propagation_score[non_zero_indices] / np.abs(
@@ -235,14 +243,10 @@ def perform_propagation(test_name: str, general_args: GeneralArgs):
     # create or upload similarity matrix
     matrix, network_gene_index = get_similarity_matrix(network, general_args)
 
-    all_genes_ids = set(network.nodes())
-    # Filter prior_data to include only genes in the network
-    filtered_prior_data = prior_data[prior_data['GeneID'].isin(all_genes_ids)]
-    filtered_prior_gene_ids = set(filtered_prior_data['GeneID'])
 
     # Propagate network
     print("propagating network")
-    propagation_input_df = set_input_type(filtered_prior_data, general_args.input_type)
+    propagation_input_df = set_input_type(prior_data, general_args.input_type)
 
     # Filter genes in the network
     network_genes_df, filtered_propagation_input = filter_network_genes(propagation_input_df, network)
