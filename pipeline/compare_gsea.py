@@ -13,7 +13,7 @@ from utils import read_prior_set
 
 
 # Define directories
-input_dir = 'Inputs/experiments_data/NGSEA/XLSXN'
+input_dir = 'Inputs/experiments_data/NGSEA/XLSX'
 output_dir_gsea = 'Outputs/NGSEA/GSEA'
 output_dir_ngsea = 'Outputs/NGSEA/NGSEA'
 output_dir_prop = 'Outputs/NGSEA/PROP'

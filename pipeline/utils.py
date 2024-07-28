@@ -99,28 +99,6 @@ def load_pathways_genes(pathways_dir, gmt=False):
         print(f"An error occurred while loading pathways: {e}")
 
     return pathways
-    #
-    # pathways = {}
-    # # Open the file containing pathway data
-    # try:
-    #     with open(pathways_dir, 'r') as file:
-    #         for line in file:
-    #             # Process each line, normalize case (optional), and split by whitespace
-    #             parts = line.strip().split()
-    #             # Skip lines that don't have at least 2 parts
-    #             if len(parts) < 2:
-    #                 continue
-    #             # Parse pathway name
-    #             pathway_name = parts[0]
-    #             # Extract genes from the second part (string)
-    #             genes_str = parts[1]
-    #             genes = [int(gene) for gene in genes_str.split()]  # Split by space and convert to integers
-    #             pathways[pathway_name] = genes
-    # except FileNotFoundError:
-    #     print(f"File not found: {pathways_dir}")
-    # except Exception as e:
-    #     print(f"An error occurred while loading pathways: {e}")
-    # return pathways
 
 
 def load_propagation_file(file_path, decompress=True):
