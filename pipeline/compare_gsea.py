@@ -13,7 +13,7 @@ from utils import read_prior_set
 
 
 # Define directories
-input_dir = 'Inputs/experiments_data/NGSEA/XLSX'
+input_dir = 'Inputs/experiments_data/NGSEA/XLSXN'
 output_dir_gsea = 'Outputs/NGSEA/GSEA'
 output_dir_ngsea = 'Outputs/NGSEA/NGSEA'
 output_dir_prop = 'Outputs/NGSEA/PROP'
@@ -88,33 +88,33 @@ for file_name in os.listdir(input_dir):
         prop_output_path = os.path.join(output_dir_prop, file_name)
         abs_prop_output_path = os.path.join(output_dir_abs_prop, file_name)
         file_name = file_name.replace('.xlsx', '')
-
+        print(f"Running analysis for {dataset_name} and {pathway_name}")
         # Run network propagation GSEA
         prop_scores = run_propagation_and_enrichment(file_name, prior_data, alpha=0.1, run_gsea=True, run_NGSEA=False,
                                                      output_path=prop_output_path, network=network)
         # prop_rank = get_pathway_rank(prop_output_path, pathway_name)
         #
-        # # Run abs network propagation GSEA
-        # prop_scores_abs = run_propagation_and_enrichment(file_name, prior_data, alpha=0.1, run_gsea=True,
-        #                                                  run_NGSEA=False,
-        #                                                  output_path=abs_prop_output_path, score='abs_Score',
-        #                                                  network=network)
+        # Run abs network propagation GSEA
+        prop_scores_abs = run_propagation_and_enrichment(file_name, prior_data, alpha=0.1, run_gsea=True,
+                                                         run_NGSEA=False,
+                                                         output_path=abs_prop_output_path, score='abs_Score',
+                                                         network=network)
         # prop_rank_abs = get_pathway_rank(abs_prop_output_path, pathway_name)
         #
-        # # Run NGSEA
-        # ngsea_scores = run_propagation_and_enrichment(file_name, prior_data, alpha=1, run_gsea=True, run_NGSEA=True, output_path=ngsea_output_path, network=network)
+        # Run NGSEA
+        ngsea_scores = run_propagation_and_enrichment(file_name, prior_data, alpha=1, run_gsea=True, run_NGSEA=True, output_path=ngsea_output_path, network=network)
         # ngsea_rank = get_pathway_rank(ngsea_output_path, pathway_name)
         #
-        # # Run normal GSEA
-        # gsea_scores = run_propagation_and_enrichment(file_name,prior_data, alpha=1, run_gsea=True, run_NGSEA=False, output_path=gsea_output_path, network=network, )
+        # Run normal GSEA
+        gsea_scores = run_propagation_and_enrichment(file_name,prior_data, alpha=1, run_gsea=True, run_NGSEA=False, output_path=gsea_output_path, network=network, )
         # gsea_rank = get_pathway_rank(gsea_output_path, pathway_name)
         #
-        # # Define plot path
-        # plot_path = os.path.join(plot_output_dir, f"{dataset_name}_score_distributions.png")
-        #
+        # Define plot path
+        plot_path = os.path.join(plot_output_dir, f"{dataset_name}_score_distributions.png")
+
         # Compare score distributions and save the plot
-        # compare_score_distributions(gsea_scores, ngsea_scores, prop_scores, prop_scores_abs,
-        #                             title=f"Score Distributions for {dataset_name}", plot_path=plot_path)
+        compare_score_distributions(gsea_scores, ngsea_scores, prop_scores, prop_scores_abs,
+                                    title=f"Score Distributions for {dataset_name}", plot_path=plot_path)
 
         # # Append the ranks to the DataFrame
         # new_row = pd.DataFrame([{
