@@ -53,7 +53,7 @@ class GeneralArgs:
         self.run_hyper = run_hyper
         self.input_type = input_type
         self.run_NGSEA = run_NGSEA
-        self.debug = False
+        self.debug = True
 
         # Experiment and output settings
         self.Experiment_name = 'Simulated' if self.run_simulated else 'NGSEA'
