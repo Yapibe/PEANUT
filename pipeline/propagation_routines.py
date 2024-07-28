@@ -168,7 +168,7 @@ def symmetric_matrix_vector_multiply(upper_tri_matrix: np.ndarray, F_0: np.ndarr
 
     return result
 
-def matrix_prop(propagation_input: dict, gene_indexes: dict, debug: bool, inverse_matrix: sp.spmatrix=None) -> np.ndarray:
+def matrix_prop(propagation_input: dict, gene_indexes: dict, debug: bool, inverse_matrix=None) -> np.ndarray:
     """
     Propagates seed gene values through a precomputed inverse matrix for faster calculation.
 
