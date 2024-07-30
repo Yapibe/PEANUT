@@ -164,21 +164,21 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs, gsea_output_pa
     genes_by_pathway, scores = load_pathways_and_propagation_scores(general_args, enrich_task.propagation_file)
 
 
-    # print("Running GSEA on {}".format(test_name))
-    # # Prepare data for GSEA
-    # # Unpack the scores dictionary into separate lists for GeneID and Score
-    # gene_ids = list(scores.keys())
-    # logfc_scores = [score[0] for score in scores.values()]
-    # # Create DataFrame for GSEA with string gene identifiers
-    # gene_expression_data = pd.DataFrame({'gene': gene_ids, 'logFC': logfc_scores})
-    # gene_expression_data['gene'] = gene_expression_data['gene'].astype(str)
-    # # Rank the data by logFC in descending order
-    # gene_expression_data = gene_expression_data.sort_values(by='logFC', ascending=False)
-    # # Run GSEA
-    # gsea_results = gp.prerank(rnk=gene_expression_data, gene_sets=genes_by_pathway, outdir=general_args.gsea_out, verbose=True, permutation_num=1000, no_plot=True)
+    print("Running GSEA on {}".format(test_name))
+    # Prepare data for GSEA
+    # Unpack the scores dictionary into separate lists for GeneID and Score
+    gene_ids = list(scores.keys())
+    logfc_scores = [score[0] for score in scores.values()]
+    # Create DataFrame for GSEA with string gene identifiers
+    gene_expression_data = pd.DataFrame({'gene': gene_ids, 'logFC': logfc_scores})
+    gene_expression_data['gene'] = gene_expression_data['gene'].astype(str)
+    # Rank the data by logFC in descending order
+    gene_expression_data = gene_expression_data.sort_values(by='logFC', ascending=False)
+    # Run GSEA
+    gsea_results = gp.prerank(rnk=gene_expression_data, gene_sets=genes_by_pathway, outdir=general_args.gsea_out, verbose=True, permutation_num=1000, no_plot=True)
 
 
-    # # save csv
-    # gsea_results.res2d.to_csv(gsea_output_path)
+    # save csv
+    gsea_results.res2d.to_csv(gsea_output_path)
 
     return scores

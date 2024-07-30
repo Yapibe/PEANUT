@@ -10,6 +10,7 @@ from pathway_enrichment import perform_enrichment
 from propagation_routines import perform_propagation
 from utils import read_network
 from utils import read_prior_set
+import time
 
 
 # Define directories
@@ -76,6 +77,7 @@ def get_pathway_rank(gsea_output_path, pathway_name):
 # Initialize a DataFrame to store the rankings
 rankings_df = pd.DataFrame(columns=['Dataset', 'Pathway', 'GSEA', 'NGSEA', 'PROP', 'ABS-PROP'])
 network = read_network(network_file)
+start = time.time()
 # Process each file in the input directory
 for file_name in os.listdir(input_dir):
     if file_name.endswith('.xlsx'):
@@ -92,23 +94,23 @@ for file_name in os.listdir(input_dir):
         # Run network propagation GSEA
         prop_scores = run_propagation_and_enrichment(file_name, prior_data, alpha=0.1, run_gsea=True, run_NGSEA=False,
                                                      output_path=prop_output_path, network=network)
-        # prop_rank = get_pathway_rank(prop_output_path, pathway_name)
-        #
+        prop_rank = get_pathway_rank(prop_output_path, pathway_name)
+
         # Run abs network propagation GSEA
         prop_scores_abs = run_propagation_and_enrichment(file_name, prior_data, alpha=0.1, run_gsea=True,
                                                          run_NGSEA=False,
                                                          output_path=abs_prop_output_path, score='abs_Score',
                                                          network=network)
-        # prop_rank_abs = get_pathway_rank(abs_prop_output_path, pathway_name)
-        #
+        prop_rank_abs = get_pathway_rank(abs_prop_output_path, pathway_name)
+
         # Run NGSEA
         ngsea_scores = run_propagation_and_enrichment(file_name, prior_data, alpha=1, run_gsea=True, run_NGSEA=True, output_path=ngsea_output_path, network=network)
-        # ngsea_rank = get_pathway_rank(ngsea_output_path, pathway_name)
-        #
+        ngsea_rank = get_pathway_rank(ngsea_output_path, pathway_name)
+
         # Run normal GSEA
         gsea_scores = run_propagation_and_enrichment(file_name,prior_data, alpha=1, run_gsea=True, run_NGSEA=False, output_path=gsea_output_path, network=network, )
-        # gsea_rank = get_pathway_rank(gsea_output_path, pathway_name)
-        #
+        gsea_rank = get_pathway_rank(gsea_output_path, pathway_name)
+
         # Define plot path
         plot_path = os.path.join(plot_output_dir, f"{dataset_name}_score_distributions.png")
 
@@ -116,18 +118,20 @@ for file_name in os.listdir(input_dir):
         compare_score_distributions(gsea_scores, ngsea_scores, prop_scores, prop_scores_abs,
                                     title=f"Score Distributions for {dataset_name}", plot_path=plot_path)
 
-        # # Append the ranks to the DataFrame
-        # new_row = pd.DataFrame([{
-        #     'Dataset': dataset_name,
-        #     'Pathway': pathway_name,
-        #     'GSEA': gsea_rank,
-        #     'NGSEA': ngsea_rank,
-        #     'PROP': prop_rank,
-        #     'ABS-PROP': prop_rank_abs
-        # }])
-        # rankings_df = pd.concat([rankings_df, new_row], ignore_index=True)
+        # Append the ranks to the DataFrame
+        new_row = pd.DataFrame([{
+            'Dataset': dataset_name,
+            'Pathway': pathway_name,
+            'GSEA': gsea_rank,
+            'NGSEA': ngsea_rank,
+            'PROP': prop_rank,
+            'ABS-PROP': prop_rank_abs
+        }])
+        rankings_df = pd.concat([rankings_df, new_row], ignore_index=True)
+end = time.time()
 
+print(f"Analysis completed in {end - start:.2f} seconds")
 # Save the rankings DataFrame
-# rankings_output_path = 'Outputs/NGSEA/rankings_summary.xlsx'
-# rankings_df.to_excel(rankings_output_path, index=False)
-# print(f"Rankings summary saved to {rankings_output_path}")
+rankings_output_path = 'Outputs/NGSEA/rankings_summary.xlsx'
+rankings_df.to_excel(rankings_output_path, index=False)
+print(f"Rankings summary saved to {rankings_output_path}")

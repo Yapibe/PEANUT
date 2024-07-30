@@ -263,16 +263,14 @@ def _normalize_prop_scores(matrix, network_gene_index, propagation_score, filter
     Returns:
     - pd.DataFrame: DataFrame containing GeneID and normalized Scores.
     """
-    # Set input type to 'ones'
+    # Set input type to 'ones' and convert to dictionary
     ones_input_df = set_input_type(filtered_prior_data, 'ones')
-
-    # Convert DataFrame to dictionary format
-    ones_input = {gene_id: score for gene_id, score in zip(ones_input_df['GeneID'], ones_input_df['Score'])}
+    ones_input = ones_input_df.set_index('GeneID')['Score'].to_dict()
 
     # Perform propagation with ones input
     ones_gene_scores_inverse = matrix_prop(ones_input, network_gene_index, debug, inverse_matrix=matrix)
 
-    # Identify zero normalization and zero propagation genes
+    # Identify genes with zero normalization scores
     zero_normalization_genes = np.nonzero(ones_gene_scores_inverse == 0)[0]
     zero_propagation_genes = np.nonzero(propagation_score == 0)[0]
     genes_to_delete = list(set(zero_normalization_genes).difference(zero_propagation_genes))
@@ -280,13 +278,16 @@ def _normalize_prop_scores(matrix, network_gene_index, propagation_score, filter
     # Adjust the normalization scores
     ones_gene_scores_inverse[genes_to_delete] = 1
     non_zero_indices = np.nonzero(propagation_score != 0)[0]
-    propagation_score[non_zero_indices] = propagation_score[non_zero_indices] / np.abs(
-        ones_gene_scores_inverse[non_zero_indices])
+    propagation_score[non_zero_indices] /= np.abs(ones_gene_scores_inverse[non_zero_indices])
+
+    # Create a DataFrame for all network genes
+    all_network_genes = list(network_gene_index.keys())
+    all_normalized_scores = propagation_score[np.array([network_gene_index[gene_id] for gene_id in all_network_genes])]
 
     # Create DataFrame for normalized scores
     normalized_df = pd.DataFrame({
-        'GeneID': filtered_prior_data['GeneID'],
-        'Score': [propagation_score[network_gene_index[gene_id]] for gene_id in filtered_prior_data['GeneID']]
+        'GeneID': all_network_genes,
+        'Score': all_normalized_scores
     })
 
     return normalized_df
