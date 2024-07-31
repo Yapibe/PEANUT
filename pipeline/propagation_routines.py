@@ -108,12 +108,12 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     if not os.path.exists(os.path.dirname(args.similarity_matrix_path)):
         os.makedirs(os.path.dirname(args.similarity_matrix_path))
     sp.save_npz(args.similarity_matrix_path, inverse_matrix)
-    save_upper_path = os.path.join(args.data_dir, 'matrix', 'HumanNet_tri_0.1')
+    save_upper_path = args.tri_similarity_matrix_path
     np.save(save_upper_path, upper_tri_inverse_matrix)
 
     end = time.time()
     print(f"Time elapsed: {end - start} seconds")
-    return inverse_matrix, upper_tri_inverse_matrix, gene_index
+    return inverse_matrix, gene_index
 
 
 def read_sparse_matrix_txt(network: nx.Graph, similarity_matrix_path: str, tri_matrix_path: str, debug: bool) -> tuple:
@@ -329,9 +329,10 @@ def merge_with_prior_data(final_propagation_results, prior_data, gene_name_dict)
 
 
 def filter_network_genes(propagation_input_df, network):
-    network_genes_df = propagation_input_df[propagation_input_df['GeneID'].isin(network.nodes())]
+    network_genes_df = propagation_input_df[propagation_input_df['GeneID'].isin(network.nodes())].copy()
+    non_network_genes = propagation_input_df[~propagation_input_df['GeneID'].isin(network.nodes())].copy()
     filtered_propagation_input = {gene_id: score for gene_id, score in zip(network_genes_df['GeneID'], network_genes_df['Score'])}
-    return network_genes_df, filtered_propagation_input
+    return network_genes_df, non_network_genes, filtered_propagation_input
 
 
 def get_similarity_matrix(network, general_args):
@@ -350,7 +351,7 @@ def handle_no_propagation_cases(prior_data, prop_task, general_args, network):
         _handle_no_propagation_case(prior_data, prop_task, general_args)
 
 
-def perform_propagation(test_name: str, general_args, network, prior_data):
+def perform_propagation(test_name: str, general_args, network=None, prior_data=None):
     """
     Performs the propagation of gene scores through the network.
 
@@ -377,7 +378,7 @@ def perform_propagation(test_name: str, general_args, network, prior_data):
     propagation_input_df = set_input_type(prior_data, general_args.input_type)
 
     # Filter genes in the network
-    network_genes_df, filtered_propagation_input = filter_network_genes(propagation_input_df, network)
+    network_genes_df, non_network_genes, filtered_propagation_input = filter_network_genes(propagation_input_df, network)
 
     # Perform network propagation
     propagation_score = matrix_prop(filtered_propagation_input, network_gene_index, general_args.debug,
@@ -386,9 +387,6 @@ def perform_propagation(test_name: str, general_args, network, prior_data):
     # Normalize the propagation scores and create DataFrame within the function
     normalized_df = _normalize_prop_scores(matrix, network_gene_index, propagation_score, network_genes_df,
                                            general_args.debug)
-
-    # Handle genes not in the network
-    non_network_genes = propagation_input_df[~propagation_input_df['GeneID'].isin(network.nodes())].copy()
 
     # Combine network and non-network genes
     final_propagation_results = pd.concat([

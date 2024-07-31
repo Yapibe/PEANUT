@@ -53,7 +53,7 @@ class GeneralArgs:
         self.run_hyper = run_hyper
         self.input_type = input_type
         self.run_NGSEA = run_NGSEA
-        self.debug = True
+        self.debug = False
 
         # Experiment and output settings
         self.Experiment_name = 'Simulated' if self.run_simulated else 'NGSEA'
@@ -70,7 +70,7 @@ class GeneralArgs:
         self.gsea_out = self._create_output_subdir('GSEA') if self.run_gsea else None
 
         # Network and pathway files
-        self.network_file = 'HumanNet'
+        self.network_file = 'H_sapiens'
         self.network_file_path = path.join(self.data_dir, 'network', self.network_file)
         self.genes_names_file = 'gene_info.json'
         self.genes_names_file_path = path.join(self.data_dir, 'gene_names', self.genes_names_file)
@@ -79,8 +79,8 @@ class GeneralArgs:
 
         # Similarity matrix
         self.create_similarity_matrix = False
-        self.similarity_matrix_path = path.join(self.data_dir, 'matrix', f'HumanNet_{self.alpha}.npz')
-        self.tri_similarity_matrix_path = path.join(self.data_dir, 'matrix', f'HumanNet_tri_{self.alpha}.npy')
+        self.similarity_matrix_path = path.join(self.data_dir, 'matrix', f'{self.network_file}_{self.alpha}.npz')
+        self.tri_similarity_matrix_path = path.join(self.data_dir, 'matrix', f'{self.network_file}_tri_{self.alpha}.npy')
 
     def _set_input_dir(self):
         """
@@ -106,14 +106,14 @@ class PropagationTask:
 
         Parameters:
         - general_args (GeneralArgs): General arguments and settings.
-        - test_name (str): Name of the test for which propagation is performed.
+        - test_name (str): Name of the Comparison for which propagation is performed.
 
         Attributes:
         - general_args (GeneralArgs): General arguments and settings.
         - results (dict): Dictionary to store results.
-        - test_name (str): Name of the test.
-        - test_file (str): Name of the test file.
-        - test_file_path (str): Path to the test file.
+        - test_name (str): Name of the Comparison.
+        - test_file (str): Name of the Comparison file.
+        - test_file_path (str): Path to the Comparison file.
         - remove_self_propagation (bool): Flag to remove self propagation.
         - output_folder (str): Directory for output files.
         """
@@ -136,14 +136,14 @@ class EnrichTask:
 
         Parameters:
         - name (str): Name of the task.
-        - statistic_test (function): Statistical test function to use for enrichment analysis.
+        - statistic_test (function): Statistical Comparison function to use for enrichment analysis.
         - target_field (str): Field in the data to target for enrichment analysis.
         - create_scores (bool): Flag to determine whether to create scores (default: True).
         - propagation_file (str): Filename of the propagated gene scores (default: None).
 
         Attributes:
         - name (str): Name of the task.
-        - statistic_test (function): Statistical test function.
+        - statistic_test (function): Statistical Comparison function.
         - target_field (str): Field in the data to target.
         - results (dict): Dictionary to store results.
         - create_scores (bool): Flag to determine whether to create scores.

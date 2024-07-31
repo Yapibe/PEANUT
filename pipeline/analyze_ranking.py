@@ -1,139 +1,111 @@
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
-
-# Load the pathways file with correct headers
-pathways_file_path = 'Data/H_sapiens/pathways/kegg.gmt'
-pathways_df = pd.read_csv(pathways_file_path, header=None)  # Read without header
-
-# Set the correct column names
-pathways_df.columns = ['Pathway', 'Genes']
-
-# Ensure 'Genes' is split into individual gene entries if needed
-pathways_df['Genes'] = pathways_df['Genes'].apply(lambda x: x.split('\\t'))
+import seaborn as sns
+from scipy.stats import wilcoxon, pearsonr
 
 # Load the rankings summary
-rankings_path = 'Outputs/NGSEA/rankings_summary.xlsx'
-rankings_df = pd.read_excel(rankings_path)
+file_path = 'Outputs/NGSEA/Summary/rankings_summary_HumanNet_kegg.xlsx'
+rankings_df = pd.read_excel(file_path)
 
-# Calculate performance differences
-rankings_df['Diff_vs_GSEA'] = rankings_df['PROP'] - rankings_df['GSEA']
-rankings_df['Diff_vs_NGSEA'] = rankings_df['PROP'] - rankings_df['NGSEA']
-rankings_df['Diff_vs_ABS_PROP'] = rankings_df['PROP'] - rankings_df['ABS-PROP']
+# Function to calculate the changes in rank
+def calculate_rank_changes(df, method1, method2):
+    df[f'{method1}_vs_{method2}'] = df[method2] - df[method1]
+    return df
 
-# Classify pathways
-rankings_df['Better_than_GSEA'] = rankings_df['Diff_vs_GSEA'] < 0
-rankings_df['Better_than_NGSEA'] = rankings_df['Diff_vs_NGSEA'] < 0
-rankings_df['Better_than_ABS_PROP'] = rankings_df['Diff_vs_ABS_PROP'] < 0
-rankings_df['Worse_than_GSEA'] = rankings_df['Diff_vs_GSEA'] > 0
-rankings_df['Worse_than_NGSEA'] = rankings_df['Diff_vs_NGSEA'] > 0
-rankings_df['Worse_than_ABS_PROP'] = rankings_df['Diff_vs_ABS_PROP'] > 0
+# Calculate rank changes between methods
+rankings_df = calculate_rank_changes(rankings_df, 'ABS-PROP', 'GSEA')
+rankings_df = calculate_rank_changes(rankings_df, 'ABS-PROP', 'NGSEA')
+rankings_df = calculate_rank_changes(rankings_df, 'ABS-PROP', 'PROP')
 
-# Add pathway sizes
-pathway_sizes = pathways_df.explode('Genes').groupby('Pathway').size().reset_index(name='Size')
-rankings_df = rankings_df.merge(pathway_sizes, on='Pathway', how='left')
+# Save the processed data to CSV
+rankings_df.to_csv('Outputs/NGSEA/processed_rankings.csv', index=False)
 
-# Summary statistics
-better_than_gsea = rankings_df[rankings_df['Better_than_GSEA']]
-worse_than_gsea = rankings_df[rankings_df['Worse_than_GSEA']]
-better_than_ngsea = rankings_df[rankings_df['Better_than_NGSEA']]
-worse_than_ngsea = rankings_df[rankings_df['Worse_than_NGSEA']]
-better_than_abs_prop = rankings_df[rankings_df['Better_than_ABS_PROP']]
-worse_than_abs_prop = rankings_df[rankings_df['Worse_than_ABS_PROP']]
+# Perform Wilcoxon signed-rank test
+w_stat_gsea, p_val_gsea = wilcoxon(rankings_df['ABS-PROP'], rankings_df['GSEA'])
+w_stat_ngsea, p_val_ngsea = wilcoxon(rankings_df['ABS-PROP'], rankings_df['NGSEA'])
+w_stat_prop, p_val_prop = wilcoxon(rankings_df['ABS-PROP'], rankings_df['PROP'])
 
-# Print summary statistics
-print("Summary Statistics:")
-print(f"Number of pathways better than GSEA: {len(better_than_gsea)}")
-print(f"Number of pathways worse than GSEA: {len(worse_than_gsea)}")
-print(f"Number of pathways better than NGSEA: {len(better_than_ngsea)}")
-print(f"Number of pathways worse than NGSEA: {len(worse_than_ngsea)}")
-print(f"Number of pathways better than ABS-PROP: {len(better_than_abs_prop)}")
-print(f"Number of pathways worse than ABS-PROP: {len(worse_than_abs_prop)}")
+# Generate rank distribution plot with significance
+plt.figure(figsize=(10, 6))
+sns.boxplot(data=rankings_df[['ABS-PROP', 'GSEA', 'NGSEA', 'PROP']], palette="Set2")
+plt.title('Rank Distribution of Matched KEGG Pathway Terms')
+plt.ylabel('Rank')
+plt.xlabel('Method')
 
-# Perform statistical analysis (e.g., mean difference, t-test)
-mean_diff_gsea = np.mean(rankings_df['Diff_vs_GSEA'])
-mean_diff_ngsea = np.mean(rankings_df['Diff_vs_NGSEA'])
-mean_diff_abs_prop = np.mean(rankings_df['Diff_vs_ABS_PROP'])
-std_diff_gsea = np.std(rankings_df['Diff_vs_GSEA'])
-std_diff_ngsea = np.std(rankings_df['Diff_vs_NGSEA'])
-std_diff_abs_prop = np.std(rankings_df['Diff_vs_ABS_PROP'])
+# Add significance asterisks
+def add_significance_annotation(ax, p_value, x1, x2, y, h, col):
+    if p_value < 0.05:
+        ax.plot([x1, x1, x2, x2], [y, y+h, y+h, y], lw=1.5, c=col)
+        ax.text((x1+x2)*.5, y+h, "*", ha='center', va='bottom', color=col)
 
-print(f"Mean difference vs GSEA: {mean_diff_gsea} (std: {std_diff_gsea})")
-print(f"Mean difference vs NGSEA: {mean_diff_ngsea} (std: {std_diff_ngsea})")
-print(f"Mean difference vs ABS-PROP: {mean_diff_abs_prop} (std: {std_diff_abs_prop})")
+ax = plt.gca()
+y_max = rankings_df[['ABS-PROP', 'GSEA', 'NGSEA', 'PROP']].values.max()
+h = 2000  # height of the annotation
+col = 'k'
+add_significance_annotation(ax, p_val_gsea, 0, 1, y_max, h, col)
+add_significance_annotation(ax, p_val_ngsea, 0, 2, y_max + h, h, col)
+add_significance_annotation(ax, p_val_prop, 0, 3, y_max + 2*h, h, col)
 
-# Visualize results
-plt.figure(figsize=(18, 6))
+plt.savefig('Outputs/NGSEA/rank_distribution.png')
+plt.show()
 
-# Histogram of differences
-plt.subplot(1, 3, 1)
-plt.hist(rankings_df['Diff_vs_GSEA'], bins=30, alpha=0.7, label='Diff vs GSEA')
-plt.hist(rankings_df['Diff_vs_NGSEA'], bins=30, alpha=0.7, label='Diff vs NGSEA')
-plt.hist(rankings_df['Diff_vs_ABS_PROP'], bins=30, alpha=0.7, label='Diff vs ABS-PROP')
-plt.xlabel('Difference in Rank')
-plt.ylabel('Frequency')
-plt.legend()
-plt.title('Histogram of Rank Differences')
+# Function to compute PCC
+def compute_pcc(df, method1, method2):
+    pcc_values = []
+    for pathway in df['Pathway'].unique():
+        subset = df[df['Pathway'] == pathway]
+        if len(subset) > 1:  # Ensure there are at least 2 points to calculate PCC
+            pcc, _ = pearsonr(subset[method1], subset[method2])
+            pcc_values.append(pcc)
+    return pcc_values
 
-# Boxplot of differences
-plt.subplot(1, 3, 2)
-plt.boxplot([rankings_df['Diff_vs_GSEA'], rankings_df['Diff_vs_NGSEA'], rankings_df['Diff_vs_ABS_PROP']],
-            labels=['Diff vs GSEA', 'Diff vs NGSEA', 'Diff vs ABS-PROP'])
-plt.ylabel('Difference in Rank')
-plt.title('Boxplot of Rank Differences')
+# Compute PCC for same diseases and different diseases
+pcc_abs_prop_vs_gsea = compute_pcc(rankings_df, 'ABS-PROP', 'GSEA')
+pcc_abs_prop_vs_ngsea = compute_pcc(rankings_df, 'ABS-PROP', 'NGSEA')
 
-# Size of pathways
-better_than_gsea_sizes = better_than_gsea['Size']
-worse_than_gsea_sizes = worse_than_gsea['Size']
-better_than_ngsea_sizes = better_than_ngsea['Size']
-worse_than_ngsea_sizes = worse_than_ngsea['Size']
-better_than_abs_prop_sizes = better_than_abs_prop['Size']
-worse_than_abs_prop_sizes = worse_than_abs_prop['Size']
+# Generate PCC distribution plot
+plt.figure(figsize=(10, 6))
+sns.boxplot(data=[pcc_abs_prop_vs_gsea, pcc_abs_prop_vs_ngsea], palette="Set2")
+plt.title('PCC Distribution of NES')
+plt.ylabel('PCC')
+plt.xticks([0, 1], ['ABS-PROP vs GSEA', 'ABS-PROP vs NGSEA'])
+plt.savefig('Outputs/NGSEA/pcc_distribution.png')
+plt.show()
 
-# Boxplot of pathway sizes
-plt.subplot(1, 3, 3)
-plt.boxplot([better_than_gsea_sizes, worse_than_gsea_sizes,
-             better_than_ngsea_sizes, worse_than_ngsea_sizes,
-             better_than_abs_prop_sizes, worse_than_abs_prop_sizes],
-            labels=['Better GSEA', 'Worse GSEA', 'Better NGSEA', 'Worse NGSEA', 'Better ABS-PROP', 'Worse ABS-PROP'])
-plt.ylabel('Pathway Size')
-plt.title('Boxplot of Pathway Sizes')
+# Remove "KEGG_" prefix from Pathway names and underscores
+rankings_df['Pathway'] = rankings_df['Pathway'].str.replace('KEGG_', '').str.replace('_', ' ')
 
+# Create combined labels for y-axis
+rankings_df['Label'] = rankings_df['Pathway'] + ' (' + rankings_df['Dataset'] + ')'
+
+# Sort the data by Pathway names to group similar pathways together
+rankings_df = rankings_df.sort_values(by=['Pathway', 'Dataset'])
+
+# Plotting the comparison
+plt.figure(figsize=(12, 8))
+
+# Plot ranks for ABS-PROP and GSEA
+for i, row in rankings_df.iterrows():
+    color = 'orange' if row['ABS-PROP'] < row['GSEA'] else 'black'
+    plt.scatter(row['ABS-PROP'], i, color='black', label='ABS-PROP' if i == 0 else "", marker='o', edgecolor='black')
+    plt.scatter(row['GSEA'], i, color='white', edgecolor='black', label='GSEA' if i == 0 else "", marker='o')
+
+# Custom y-ticks with colored labels
+y_ticks_labels = rankings_df['Label'].tolist()
+y_ticks_colors = ['orange' if row['ABS-PROP'] < row['GSEA'] else 'black' for _, row in rankings_df.iterrows()]
+
+plt.yticks(range(len(rankings_df)), labels=y_ticks_labels, fontsize=8, color='black')
+ax = plt.gca()
+for tick_label, tick_color in zip(ax.get_yticklabels(), y_ticks_colors):
+    tick_label.set_color(tick_color)
+
+plt.xlabel('Rank')
+plt.ylabel('Gene expression data set (GSE ID)')
+plt.title('Rank Comparison of Matched Pathways between ABS-PROP and GSEA')
+plt.legend(loc='upper right')
+ax.grid(False)  # Disable grid lines
 plt.tight_layout()
-plt.savefig('Outputs/NGSEA/rank_differences_analysis.png')
-plt.close()
 
-print("Rank differences analysis saved to Outputs/NGSEA/rank_differences_analysis.png")
-
-# Function to extract genes from pathway
-def extract_genes_from_pathway(pathway_name):
-    # Extract genes based on your data
-    genes = pathways_df[pathways_df['Pathway'] == pathway_name]['Genes'].values[0]
-    return genes
-
-# Additional analyses for important genes
-def analyze_important_genes(rankings_df, condition):
-    pathways = rankings_df[condition]['Pathway'].unique()
-    important_genes = []
-    for pathway in pathways:
-        genes = extract_genes_from_pathway(pathway)
-        important_genes.extend(genes)
-    return pd.Series(important_genes).value_counts().head(10)
-
-print("Top 10 important genes where pipeline is better than GSEA:")
-print(analyze_important_genes(rankings_df, rankings_df['Better_than_GSEA']))
-
-print("Top 10 important genes where pipeline is worse than GSEA:")
-print(analyze_important_genes(rankings_df, rankings_df['Worse_than_GSEA']))
-
-print("Top 10 important genes where pipeline is better than NGSEA:")
-print(analyze_important_genes(rankings_df, rankings_df['Better_than_NGSEA']))
-
-print("Top 10 important genes where pipeline is worse than NGSEA:")
-print(analyze_important_genes(rankings_df, rankings_df['Worse_than_NGSEA']))
-
-print("Top 10 important genes where pipeline is better than ABS-PROP:")
-print(analyze_important_genes(rankings_df, rankings_df['Better_than_ABS_PROP']))
-
-print("Top 10 important genes where pipeline is worse than ABS-PROP:")
-print(analyze_important_genes(rankings_df, rankings_df['Worse_than_ABS_PROP']))
+# Save the plot
+plt.savefig('Outputs/NGSEA/rank_comparison_ABS_PROP_GSEA.png')
+plt.show()

@@ -4,8 +4,9 @@ from os import path, listdir
 from args import GeneralArgs
 from pathway_enrichment import perform_enrichment
 from propagation_routines import perform_propagation
-from utils import read_temp_scores, process_condition
+from utils import read_temp_scores, process_condition, read_network
 from visualization_tools import print_aggregated_pathway_information, plot_pathways_mean_scores
+
 
 
 
@@ -30,12 +31,13 @@ def main(alpha=0.1, run_propagation: bool=True, run_gsea: bool=True, run_simulat
     # Perform propagation and enrichment based on flags
     for test_name in test_name_list:
         if run_propagation:
-            perform_propagation(test_name, general_args)
+            network = read_network(general_args.network_file_path)
+            perform_propagation(test_name, general_args, network)
 
         print(f"Running enrichment on {test_name}")
-        perform_enrichment(test_name, general_args)
+        scores = perform_enrichment(test_name, general_args)
         print("-----------------------------------------")
-    return
+        return
 
     if general_args.run_simulated:
         return
