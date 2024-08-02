@@ -74,14 +74,14 @@ def calculate_metrics(true_decoys, identified_pathways, all_pathways):
 
 # Main script
 root_dir = path.dirname(path.abspath(__file__))
-pathways_file = path.join(root_dir, 'pipeline', 'Data', 'H_sapiens', 'pathways', 'c2.gmt')
+pathways_file = path.join(root_dir, 'pipeline', 'Data', 'Human', 'pathways', 'c2.gmt')
 pathways = load_pathways_genes(pathways_file)
 
-deltas = [100]
-alphas = [1]  # Different alpha values to loop through
-num_decoy_pathways_list = [50]  # Different numbers of decoy pathways to loop through
-n_runs = 1  # Number of runs for each combination
-run_gsea_options = [True]  # Run GSEA and non-GSEA options
+deltas = [100, 1000, 10000]
+alphas = [0.1, 0.2, 1]  # Different alpha values to loop through
+num_decoy_pathways_list = [50, 60, 100]  # Different numbers of decoy pathways to loop through
+n_runs = 10  # Number of runs for each combination
+run_gsea_options = [True, False]  # Run GSEA and non-GSEA options
 
 results_dict = {
     'delta': [],

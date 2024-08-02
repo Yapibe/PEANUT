@@ -4,7 +4,7 @@ import seaborn as sns
 from scipy.stats import wilcoxon, pearsonr
 
 # Load the rankings summary
-file_path = 'Outputs/NGSEA/Summary/rankings_summary_HumanNet_kegg.xlsx'
+file_path = 'Outputs/NGSEA/Summary/H_sapiens/rankings_summary_H_sapiens.xlsx'
 rankings_df = pd.read_excel(file_path)
 
 # Function to calculate the changes in rank
@@ -14,20 +14,20 @@ def calculate_rank_changes(df, method1, method2):
 
 # Calculate rank changes between methods
 rankings_df = calculate_rank_changes(rankings_df, 'ABS-PROP', 'GSEA')
-rankings_df = calculate_rank_changes(rankings_df, 'ABS-PROP', 'NGSEA')
+rankings_df = calculate_rank_changes(rankings_df, 'ABS-PROP', 'GSE')
 rankings_df = calculate_rank_changes(rankings_df, 'ABS-PROP', 'PROP')
 
 # Save the processed data to CSV
-rankings_df.to_csv('Outputs/NGSEA/processed_rankings.csv', index=False)
+rankings_df.to_csv('Outputs/GSE/processed_rankings.csv', index=False)
 
 # Perform Wilcoxon signed-rank test
 w_stat_gsea, p_val_gsea = wilcoxon(rankings_df['ABS-PROP'], rankings_df['GSEA'])
-w_stat_ngsea, p_val_ngsea = wilcoxon(rankings_df['ABS-PROP'], rankings_df['NGSEA'])
+w_stat_ngsea, p_val_ngsea = wilcoxon(rankings_df['ABS-PROP'], rankings_df['GSE'])
 w_stat_prop, p_val_prop = wilcoxon(rankings_df['ABS-PROP'], rankings_df['PROP'])
 
 # Generate rank distribution plot with significance
 plt.figure(figsize=(10, 6))
-sns.boxplot(data=rankings_df[['ABS-PROP', 'GSEA', 'NGSEA', 'PROP']], palette="Set2")
+sns.boxplot(data=rankings_df[['ABS-PROP', 'GSEA', 'GSE', 'PROP']], palette="Set2")
 plt.title('Rank Distribution of Matched KEGG Pathway Terms')
 plt.ylabel('Rank')
 plt.xlabel('Method')
@@ -39,14 +39,14 @@ def add_significance_annotation(ax, p_value, x1, x2, y, h, col):
         ax.text((x1+x2)*.5, y+h, "*", ha='center', va='bottom', color=col)
 
 ax = plt.gca()
-y_max = rankings_df[['ABS-PROP', 'GSEA', 'NGSEA', 'PROP']].values.max()
+y_max = rankings_df[['ABS-PROP', 'GSEA', 'GSE', 'PROP']].values.max()
 h = 2000  # height of the annotation
 col = 'k'
 add_significance_annotation(ax, p_val_gsea, 0, 1, y_max, h, col)
 add_significance_annotation(ax, p_val_ngsea, 0, 2, y_max + h, h, col)
 add_significance_annotation(ax, p_val_prop, 0, 3, y_max + 2*h, h, col)
 
-plt.savefig('Outputs/NGSEA/rank_distribution.png')
+plt.savefig('Outputs/GSE/rank_distribution.png')
 plt.show()
 
 # Function to compute PCC
@@ -61,15 +61,15 @@ def compute_pcc(df, method1, method2):
 
 # Compute PCC for same diseases and different diseases
 pcc_abs_prop_vs_gsea = compute_pcc(rankings_df, 'ABS-PROP', 'GSEA')
-pcc_abs_prop_vs_ngsea = compute_pcc(rankings_df, 'ABS-PROP', 'NGSEA')
+pcc_abs_prop_vs_ngsea = compute_pcc(rankings_df, 'ABS-PROP', 'GSE')
 
 # Generate PCC distribution plot
 plt.figure(figsize=(10, 6))
 sns.boxplot(data=[pcc_abs_prop_vs_gsea, pcc_abs_prop_vs_ngsea], palette="Set2")
 plt.title('PCC Distribution of NES')
 plt.ylabel('PCC')
-plt.xticks([0, 1], ['ABS-PROP vs GSEA', 'ABS-PROP vs NGSEA'])
-plt.savefig('Outputs/NGSEA/pcc_distribution.png')
+plt.xticks([0, 1], ['ABS-PROP vs GSEA', 'ABS-PROP vs GSE'])
+plt.savefig('Outputs/GSE/pcc_distribution.png')
 plt.show()
 
 # Remove "KEGG_" prefix from Pathway names and underscores
@@ -107,5 +107,5 @@ ax.grid(False)  # Disable grid lines
 plt.tight_layout()
 
 # Save the plot
-plt.savefig('Outputs/NGSEA/rank_comparison_ABS_PROP_GSEA.png')
+plt.savefig('Outputs/GSE/rank_comparison_ABS_PROP_GSEA.png')
 plt.show()

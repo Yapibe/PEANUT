@@ -205,7 +205,7 @@ def matrix_prop(propagation_input: dict, gene_indexes: dict, debug: bool, invers
 
 def _handle_ngsea_case(prior_data, prop_task, general_args, network):
     """
-    Handle the NGSEA case for alpha = 1.
+    Handle the GSE case for alpha = 1.
 
     Parameters:
     - prior_data (pd.DataFrame): The prior data.
@@ -218,8 +218,6 @@ def _handle_ngsea_case(prior_data, prop_task, general_args, network):
     gene_scores = calculate_gene_scores(network, prior_data)
     posterior_set = prior_data.copy()
     posterior_set['Score'] = posterior_set['GeneID'].map(gene_scores)
-    # print how many genes are being saved to scores
-    print(f"Number of genes being saved to scores: {len(posterior_set)}")
     save_propagation_score(
         prior_set=prior_data,
         propagation_input={gene_id: score for gene_id, score in zip(posterior_set['GeneID'], posterior_set['Score'])},
@@ -235,8 +233,6 @@ def _handle_no_propagation_case(prior_data, prop_task, general_args):
     sorted_prior_data = prior_data.sort_values(by='GeneID').reset_index(drop=True)
     gene_scores = sorted_prior_data['Score'].values.reshape((len(sorted_prior_data), 1))
     sorted_prior_data['Score'] = gene_scores.flatten()
-    # print how many genes are being saved to scores
-    print(f"Number of genes being saved to scores: {len(sorted_prior_data)}")
     save_propagation_score(
         prior_set=sorted_prior_data,
         propagation_input={gene_id: score for gene_id, score in
@@ -274,9 +270,9 @@ def _normalize_prop_scores(matrix, network_gene_index, propagation_score, filter
     zero_normalization_genes = np.nonzero(ones_gene_scores_inverse == 0)[0]
     zero_propagation_genes = np.nonzero(propagation_score == 0)[0]
     genes_to_delete = list(set(zero_normalization_genes).difference(zero_propagation_genes))
+    ones_gene_scores_inverse[genes_to_delete] = 1
 
     # Adjust the normalization scores
-    ones_gene_scores_inverse[genes_to_delete] = 1
     non_zero_indices = np.nonzero(propagation_score != 0)[0]
     propagation_score[non_zero_indices] /= np.abs(ones_gene_scores_inverse[non_zero_indices])
 
@@ -307,8 +303,6 @@ def _save_propagation_results(propagation_input_df, full_propagated_scores_df, p
     Returns:
     - None
     """
-    # print how many genes are being saved to scores
-    print(f"Number of genes being saved to scores: {len(full_propagated_scores_df)}")
     save_propagation_score(
         prior_set=propagation_input_df,
         propagation_input={gene_id: score for gene_id, score in
@@ -344,7 +338,7 @@ def get_similarity_matrix(network, general_args):
 
 def handle_no_propagation_cases(prior_data, prop_task, general_args, network):
     if general_args.run_NGSEA:
-        print("Running NGSEA")
+        print("Running GSE")
         _handle_ngsea_case(prior_data, prop_task, general_args, network)
     else:
         print("Running GSEA")
@@ -370,7 +364,7 @@ def perform_propagation(test_name: str, general_args, network=None, prior_data=N
         handle_no_propagation_cases(prior_data, prop_task, general_args, network)
         return
 
-    print(f"Running propagation with scores '{general_args.input_type}'")
+    print(f"Running propagation with '{general_args.input_type}'")
 
     matrix, network_gene_index = get_similarity_matrix(network, general_args)
 

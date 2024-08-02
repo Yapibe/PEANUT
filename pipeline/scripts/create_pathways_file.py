@@ -3,7 +3,7 @@ import os
 
 # Load and parse the new file
 new_file_path = "../Data/H_sapiens/pathways/c2.all.v2023.2.Hs.entrez.gmt"
-output_folder = "pipeline/Data/H_sapiens/pathways"  # Define the output folder
+output_folder = "pipeline/Data/Human/pathways"  # Define the output folder
 os.makedirs(output_folder, exist_ok=True)  # Create the folder if it doesn't exist
 output_file_path = os.path.join(output_folder, "c2.gmt")
 

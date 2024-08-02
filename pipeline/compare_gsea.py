@@ -14,7 +14,7 @@ import time
 from scipy import stats
 
 
-network_name = 'H_sapiens'
+network_name = 'HumanNet'
 network_file = f'Data/H_sapiens/network/{network_name}'
 
 # Define directories
@@ -241,7 +241,7 @@ for file_name in os.listdir(input_dir):
                                                          network=network)
         prop_rank_abs = get_pathway_rank(abs_prop_output_path, pathway_name)
 
-        # Run NGSEA
+        # Run GSE
         ngsea_scores = run_propagation_and_enrichment(file_name, prior_data, alpha=1, run_gsea=True, run_NGSEA=True, output_path=ngsea_output_path, network=network)
         ngsea_rank = get_pathway_rank(ngsea_output_path, pathway_name)
 
@@ -258,7 +258,7 @@ for file_name in os.listdir(input_dir):
             'Dataset': dataset_name,
             'Pathway': pathway_name,
             'GSEA': gsea_rank,
-            'NGSEA': ngsea_rank,
+            'GSE': ngsea_rank,
             'PROP': prop_rank,
             'ABS-PROP': prop_rank_abs
         }])
