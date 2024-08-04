@@ -24,8 +24,7 @@ def main(alpha=0.2, run_propagation: bool=True, run_gsea: bool=True, run_simulat
     Returns:
     - None
     """
-    general_args = GeneralArgs(run_propagation=run_propagation, alpha=alpha, run_simulated=run_simulated, run_gsea=run_gsea,
-                               input_type=input_type)
+    general_args = GeneralArgs(alpha=alpha, input_type=input_type, network='H_sapiens')
     test_name_list = [path.splitext(file)[0] for file in listdir(general_args.input_dir) if file.endswith('.xlsx')]
 
     # Perform propagation and enrichment based on flags

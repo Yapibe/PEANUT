@@ -3,8 +3,7 @@ from datetime import datetime
 
 
 class GeneralArgs:
-    def __init__(self, alpha: float = 1, run_NGSEA=False, run_propagation: bool =True, run_gsea: bool =False, run_simulated: bool =False,
-                 input_type: str = 'Score', run_hyper: bool = False):
+    def __init__(self, alpha: float = 1, run_NGSEA=False, input_type: str = 'Score', network: str = 'H_sapiens'):
         """
         Initializes general arguments used throughout the pipeline.
 
@@ -47,10 +46,10 @@ class GeneralArgs:
         self.minimum_gene_per_pathway = 15
         self.maximum_gene_per_pathway = 500
         self.JAC_THRESHOLD = 0.2
-        self.run_propagation = run_propagation
-        self.run_simulated = run_simulated
-        self.run_gsea = run_gsea
-        self.run_hyper = run_hyper
+        self.run_propagation = True
+        self.run_simulated = False
+        self.run_gsea = True
+        self.run_hyper = False
         self.input_type = input_type
         self.run_NGSEA = run_NGSEA
         self.debug = True
@@ -70,7 +69,7 @@ class GeneralArgs:
         self.gsea_out = self._create_output_subdir('GSEA') if self.run_gsea else None
 
         # Network and pathway files
-        self.network_file = 'HumanNet'
+        self.network_file = network
         self.network_file_path = path.join(self.data_dir, 'network', self.network_file)
         self.genes_names_file = 'gene_info.json'
         self.genes_names_file_path = path.join(self.data_dir, 'gene_names', self.genes_names_file)
@@ -78,7 +77,7 @@ class GeneralArgs:
         self.pathway_file_dir = path.join(self.data_dir, 'pathways', self.pathway_file)
 
         # Similarity matrix
-        self.create_similarity_matrix = True
+        self.create_similarity_matrix = False
         self.similarity_matrix_path = path.join(self.data_dir, 'matrix', f'{self.network_file}_{self.alpha}.npz')
         self.tri_similarity_matrix_path = path.join(self.data_dir, 'matrix', f'{self.network_file}_tri_{self.alpha}.npy')
 
