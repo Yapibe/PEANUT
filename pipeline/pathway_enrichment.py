@@ -154,10 +154,11 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs, gsea_output_pa
     Returns:
     - None
     """
+    test_name = test_name.split('.')[0]
     # run enrichment
     propagation_folder = path.join(general_args.propagation_folder, test_name)
 
-    propagation_file = path.join(f'{propagation_folder}', '{}_{}_{}'.format(test_name, general_args.alpha, general_args.date))
+    propagation_file = path.join(f'{propagation_folder}', '{}_{}'.format( general_args.alpha, general_args.date))
     enrich_task = EnrichTask(name=test_name, create_scores=True, target_field='gene_prop_scores',
                                  statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)
 

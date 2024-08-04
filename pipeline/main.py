@@ -10,7 +10,7 @@ from visualization_tools import print_aggregated_pathway_information, plot_pathw
 
 
 
-def main(alpha=0.2, run_propagation: bool=True, run_gsea: bool=True, run_simulated: bool=False, input_type: str='Score'):
+def main(alpha=0.1, run_propagation: bool=True, run_gsea: bool=True, run_simulated: bool=False, input_type: str='Score'):
     """
     Execute propagation and enrichment analysis based on specified flags.
 
@@ -31,7 +31,7 @@ def main(alpha=0.2, run_propagation: bool=True, run_gsea: bool=True, run_simulat
     for test_name in test_name_list:
         if run_propagation:
             network = read_network(general_args.network_file_path)
-            perform_propagation(test_name, general_args, network)
+            perform_propagation(test_name, general_args, network=network)
 
         print(f"Running enrichment on {test_name}")
         scores = perform_enrichment(test_name, general_args)

@@ -3,7 +3,7 @@ from datetime import datetime
 
 
 class GeneralArgs:
-    def __init__(self, alpha: float = 1, run_NGSEA=False, input_type: str = 'Score', network: str = 'H_sapiens'):
+    def __init__(self, alpha: float = 1, method=None, run_NGSEA=False, input_type: str = 'Score', network: str = 'H_sapiens', pathway_file='c2'):
         """
         Initializes general arguments used throughout the pipeline.
 
@@ -53,6 +53,7 @@ class GeneralArgs:
         self.input_type = input_type
         self.run_NGSEA = run_NGSEA
         self.debug = True
+        self.method = method
 
         # Experiment and output settings
         self.Experiment_name = 'Simulated' if self.run_simulated else 'GSE'
@@ -64,16 +65,16 @@ class GeneralArgs:
         self.data_dir = path.join(self.root_folder, 'Data', 'Human')
         self.output_dir = path.join(self.root_folder, 'Outputs')
         self.input_dir = self._set_input_dir()
-        self.temp_output_folder = self._create_output_subdir('Temp')
-        self.propagation_folder = self._create_output_subdir('Propagation_Scores')
-        self.gsea_out = self._create_output_subdir('GSEA') if self.run_gsea else None
+        self.temp_output_folder = self._create_output_subdir(path.join('Temp', self.method, network, pathway_file))
+        self.propagation_folder = self._create_output_subdir(path.join('Propagation_Scores', self.method, network, pathway_file))
+        self.gsea_out = self._create_output_subdir(path.join('GSEA', self.method, network, pathway_file)) if self.run_gsea else None
 
         # Network and pathway files
         self.network_file = network
         self.network_file_path = path.join(self.data_dir, 'network', self.network_file)
         self.genes_names_file = 'gene_info.json'
         self.genes_names_file_path = path.join(self.data_dir, 'gene_names', self.genes_names_file)
-        self.pathway_file = 'c2.gmt' if self.run_gsea else 'bio_pathways.gmt'
+        self.pathway_file = pathway_file
         self.pathway_file_dir = path.join(self.data_dir, 'pathways', self.pathway_file)
 
         # Similarity matrix
@@ -119,10 +120,7 @@ class PropagationTask:
         self.general_args = general_args
         self.results = {}
         self.test_name = test_name
-        self.test_file = f'{test_name}.xlsx'
-        self.test_file_path = path.join(self.general_args.input_dir, self.test_file)
-        #TODO: understand this flag
-        self.remove_self_propagation = False
+        # self.test_file = f'{test_name}.xlsx'
         self.output_folder = path.join(self.general_args.propagation_folder, self.test_name)
 
 

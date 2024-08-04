@@ -345,7 +345,7 @@ def handle_no_propagation_cases(prior_data, prop_task, general_args, network):
         _handle_no_propagation_case(prior_data, prop_task, general_args)
 
 
-def perform_propagation(test_name: str, general_args, network=None, prior_data=None):
+def perform_propagation(test_name: str,general_args, network=None, prior_data=None,):
     """
     Performs the propagation of gene scores through the network.
 
