@@ -317,7 +317,7 @@ def save_propagation_score(propagation_scores: pd.DataFrame, prior_set: pd.DataF
     Returns:
     - None
     """
-    file_name = f"{task.test_name}_{general_args.alpha}_{general_args.date}"
+    file_name = f"{general_args.alpha}_{general_args.date}"
     save_dir = save_dir
     makedirs(save_dir, exist_ok=True)
     propagation_results_path = path.join(save_dir, file_name)

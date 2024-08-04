@@ -176,8 +176,6 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs, gsea_output_pa
     gene_expression_data = gene_expression_data.sort_values(by='logFC', ascending=False)
     # Run GSEA
     gsea_results = gp.prerank(rnk=gene_expression_data, gene_sets=genes_by_pathway, outdir=general_args.gsea_out, verbose=True, permutation_num=1000, no_plot=True)
-
-
     # save xlsx
     gsea_results.res2d.to_excel(gsea_output_path)
 

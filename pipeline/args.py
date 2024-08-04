@@ -119,7 +119,9 @@ class PropagationTask:
         """
         self.general_args = general_args
         self.results = {}
+        test_name = test_name.split(".")[0]
         self.test_name = test_name
+        # remove .xlsx
         # self.test_file = f'{test_name}.xlsx'
         self.output_folder = path.join(self.general_args.propagation_folder, self.test_name)
 

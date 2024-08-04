@@ -5,7 +5,7 @@ import os
 new_file_path = "../Data/H_sapiens/pathways/c2.all.v2023.2.Hs.entrez.gmt"
 output_folder = "pipeline/Data/Human/pathways"  # Define the output folder
 os.makedirs(output_folder, exist_ok=True)  # Create the folder if it doesn't exist
-output_file_path = os.path.join(output_folder, "c2.gmt")
+output_file_path = os.path.join(output_folder, "c2")
 
 new_data = []
 

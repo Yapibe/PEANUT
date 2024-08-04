@@ -74,7 +74,7 @@ def calculate_metrics(true_decoys, identified_pathways, all_pathways):
 
 # Main script
 root_dir = path.dirname(path.abspath(__file__))
-pathways_file = path.join(root_dir, 'pipeline', 'Data', 'Human', 'pathways', 'c2.gmt')
+pathways_file = path.join(root_dir, 'pipeline', 'Data', 'Human', 'pathways', 'c2')
 pathways = load_pathways_genes(pathways_file)
 
 deltas = [100, 1000, 10000]
