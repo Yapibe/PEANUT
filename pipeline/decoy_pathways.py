@@ -74,6 +74,6 @@ def evaluate_performance(real_results, decoy_results):
 
 # Usage
 root_folder = path.dirname(path.abspath(__file__))
-pathway_file = path.join(root_folder, 'Data', 'Human', 'pathways', 'bio_pathways')
-output_file = path.join(root_folder, 'Data', 'Human', 'pathways', 'decoy_pathways')
+pathway_file = path.join(root_folder, 'Data', 'Human', 'pathways', 'c2')
+output_file = path.join(root_folder, 'Data', 'Human', 'pathways', 'decoy')
 generate_decoy_pathways(pathway_file, output_file)

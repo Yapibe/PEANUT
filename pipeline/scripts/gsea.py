@@ -43,4 +43,4 @@ def load_gene_expression_data(file_path):
 
 root_dir = path.dirname(path.abspath(__file__))
 pathway_path = path.join(root_dir, 'Data', 'Human', 'pathways')
-# add_description_to_pathway_file(path.join(pathway_path, 'decoy_pathways'), path.join(pathway_path, 'decoy_pathways_gmt.gmt'))
+# add_description_to_pathway_file(path.join(pathway_path, 'decoy'), path.join(pathway_path, 'decoy_pathways_gmt.gmt'))
