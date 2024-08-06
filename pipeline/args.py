@@ -41,7 +41,11 @@ class GeneralArgs:
         - propagation_folder (str): Directory for propagation scores.
         """
         # General Parameters
-        self.alpha = alpha
+        self.network_file = network
+        self.root_folder = path.dirname(path.abspath(__file__))
+        self.data_dir = path.join(self.root_folder, 'Data', 'Human')
+        self.alpha = None
+        self.set_alpha(alpha)
         self.FDR_threshold = 0.05
         self.minimum_gene_per_pathway = 15
         self.maximum_gene_per_pathway = 500
@@ -61,8 +65,6 @@ class GeneralArgs:
         self.figure_title = 'Pathway Enrichment'
 
         # Directories and file paths
-        self.root_folder = path.dirname(path.abspath(__file__))
-        self.data_dir = path.join(self.root_folder, 'Data', 'Human')
         self.output_dir = path.join(self.root_folder, 'Outputs')
         self.input_dir = self._set_input_dir()
         self.temp_output_folder = self._create_output_subdir(path.join('Temp', self.method, network, pathway_file))
@@ -70,7 +72,6 @@ class GeneralArgs:
         self.gsea_out = self._create_output_subdir(path.join('GSEA', self.method, network, pathway_file)) if self.run_gsea else None
 
         # Network and pathway files
-        self.network_file = network
         self.network_file_path = path.join(self.data_dir, 'network', self.network_file)
         self.genes_names_file = 'gene_info.json'
         self.genes_names_file_path = path.join(self.data_dir, 'gene_names', self.genes_names_file)
@@ -79,6 +80,11 @@ class GeneralArgs:
 
         # Similarity matrix
         self.create_similarity_matrix = False
+        self.similarity_matrix_path = path.join(self.data_dir, 'matrix', f'{self.network_file}_{self.alpha}.npz')
+        self.tri_similarity_matrix_path = path.join(self.data_dir, 'matrix', f'{self.network_file}_tri_{self.alpha}.npy')
+
+    def set_alpha(self, alpha):
+        self.alpha = alpha
         self.similarity_matrix_path = path.join(self.data_dir, 'matrix', f'{self.network_file}_{self.alpha}.npz')
         self.tri_similarity_matrix_path = path.join(self.data_dir, 'matrix', f'{self.network_file}_tri_{self.alpha}.npy')
 

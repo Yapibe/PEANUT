@@ -178,4 +178,13 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs, gsea_output_pa
     gsea_results = gp.prerank(rnk=gene_expression_data, gene_sets=genes_by_pathway, outdir=general_args.gsea_out, verbose=True, permutation_num=1000, no_plot=True)
     # save xlsx
     gsea_results.res2d.to_excel(gsea_output_path)
+    # create test xlsx file to check validity of gsea_output_path with columns Rank,Name,Term,ES,NES,NOM p-val,FDR q-val,FWER p-val,Tag %,Gene %,Lead_genes
+    # test_df = pd.DataFrame(columns=['Rank', 'Name', 'Term', 'ES', 'NES', 'NOM p-val', 'FDR q-val', 'FWER p-val', 'Tag %', 'Gene %', 'Lead_genes'])
+    #
+    # # Create a new row as a DataFrame
+    # new_row = pd.DataFrame([{'Rank': 1, 'Name': 'Test', 'Term': 'Test', 'ES': 0.1, 'NES': 0.1, 'NOM p-val': 0.1,
+    #                          'FDR q-val': 0.1, 'FWER p-val': 0.1, 'Tag %': 0.1, 'Gene %': 0.1, 'Lead_genes': 'Test'}])
+    # test_df = pd.concat([test_df, new_row], ignore_index=True)
+    # test_df.to_excel(gsea_output_path, index=False)
+
 

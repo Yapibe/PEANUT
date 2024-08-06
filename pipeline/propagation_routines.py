@@ -33,7 +33,7 @@ def calculate_gene_scores(network: nx.Graph, prior_data: pd.DataFrame) -> dict:
         gene_scores[gene_id] = abs(score)
 
     # Calculate the scores for genes in the prior data and in the network based on their neighbors
-    for gene_id in tqdm(prior_data_dict.keys(), desc="Calculating gene scores"):
+    for gene_id in prior_data_dict.keys():
         if gene_id in network.nodes():
             neighbors = list(network.neighbors(gene_id))
 
@@ -338,14 +338,14 @@ def get_similarity_matrix(network, general_args):
 
 def handle_no_propagation_cases(prior_data, prop_task, general_args, network):
     if general_args.run_NGSEA:
-        print("Running GSE")
+        print("Running NGSEA")
         _handle_ngsea_case(prior_data, prop_task, general_args, network)
     else:
         print("Running GSEA")
         _handle_no_propagation_case(prior_data, prop_task, general_args)
 
 
-def perform_propagation(test_name: str,general_args, network=None, prior_data=None,):
+def perform_propagation(test_name: str,general_args, network=None, prior_data=None):
     """
     Performs the propagation of gene scores through the network.
 
