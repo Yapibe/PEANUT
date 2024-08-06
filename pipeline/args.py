@@ -40,6 +40,11 @@ class GeneralArgs:
         - temp_output_folder (str): Directory for temporary outputs.
         - propagation_folder (str): Directory for propagation scores.
         """
+        # Similarity matrix
+        self.create_similarity_matrix = False
+        self.similarity_matrix_path = None
+        self.tri_similarity_matrix_path = None
+
         # General Parameters
         self.network_file = network
         self.root_folder = path.dirname(path.abspath(__file__))
@@ -77,11 +82,6 @@ class GeneralArgs:
         self.genes_names_file_path = path.join(self.data_dir, 'gene_names', self.genes_names_file)
         self.pathway_file = pathway_file
         self.pathway_file_dir = path.join(self.data_dir, 'pathways', self.pathway_file)
-
-        # Similarity matrix
-        self.create_similarity_matrix = False
-        self.similarity_matrix_path = path.join(self.data_dir, 'matrix', f'{self.network_file}_{self.alpha}.npz')
-        self.tri_similarity_matrix_path = path.join(self.data_dir, 'matrix', f'{self.network_file}_tri_{self.alpha}.npy')
 
     def set_alpha(self, alpha):
         self.alpha = alpha
