@@ -191,6 +191,7 @@ def matrix_prop(propagation_input: dict, gene_indexes: dict, debug: bool, invers
         F = symmetric_matrix_vector_multiply(inverse_matrix, F_0)
     else:
         F = inverse_matrix @ F_0
+
     # # Compare F_full and F_upper_tri
     # difference = np.abs(F_full - F_upper_tri)
     # threshold = 1e-5  # Define a small threshold for floating-point comparison
@@ -382,12 +383,13 @@ def perform_propagation(test_name: str,general_args, network=None, prior_data=No
     normalized_df = _normalize_prop_scores(matrix, network_gene_index, propagation_score, network_genes_df,
                                            general_args.debug)
 
-    # Combine network and non-network genes
-    final_propagation_results = pd.concat([
-        normalized_df[['GeneID', 'Score']],
-        non_network_genes[['GeneID', 'Score']]
-    ], ignore_index=True)
+    # # Combine network and non-network genes
+    # final_propagation_results = pd.concat([
+    #     normalized_df[['GeneID', 'Score']],
+    #     non_network_genes[['GeneID', 'Score']]
+    # ], ignore_index=True)
 
+    final_propagation_results = normalized_df[['GeneID', 'Score']]
     # Load the gene_info.json file
     with open(general_args.genes_names_file_path, 'r') as f:
         gene_name_dict = json.load(f)
@@ -395,3 +397,4 @@ def perform_propagation(test_name: str,general_args, network=None, prior_data=No
 
     # Save the results
     _save_propagation_results(propagation_input_df, full_propagated_scores_df, prop_task, general_args)
+    print(f"Propagation for {test_name} completed successfully.")

@@ -30,15 +30,18 @@ pathways_dir = os.path.join('Data', 'Human', 'pathways')
 os.makedirs(plot_output_dir, exist_ok=True)
 os.makedirs(summary_base_dir, exist_ok=True)
 
-# Updated run_propagation_and_enrichment function
+
 def run_propagation_and_enrichment(test_name, prior_data, network, network_name, alpha, method, output_path, pathway_file):
-    general_args = GeneralArgs(network=network_name, pathway_file=pathway_file, method=method)
-    if method == 'NGSEA':
-        general_args.run_NGSEA = True
-    elif method == 'PROP' or method == 'ABS_PROP':
-        general_args.set_alpha(alpha)
+    if method in ['PROP', 'ABS_PROP']:
+        # Set alpha before initializing GeneralArgs for PROP and ABS_PROP
+        general_args = GeneralArgs(network=network_name, pathway_file=pathway_file, method=method, alpha=alpha)
         if method == 'ABS_PROP':
             general_args.input_type = 'abs_Score'
+    elif method in ['GSEA', 'NGSEA']:
+        # Initialize GeneralArgs for GSEA without modifying alpha
+        general_args = GeneralArgs(network=network_name, pathway_file=pathway_file, method=method)
+        if method == 'NGSEA':
+            general_args.run_NGSEA = True
 
     perform_propagation(test_name, general_args, network, prior_data)
     perform_enrichment(test_name, general_args, output_path)
@@ -99,7 +102,7 @@ def process_file(network, pathway_file, network_name, alpha, prop_method, file_n
 start_time = time.time()
 
 networks = ['H_sapiens', 'HumanNet']
-pathway_files = ['c2', 'kegg']
+pathway_files = ['kegg']
 prop_methods = ['GSEA', 'NGSEA', 'PROP', 'ABS_PROP']
 alphas = [0.1, 0.2]
 
@@ -131,7 +134,7 @@ logger.info("Networks loaded and pathway densities calculated.")
 
 # Process files in parallel using ProcessPoolExecutor
 futures = []
-with ProcessPoolExecutor(max_workers=32) as executor:  # Adjust max_workers based on your CPU capabilities
+with ProcessPoolExecutor(max_workers=60) as executor:  # Adjust max_workers based on your CPU capabilities
     for network_name in tqdm(networks, desc='Networks'):
         network = loaded_networks[network_name]
         for pathway_file in tqdm(pathway_files, desc='Pathway Files', leave=False):
@@ -150,48 +153,52 @@ results = []
 for future in tqdm(as_completed(futures), total=len(futures), desc='Processing Files'):
     results.append(future.result())
 
-
 # Convert results to DataFrame
 results_df = pd.DataFrame(results)
 
-# Pivot table to get the desired format
-pivot_df = results_df.pivot_table(index=['Dataset', 'Pathway', 'Density'], columns='Method', values=['Rank', 'Significant'], aggfunc='first').reset_index()
-pivot_df.columns = ['Dataset', 'Pathway', 'Density'] + [f'{col[1]} {col[0]}' for col in pivot_df.columns[3:]]
-
-# Ensure all expected columns are present
-for method in prop_methods:
-    if f'{method} Rank' not in pivot_df.columns:
-        pivot_df[f'{method} Rank'] = np.nan
-    if f'{method} Significant' not in pivot_df.columns:
-        pivot_df[f'{method} Significant'] = np.nan
-
-# Reorder columns to the desired order
-column_order = ['Dataset', 'Pathway', 'Density']
-for method in prop_methods:
-    column_order.append(f'{method} Rank')
-    column_order.append(f'{method} Significant')
-pivot_df = pivot_df[column_order]
-
-# Calculate average rank and percent significant for each method
-avg_ranks = results_df.groupby('Method')['Rank'].mean().reset_index()
-avg_ranks.columns = ['Method', 'Average Rank']
-sig_counts = results_df.groupby('Method')['Significant'].sum().reset_index()
-total_counts = results_df.groupby('Method')['Significant'].count().reset_index()
-sig_percent = pd.merge(sig_counts, total_counts, on='Method')
-sig_percent['Percentage Significant'] = (sig_percent['Significant_x'] / sig_percent['Significant_y']) * 100
-sig_percent = sig_percent[['Method', 'Percentage Significant']]
-
-# Create DataFrame for Average Rank and Percent Significant rows
-avg_rank_row = pd.DataFrame([['Average Rank'] + [''] * 2 + [avg_ranks[avg_ranks['Method'] == method]['Average Rank'].values[0] if not avg_ranks[avg_ranks['Method'] == method].empty else '' for method in prop_methods for _ in range(2)]], columns=pivot_df.columns)
-percent_sig_row = pd.DataFrame([['Percent Significant'] + [''] * 2 + [sig_percent[sig_percent['Method'] == method]['Percentage Significant'].values[0] if not sig_percent[sig_percent['Method'] == method].empty else '' for method in prop_methods for _ in range(2)]], columns=pivot_df.columns)
-
-# Append the summary rows to the pivot DataFrame
-summary_df = pd.concat([pivot_df, avg_rank_row, percent_sig_row], ignore_index=True)
-
-# Save the summary DataFrame for each network, pathway_file, and alpha
+# Generate summary DataFrames for each combination of network_name, pathway_file, and alpha
 for network_name in networks:
     for pathway_file in pathway_files:
         for alpha in alphas:
+            filtered_df = results_df[(results_df['Network'] == network_name) &
+                                     (results_df['Pathway file'] == pathway_file) &
+                                     (results_df['Alpha'] == alpha)]
+
+            # Pivot table to get the desired format
+            pivot_df = filtered_df.pivot_table(index=['Dataset', 'Pathway', 'Density'], columns='Method', values=['Rank', 'Significant'], aggfunc='first').reset_index()
+            pivot_df.columns = ['Dataset', 'Pathway', 'Density'] + [f'{col[1]} {col[0]}' for col in pivot_df.columns[3:]]
+
+            # Ensure all expected columns are present
+            for method in prop_methods:
+                if f'{method} Rank' not in pivot_df.columns:
+                    pivot_df[f'{method} Rank'] = np.nan
+                if f'{method} Significant' not in pivot_df.columns:
+                    pivot_df[f'{method} Significant'] = np.nan
+
+            # Reorder columns to the desired order
+            column_order = ['Dataset', 'Pathway', 'Density']
+            for method in prop_methods:
+                column_order.append(f'{method} Rank')
+                column_order.append(f'{method} Significant')
+            pivot_df = pivot_df[column_order]
+
+            # Calculate average rank and percent significant for each method
+            avg_ranks = filtered_df.groupby('Method')['Rank'].mean().reset_index()
+            avg_ranks.columns = ['Method', 'Average Rank']
+            sig_counts = filtered_df.groupby('Method')['Significant'].sum().reset_index()
+            total_counts = filtered_df.groupby('Method')['Significant'].count().reset_index()
+            sig_percent = pd.merge(sig_counts, total_counts, on='Method')
+            sig_percent['Percentage Significant'] = (sig_percent['Significant_x'] / sig_percent['Significant_y']) * 100
+            sig_percent = sig_percent[['Method', 'Percentage Significant']]
+
+            # Create DataFrame for Average Rank and Percent Significant rows
+            avg_rank_row = pd.DataFrame([['Average Rank'] + [''] * 2 + [avg_ranks[avg_ranks['Method'] == method]['Average Rank'].values[0] if not avg_ranks[avg_ranks['Method'] == method].empty else '' for method in prop_methods for _ in range(2)]], columns=pivot_df.columns)
+            percent_sig_row = pd.DataFrame([['Percent Significant'] + [''] * 2 + [sig_percent[sig_percent['Method'] == method]['Percentage Significant'].values[0] if not sig_percent[sig_percent['Method'] == method].empty else '' for method in prop_methods for _ in range(2)]], columns=pivot_df.columns)
+
+            # Append the summary rows to the pivot DataFrame
+            summary_df = pd.concat([pivot_df, avg_rank_row, percent_sig_row], ignore_index=True)
+
+            # Save the summary DataFrame for each network, pathway_file, and alpha
             summary_output_dir = os.path.join(summary_base_dir, network_name, pathway_file, f"alpha {alpha}")
             os.makedirs(summary_output_dir, exist_ok=True)
             rankings_output_path = os.path.join(summary_output_dir, f'rankings_summary_{network_name}_{pathway_file}_alpha_{alpha}.xlsx')

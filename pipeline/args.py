@@ -1,177 +1,135 @@
 from os import path, makedirs
 from datetime import datetime
+from dataclasses import dataclass, field
+from typing import Callable, Optional
 
 
+@dataclass
 class GeneralArgs:
-    def __init__(self, alpha: float = 1, method=None, run_NGSEA=False, input_type: str = 'Score', network: str = 'H_sapiens', pathway_file='c2'):
+    """
+    General arguments used throughout the pipeline.
+    """
+    alpha: float = 1
+    method: Optional[str] = None
+    run_NGSEA: bool = False
+    input_type: str = 'Score'
+    network: str = 'H_sapiens'
+    pathway_file: str = 'c2'
+    run_propagation: bool = True
+    run_simulated: bool = False
+    run_gsea: bool = True
+    debug: bool = True
+    create_similarity_matrix: bool = False
+
+    # Paths and directories
+    root_folder: str = field(init=False)
+    data_dir: str = field(init=False)
+    similarity_matrix_path: Optional[str] = field(init=False)
+    tri_similarity_matrix_path: Optional[str] = field(init=False)
+    FDR_threshold: float = 0.05
+    minimum_gene_per_pathway: int = 15
+    maximum_gene_per_pathway: int = 500
+    JAC_THRESHOLD: float = 0.2
+    Experiment_name: str = field(init=False)
+    date: str = field(init=False)
+    figure_title: str = 'Pathway Enrichment'
+    output_dir: str = field(init=False)
+    input_dir: str = field(init=False)
+    temp_output_folder: str = field(init=False)
+    propagation_folder: str = field(init=False)
+    gsea_out: Optional[str] = field(init=False)
+    network_file_path: str = field(init=False)
+    genes_names_file: str = 'gene_info.json'
+    genes_names_file_path: str = field(init=False)
+    pathway_file_dir: str = field(init=False)
+
+    def __post_init__(self):
         """
-        Initializes general arguments used throughout the pipeline.
-
-        Parameters:
-        - alpha (float): Alpha value for similarity matrix (default: 1).
-        - run_propagation (bool): Flag to run propagation (default: True).
-        - run_gsea (bool): Flag to run GSEA (default: False).
-        - run_simulated (bool): Flag to run simulated data (default: False).
-        - input_type (str): Type of input data (default: 'Score').
-
-        Attributes:
-        - alpha (float): Alpha value.
-        - FDR_threshold (float): FDR threshold.
-        - minimum_gene_per_pathway (int): Minimum number of genes per pathway.
-        - maximum_gene_per_pathway (int): Maximum number of genes per pathway.
-        - JAC_THRESHOLD (float): Jaccard threshold.
-        - run_propagation (bool): Flag to run propagation.
-        - Experiment_name (str): Name of the experiment.
-        - date (str): Current date and time.
-        - figure_title (str): Name of the experiment to be displayed on figures.
-        - run_gsea (bool): Flag to run GSEA.
-        - root_folder (str): Root directory of the script.
-        - data_dir (str): Directory for input data.
-        - output_dir (str): Directory for output data.
-        - input_dir (str): Directory for input experiment data.
-        - network_file (str): Network file name.
-        - network_file_path (str): Path to the network file.
-        - genes_names_file (str): Gene names file name.
-        - genes_names_file_path (str): Path to the gene names file.
-        - bio_pathways (str): Pathway file name.
-        - pathway_file_dir (str): Directory for pathway files.
-        - similarity_matrix_path (str): Path to the similarity matrix file.
-        - create_similarity_matrix (bool): Flag to create similarity matrix.
-        - temp_output_folder (str): Directory for temporary outputs.
-        - propagation_folder (str): Directory for propagation scores.
+        Post-initialization to set up directories, file paths, and other settings.
         """
-        # Similarity matrix
-        self.create_similarity_matrix = False
-        self.similarity_matrix_path = None
-        self.tri_similarity_matrix_path = None
-
-        # General Parameters
-        self.network_file = network
         self.root_folder = path.dirname(path.abspath(__file__))
         self.data_dir = path.join(self.root_folder, 'Data', 'Human')
-        self.alpha = None
-        self.set_alpha(alpha)
-        self.FDR_threshold = 0.05
-        self.minimum_gene_per_pathway = 15
-        self.maximum_gene_per_pathway = 500
-        self.JAC_THRESHOLD = 0.2
-        self.run_propagation = True
-        self.run_simulated = False
-        self.run_gsea = True
-        self.run_hyper = False
-        self.input_type = input_type
-        self.run_NGSEA = run_NGSEA
-        self.debug = True
-        self.method = method
-
-        # Experiment and output settings
         self.Experiment_name = 'Simulated' if self.run_simulated else 'GSE'
         self.date = datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
-        self.figure_title = 'Pathway Enrichment'
-
-        # Directories and file paths
         self.output_dir = path.join(self.root_folder, 'Outputs')
-        self.input_dir = self._set_input_dir()
-        self.temp_output_folder = self._create_output_subdir(path.join('Temp', self.method, network, pathway_file))
-        self.propagation_folder = self._create_output_subdir(path.join('Propagation_Scores', self.method, network, pathway_file))
-        self.gsea_out = self._create_output_subdir(path.join('GSEA', self.method, network, pathway_file)) if self.run_gsea else None
-
-        # Network and pathway files
-        self.network_file_path = path.join(self.data_dir, 'network', self.network_file)
-        self.genes_names_file = 'gene_info.json'
+        self.similarity_matrix_path = path.join(self.data_dir, 'matrix', f'{self.network}_{self.alpha}.npz')
+        self.tri_similarity_matrix_path = path.join(self.data_dir, 'matrix', f'{self.network}_tri_{self.alpha}.npy')
+        self.input_dir = path.join(self.root_folder, 'Inputs', 'Simulated') if self.run_simulated else path.join(
+            self.root_folder,
+            'Inputs',
+            'experiments_data',
+            self.Experiment_name,
+            'XLSX')
+        self.temp_output_folder = self._create_output_subdir(
+            path.join('Temp', self.method or '', self.network, self.pathway_file))
+        self.propagation_folder = self._create_output_subdir(
+            path.join('Propagation_Scores', self.method or '', self.network, self.pathway_file, f'alpha_{self.alpha}'))
+        self.gsea_out = self._create_output_subdir(
+            path.join('GSEA', self.method or '', self.network, self.pathway_file)) if self.run_gsea else None
+        self.network_file_path = path.join(self.data_dir, 'network', self.network)
         self.genes_names_file_path = path.join(self.data_dir, 'gene_names', self.genes_names_file)
-        self.pathway_file = pathway_file
         self.pathway_file_dir = path.join(self.data_dir, 'pathways', self.pathway_file)
 
-    def set_alpha(self, alpha):
-        self.alpha = alpha
-        self.similarity_matrix_path = path.join(self.data_dir, 'matrix', f'{self.network_file}_{self.alpha}.npz')
-        self.tri_similarity_matrix_path = path.join(self.data_dir, 'matrix', f'{self.network_file}_tri_{self.alpha}.npy')
-
-    def _set_input_dir(self):
-        """
-        Determine the input directory based on whether the simulation is run.
-        """
-        if self.run_simulated:
-            return path.join(self.root_folder, 'Inputs', 'Simulated')
-        return path.join(self.root_folder, 'Inputs', 'experiments_data', self.Experiment_name,'XLSX')
-
-    def _create_output_subdir(self, subdir_name):
-        """
-        Create and return a subdirectory in the output directory.
-        """
+    def _create_output_subdir(self, subdir_name: str) -> str:
         subdir_path = path.join(self.output_dir, subdir_name)
         makedirs(subdir_path, exist_ok=True)
         return subdir_path
 
 
+@dataclass
 class PropagationTask:
-    def __init__(self, general_args: GeneralArgs, test_name: str):
-        """
-        Initialize a PropagationTask instance.
+    """
+    A task for performing propagation on a dataset.
 
-        Parameters:
-        - general_args (GeneralArgs): General arguments and settings.
-        - test_name (str): Name of the Comparison for which propagation is performed.
+    Attributes:
+    - general_args (GeneralArgs): General arguments and settings.
+    - test_name (str): Name of the comparison test.
+    - results (dict): Dictionary to store results.
+    - output_folder (str): Directory for output files.
+    """
+    general_args: GeneralArgs
+    test_name: str
+    results: dict = field(default_factory=dict)
+    output_folder: str = field(init=False)
 
-        Attributes:
-        - general_args (GeneralArgs): General arguments and settings.
-        - results (dict): Dictionary to store results.
-        - test_name (str): Name of the Comparison.
-        - test_file (str): Name of the Comparison file.
-        - test_file_path (str): Path to the Comparison file.
-        - remove_self_propagation (bool): Flag to remove self propagation.
-        - output_folder (str): Directory for output files.
+    def __post_init__(self):
         """
-        self.general_args = general_args
-        self.results = {}
-        test_name = test_name.split(".")[0]
-        self.test_name = test_name
-        # remove .xlsx
-        # self.test_file = f'{test_name}.xlsx'
+        Post-initialization to set up the output folder based on the test name.
+        """
+        self.test_name = self.test_name.split(".")[0]
         self.output_folder = path.join(self.general_args.propagation_folder, self.test_name)
 
 
+@dataclass
 class EnrichTask:
-    def __init__(self, name: str, statistic_test: callable, target_field: str, create_scores: bool = True, propagation_file: str = None):
+    """
+    A task for performing enrichment analysis.
+
+    Attributes:
+    - name (str): Name of the task.
+    - statistic_test (Callable): Statistical test function for enrichment analysis.
+    - target_field (str): Field in the data to target for enrichment.
+    - create_scores (bool): Flag to determine whether to create scores (default: True).
+    - propagation_file (Optional[str]): Filename of the propagated gene scores.
+    - results (dict): Dictionary to store results.
+    - filtered_genes (set): Set of filtered genes.
+    - filtered_pathways (dict): Dictionary of filtered pathways.
+    - ks_significant_pathways_with_genes (dict): Dictionary of significant pathways with genes.
+    - temp_output_folder (str): Directory for temporary output files.
+    """
+    name: str
+    statistic_test: Callable
+    target_field: str
+    create_scores: bool = True
+    propagation_file: Optional[str] = None
+    results: dict = field(default_factory=dict)
+    filtered_genes: set = field(default_factory=set)
+    filtered_pathways: dict = field(default_factory=dict)
+    ks_significant_pathways_with_genes: dict = field(default_factory=dict)
+    temp_output_folder: str = field(init=False)
+
+    def __post_init__(self):
         """
-        Initialize an EnrichTask instance.
-
-        This class configures an enrichment analysis task, including setting file paths and statistical tests.
-
-        Parameters:
-        - name (str): Name of the task.
-        - statistic_test (function): Statistical Comparison function to use for enrichment analysis.
-        - target_field (str): Field in the data to target for enrichment analysis.
-        - create_scores (bool): Flag to determine whether to create scores (default: True).
-        - propagation_file (str): Filename of the propagated gene scores (default: None).
-
-        Attributes:
-        - name (str): Name of the task.
-        - statistic_test (function): Statistical Comparison function.
-        - target_field (str): Field in the data to target.
-        - results (dict): Dictionary to store results.
-        - create_scores (bool): Flag to determine whether to create scores.
-        - filtered_genes (set): Set of filtered genes.
-        - filtered_pathways (dict): Dictionary of filtered pathways.
-        - ks_significant_pathways_with_genes (dict): Dictionary of significant pathways with genes.
-        - propagation_file (str): Filename of the propagated gene scores.
-        - temp_output_folder (str): Directory for temporary output files.
+        Post-initialization to set up the temporary output folder.
         """
-        self.name = name
-        self.statistic_test = statistic_test
-        self.target_field = target_field
-        self.results = dict()
-        self.create_scores = create_scores
-        self.filtered_genes = set()
-        self.filtered_pathways = dict()
-        self.ks_significant_pathways_with_genes = dict()
-        self.propagation_file = propagation_file
         self.temp_output_folder = path.join(path.dirname(path.realpath(__file__)), 'Outputs', 'Temp')
-
-
-class PathwayResults:
-    def __init__(self, p_value, direction, adj_p_value):
-        self.p_value = p_value
-        self.direction = direction
-        self.adj_p_value = adj_p_value

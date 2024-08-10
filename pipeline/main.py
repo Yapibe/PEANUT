@@ -10,7 +10,7 @@ from visualization_tools import print_aggregated_pathway_information, plot_pathw
 
 
 
-def main(alpha=0.2, run_propagation: bool=True, run_gsea: bool=True, run_simulated: bool=False, input_type: str='Score'):
+def main(alpha=0.1, run_propagation: bool=True):
     """
     Execute propagation and enrichment analysis based on specified flags.
 
@@ -24,7 +24,7 @@ def main(alpha=0.2, run_propagation: bool=True, run_gsea: bool=True, run_simulat
     Returns:
     - None
     """
-    general_args = GeneralArgs(alpha=alpha, input_type=input_type, network='small_graph', method='NGSEA')
+    general_args = GeneralArgs(alpha=alpha, network='String', method='PROP', create_similarity_matrix=True)
     test_name_list = [path.splitext(file)[0] for file in listdir(general_args.input_dir) if file.endswith('.xlsx')]
 
     # Perform propagation and enrichment based on flags

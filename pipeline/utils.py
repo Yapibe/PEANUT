@@ -133,7 +133,6 @@ def load_pathways_and_propagation_scores(general_args, propagation_file_path):
         tuple: A tuple containing the network graph, a list of interesting pathways, and a dictionary mapping
                pathways to their genes.
     """
-    # network_graph = read_network(general_args.network_file_path)
     pathways_with_many_genes = load_pathways_genes(general_args.pathway_file_dir, general_args.run_gsea)
     scores = get_scores(propagation_file_path)
     if general_args.run_gsea:
