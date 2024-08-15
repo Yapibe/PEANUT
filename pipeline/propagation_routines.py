@@ -81,9 +81,20 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     degrees = np.array(matrix.sum(axis=1)).flatten()
     # Replace zero degrees with 1 to avoid division by zero
     degrees[degrees == 0] = 1
-    inv_sqrt_degrees = 1.0 / np.sqrt(degrees)
-    norm_matrix = sp.diags(inv_sqrt_degrees)
-    matrix = norm_matrix @ matrix @ norm_matrix
+
+    if args.normalization_type == 'symmetric':
+        # Symmetric normalization: A' = D^(-1/2) * A * D^(-1/2)
+        inv_sqrt_degrees = 1.0 / np.sqrt(degrees)
+        norm_matrix = sp.diags(inv_sqrt_degrees)
+        matrix = norm_matrix @ matrix @ norm_matrix
+    elif args.normalization_type == 'row':
+        # Left normalization: A' = A * D^(-1)
+        inv_degrees = 1.0 / degrees
+        norm_matrix = sp.diags(inv_degrees)
+        matrix = matrix @ norm_matrix
+    else:
+        raise ValueError(f"Unknown normalization type: {args.normalization_type}")
+
 
     n = matrix.shape[0]
     identity_matrix = sp.eye(n)
@@ -204,6 +215,30 @@ def matrix_prop(propagation_input: dict, gene_indexes: dict, debug: bool, invers
 
 
 
+# def _handle_ngsea_case(prior_data, prop_task, general_args, network):
+#     """
+#     Handle the GSE case for alpha = 1.
+#
+#     Parameters:
+#     - prior_data (pd.DataFrame): The prior data.
+#     - prop_task (PropagationTask): The propagation task object.
+#     - general_args (GeneralArgs): General arguments and settings.
+#
+#     Returns:
+#     - None
+#     """
+#     gene_scores = calculate_gene_scores(network, prior_data)
+#     posterior_set = prior_data.copy()
+#     posterior_set['Score'] = posterior_set['GeneID'].map(gene_scores)
+#     save_propagation_score(
+#         prior_set=prior_data,
+#         propagation_input={gene_id: score for gene_id, score in zip(posterior_set['GeneID'], posterior_set['Score'])},
+#         propagation_scores=posterior_set,
+#         genes_id_to_idx={gene_id: idx for idx, gene_id in enumerate(posterior_set['GeneID'])},
+#         task=prop_task,
+#         save_dir=prop_task.output_folder,
+#         general_args=general_args
+#     )
 def _handle_ngsea_case(prior_data, prop_task, general_args, network):
     """
     Handle the GSE case for alpha = 1.
@@ -212,13 +247,18 @@ def _handle_ngsea_case(prior_data, prop_task, general_args, network):
     - prior_data (pd.DataFrame): The prior data.
     - prop_task (PropagationTask): The propagation task object.
     - general_args (GeneralArgs): General arguments and settings.
+    - network (networkx.Graph): The network graph.
 
     Returns:
     - None
     """
+    # Calculate gene scores for genes in both prior_data and network
     gene_scores = calculate_gene_scores(network, prior_data)
-    posterior_set = prior_data.copy()
+
+    # Filter the posterior set to include only genes in both prior_data and network
+    posterior_set = prior_data[prior_data['GeneID'].isin(network.nodes())].copy()
     posterior_set['Score'] = posterior_set['GeneID'].map(gene_scores)
+
     save_propagation_score(
         prior_set=prior_data,
         propagation_input={gene_id: score for gene_id, score in zip(posterior_set['GeneID'], posterior_set['Score'])},
@@ -230,10 +270,44 @@ def _handle_ngsea_case(prior_data, prop_task, general_args, network):
     )
 
 
-def _handle_no_propagation_case(prior_data, prop_task, general_args):
-    sorted_prior_data = prior_data.sort_values(by='GeneID').reset_index(drop=True)
+
+# def _handle_no_propagation_case(prior_data, prop_task, general_args, network):
+#     sorted_prior_data = prior_data.sort_values(by='GeneID').reset_index(drop=True)
+#     gene_scores = sorted_prior_data['Score'].values.reshape((len(sorted_prior_data), 1))
+#     sorted_prior_data['Score'] = gene_scores.flatten()
+#     save_propagation_score(
+#         prior_set=sorted_prior_data,
+#         propagation_input={gene_id: score for gene_id, score in
+#                            zip(sorted_prior_data['GeneID'], sorted_prior_data['Score'])},
+#         propagation_scores=sorted_prior_data,
+#         genes_id_to_idx={gene_id: idx for idx, gene_id in enumerate(sorted_prior_data['GeneID'])},
+#         task=prop_task,
+#         save_dir=prop_task.output_folder,
+#         general_args=general_args
+#     )
+def _handle_no_propagation_case(prior_data, prop_task, general_args, network):
+    """
+    Handle the case where no propagation is performed (alpha = 1).
+
+    Parameters:
+    - prior_data (pd.DataFrame): The prior data.
+    - prop_task (PropagationTask): The propagation task object.
+    - general_args (GeneralArgs): General arguments and settings.
+    - network (networkx.Graph): The network graph.
+
+    Returns:
+    - None
+    """
+    # Filter prior_data to include only genes in both prior_data and network
+    filtered_prior_data = prior_data[prior_data['GeneID'].isin(network.nodes())].copy()
+
+    # Sort the filtered_prior_data by GeneID
+    sorted_prior_data = filtered_prior_data.sort_values(by='GeneID').reset_index(drop=True)
+
+    # Flatten the scores for saving
     gene_scores = sorted_prior_data['Score'].values.reshape((len(sorted_prior_data), 1))
     sorted_prior_data['Score'] = gene_scores.flatten()
+
     save_propagation_score(
         prior_set=sorted_prior_data,
         propagation_input={gene_id: score for gene_id, score in
@@ -244,6 +318,7 @@ def _handle_no_propagation_case(prior_data, prop_task, general_args):
         save_dir=prop_task.output_folder,
         general_args=general_args
     )
+
 
 
 def _normalize_prop_scores(matrix, network_gene_index, propagation_score, filtered_prior_data, debug: bool) -> pd.DataFrame:
@@ -316,13 +391,6 @@ def _save_propagation_results(propagation_input_df, full_propagated_scores_df, p
     )
 
 
-def merge_with_prior_data(final_propagation_results, prior_data, gene_name_dict):
-    full_propagated_scores_df = final_propagation_results.merge(prior_data[['GeneID', 'Symbol', 'P-value']], on='GeneID', how='left')
-    full_propagated_scores_df['Symbol'] = full_propagated_scores_df['Symbol'].fillna(full_propagated_scores_df['GeneID'].map(gene_name_dict).fillna(""))
-    full_propagated_scores_df['P-value'] = full_propagated_scores_df['P-value'].fillna(0)
-    return full_propagated_scores_df
-
-
 def filter_network_genes(propagation_input_df, network):
     network_genes_df = propagation_input_df[propagation_input_df['GeneID'].isin(network.nodes())].copy()
     non_network_genes = propagation_input_df[~propagation_input_df['GeneID'].isin(network.nodes())].copy()
@@ -343,7 +411,7 @@ def handle_no_propagation_cases(prior_data, prop_task, general_args, network):
         _handle_ngsea_case(prior_data, prop_task, general_args, network)
     else:
         print("Running GSEA")
-        _handle_no_propagation_case(prior_data, prop_task, general_args)
+        _handle_no_propagation_case(prior_data, prop_task, general_args, network)
 
 
 def perform_propagation(test_name: str,general_args, network=None, prior_data=None):
@@ -383,17 +451,10 @@ def perform_propagation(test_name: str,general_args, network=None, prior_data=No
     normalized_df = _normalize_prop_scores(matrix, network_gene_index, propagation_score, network_genes_df,
                                            general_args.debug)
 
-    # # Combine network and non-network genes
-    # final_propagation_results = pd.concat([
-    #     normalized_df[['GeneID', 'Score']],
-    #     non_network_genes[['GeneID', 'Score']]
-    # ], ignore_index=True)
-
-    final_propagation_results = normalized_df[['GeneID', 'Score']]
-    # Load the gene_info.json file
-    with open(general_args.genes_names_file_path, 'r') as f:
-        gene_name_dict = json.load(f)
-    full_propagated_scores_df = merge_with_prior_data(final_propagation_results, prior_data, gene_name_dict)
+    # Merge the normalized scores directly with prior_data
+    full_propagated_scores_df = normalized_df.merge(
+        prior_data[['GeneID', 'Symbol', 'P-value']], on='GeneID', how='inner'
+    )[['GeneID', 'Score', 'Symbol', 'P-value']]
 
     # Save the results
     _save_propagation_results(propagation_input_df, full_propagated_scores_df, prop_task, general_args)

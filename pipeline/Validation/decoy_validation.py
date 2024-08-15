@@ -77,12 +77,9 @@ def process_file(network, network_name, alpha, prop_method, file_name):
 # Start timing the entire process
 start_time = time.time()
 
-network_name = 'HumanNet'
-prop_methods = ['PROP', 'GSEA', 'NGSEA',  'ABS_PROP']
-alpha = 0.2
-
-network_file = os.path.join(pipeline_dir, 'Data', 'Human', 'network', network_name)
-network = read_network(network_file)
+network_names = ['HumanNet', 'String_', 'H_sapiens', 'String']
+prop_methods = ['PROP', 'GSEA', 'NGSEA', 'ABS_PROP']
+alpha_values = [0.2, 0.1]
 
 file_list = [f for f in os.listdir(input_dir) if f.endswith('.xlsx')]
 
@@ -91,9 +88,14 @@ logger.info("Loading network and processing files...")
 # Process files in parallel using ProcessPoolExecutor
 futures = []
 with ProcessPoolExecutor(max_workers=60) as executor:
-    for file_name in file_list:
-        for prop_method in prop_methods:
-            futures.append(executor.submit(process_file, network, network_name, alpha, prop_method, file_name))
+    for network_name in network_names:
+        network_file = os.path.join(pipeline_dir, 'Data', 'Human', 'network', network_name)
+        network = read_network(network_file)
+
+        for alpha in alpha_values:
+            for file_name in file_list:
+                for prop_method in prop_methods:
+                    futures.append(executor.submit(process_file, network, network_name, alpha, prop_method, file_name))
 
 results = []
 for future in tqdm(as_completed(futures), total=len(futures), desc='Processing Files'):
@@ -103,15 +105,18 @@ for future in tqdm(as_completed(futures), total=len(futures), desc='Processing F
 results_df = pd.DataFrame(results)
 
 # Calculate the average percentage of significant pathways per method
-average_sig_percent = results_df.groupby('Method')['Significant Percentage'].mean().reset_index()
-average_sig_percent.columns = ['Method', 'Average Significant Percentage']
+average_sig_percent = results_df.groupby(['Network', 'Alpha', 'Method'])['Significant Percentage'].mean().reset_index()
+average_sig_percent.columns = ['Network', 'Alpha', 'Method', 'Average Significant Percentage']
 
 # Save the summary DataFrame
-summary_output_dir = os.path.join(summary_base_dir, network_name, 'Decoy', f"alpha_{alpha}")
-os.makedirs(summary_output_dir, exist_ok=True)
-summary_output_path = os.path.join(summary_output_dir, f'Decoy_Summary_{network_name}_alpha_{alpha}.xlsx')
-average_sig_percent.to_excel(summary_output_path, index=False)
-logger.info(f"Significance summary saved to {summary_output_path}")
+for network_name in network_names:
+    for alpha in alpha_values:
+        summary_output_dir = os.path.join(summary_base_dir, network_name, 'Decoy', f"alpha_{alpha}")
+        os.makedirs(summary_output_dir, exist_ok=True)
+        summary_output_path = os.path.join(summary_output_dir, f'Decoy_Summary_{network_name}_alpha_{alpha}.xlsx')
+        average_sig_percent[(average_sig_percent['Network'] == network_name) &
+                            (average_sig_percent['Alpha'] == alpha)].to_excel(summary_output_path, index=False)
+        logger.info(f"Significance summary saved to {summary_output_path}")
 
 end_time = time.time()
 elapsed_time = end_time - start_time

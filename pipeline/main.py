@@ -3,7 +3,7 @@ import shutil
 from os import path, listdir
 from args import GeneralArgs
 from pathway_enrichment import perform_enrichment
-from propagation_routines import perform_propagation
+from propagation_routines import perform_propagation, get_similarity_matrix
 from utils import read_temp_scores, process_condition, read_network
 from visualization_tools import print_aggregated_pathway_information, plot_pathways_mean_scores
 
@@ -24,15 +24,17 @@ def main(alpha=0.1, run_propagation: bool=True):
     Returns:
     - None
     """
-    general_args = GeneralArgs(alpha=alpha, network='String', method='PROP', create_similarity_matrix=True)
+    general_args = GeneralArgs(alpha=alpha, network='String_', method='PROP', create_similarity_matrix=True, normalization_type='row')
     test_name_list = [path.splitext(file)[0] for file in listdir(general_args.input_dir) if file.endswith('.xlsx')]
 
     # Perform propagation and enrichment based on flags
     for test_name in test_name_list:
         if run_propagation:
             network = read_network(general_args.network_file_path)
-            perform_propagation(test_name, general_args, network=network)
-
+            matrix, network_gene_index = get_similarity_matrix(network, general_args)
+            # perform_propagation(test_name, general_args, network=network)
+            print(f"Running propagation on {test_name}")
+            return
         print(f"Running enrichment on {test_name}")
         scores = perform_enrichment(test_name, general_args)
         print("-----------------------------------------")

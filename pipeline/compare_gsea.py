@@ -62,18 +62,54 @@ def get_pathway_rank(gsea_output_path, pathway_name):
 
 
 # Calculate pathway density
+# Calculate pathway density, number of genes, and average diameter
 def calculate_pathway_density(network, genes):
+    # Create a subgraph with only the genes in the pathway
     subgraph = network.subgraph(genes)
-    if subgraph.number_of_edges() == 0:
-        return np.inf
-    try:
-        avg_shortest_path_length = nx.average_shortest_path_length(subgraph)
-    except nx.NetworkXError:
-        avg_shortest_path_length = np.inf
-    return avg_shortest_path_length
+
+    # Calculate the number of connected components
+    connected_components = list(nx.connected_components(subgraph))
+
+    # Calculate the percentage of genes that are connected
+    num_connected_genes = sum(len(component) for component in connected_components if len(component) > 1)
+    percent_connected = num_connected_genes / len(genes) if len(genes) > 0 else 0
+
+    # Calculate the average shortest path length among connected components
+    avg_shortest_path_lengths = []
+    avg_diameters = []
+    for component in connected_components:
+        if len(component) > 1:  # Only consider components with more than one node
+            component_subgraph = subgraph.subgraph(component)
+            try:
+                avg_length = nx.average_shortest_path_length(component_subgraph)
+                diameter = nx.diameter(component_subgraph)
+            except nx.NetworkXError:
+                avg_length = np.inf
+                diameter = np.inf
+            avg_shortest_path_lengths.append(avg_length)
+            avg_diameters.append(diameter)
+
+    # Calculate the average distance among connected components
+    if avg_shortest_path_lengths:
+        avg_distance_among_connected = np.mean(avg_shortest_path_lengths)
+    else:
+        avg_distance_among_connected = np.inf
+
+    # Calculate the average diameter among connected components
+    if avg_diameters:
+        avg_diameter_among_connected = np.mean(avg_diameters)
+    else:
+        avg_diameter_among_connected = np.inf
+
+    # Combine the measures as suggested by your PI
+    combined_density_measure = percent_connected * avg_distance_among_connected
+
+    return combined_density_measure if combined_density_measure != 0 else np.inf, len(genes), avg_diameter_among_connected
 
 
-def process_file(network, pathway_file, network_name, alpha, prop_method, file_name, pathway_density):
+
+# The rest of your script would remain largely the same, with the relevant adjustments:
+def process_file(network, pathway_file, network_name, alpha, prop_method, file_name, pathway_density, num_genes, avg_diameter):
     dataset_name, pathway_name = file_name.replace('.xlsx', '').split('_', 1)
     prior_data = read_prior_set(os.path.join(input_dir, file_name))
     output_dir = os.path.join(output_base_dir, prop_method, network_name, pathway_file, f"alpha_{alpha}")
@@ -94,16 +130,19 @@ def process_file(network, pathway_file, network_name, alpha, prop_method, file_n
         'Rank': prop_rank,
         'FDR q-val': fdr_q_val,
         'Significant': significant,
-        'Density': pathway_density
+        'Density': pathway_density,
+        'Num Genes': num_genes,
+        'Avg Diameter': avg_diameter
     }
+
 
 
 # Start timing the entire process
 start_time = time.time()
 
-networks = ['H_sapiens', 'HumanNet']
+networks = ['String', 'HumanNet', 'H_sapiens', 'String_']
 pathway_files = ['kegg']
-prop_methods = ['GSEA', 'NGSEA', 'PROP', 'ABS_PROP']
+prop_methods = ['PROP', 'ABS_PROP', 'GSEA', 'NGSEA']
 alphas = [0.1, 0.2]
 
 loaded_networks = {}
@@ -143,11 +182,11 @@ with ProcessPoolExecutor(max_workers=60) as executor:  # Adjust max_workers base
                 for file_name in file_list:
                     dataset_name, pathway_name = file_name.replace('.xlsx', '').split('_', 1)
                     if pathway_name in pathways:
-                        pathway_density = pathway_densities[network_name][pathway_file].get(pathway_name, np.inf)
+                        pathway_density, num_genes, avg_diameter = pathway_densities[network_name][pathway_file].get(pathway_name, (np.inf, 0, np.inf))
                         if pathway_density != np.inf:
-                            logger.info(f"Parsing {dataset_name} and {pathway_name} with density {pathway_density}")
+                            logger.info(f"Parsing {dataset_name} and {pathway_name} with density {pathway_density}, num genes {num_genes}, and avg diameter {avg_diameter}")
                         for prop_method in prop_methods:
-                            futures.append(executor.submit(process_file, network, pathway_file, network_name, alpha, prop_method, file_name, pathway_density))
+                            futures.append(executor.submit(process_file, network, pathway_file, network_name, alpha, prop_method, file_name, pathway_density, num_genes, avg_diameter))
 
 results = []
 for future in tqdm(as_completed(futures), total=len(futures), desc='Processing Files'):
@@ -165,8 +204,8 @@ for network_name in networks:
                                      (results_df['Alpha'] == alpha)]
 
             # Pivot table to get the desired format
-            pivot_df = filtered_df.pivot_table(index=['Dataset', 'Pathway', 'Density'], columns='Method', values=['Rank', 'Significant'], aggfunc='first').reset_index()
-            pivot_df.columns = ['Dataset', 'Pathway', 'Density'] + [f'{col[1]} {col[0]}' for col in pivot_df.columns[3:]]
+            pivot_df = filtered_df.pivot_table(index=['Dataset', 'Pathway', 'Density', 'Num Genes', 'Avg Diameter'], columns='Method', values=['Rank', 'Significant'], aggfunc='first').reset_index()
+            pivot_df.columns = ['Dataset', 'Pathway', 'Density', 'Num Genes', 'Avg Diameter'] + [f'{col[1]} {col[0]}' for col in pivot_df.columns[5:]]
 
             # Ensure all expected columns are present
             for method in prop_methods:
@@ -176,7 +215,7 @@ for network_name in networks:
                     pivot_df[f'{method} Significant'] = np.nan
 
             # Reorder columns to the desired order
-            column_order = ['Dataset', 'Pathway', 'Density']
+            column_order = ['Dataset', 'Pathway', 'Density', 'Num Genes', 'Avg Diameter']
             for method in prop_methods:
                 column_order.append(f'{method} Rank')
                 column_order.append(f'{method} Significant')
@@ -192,19 +231,27 @@ for network_name in networks:
             sig_percent = sig_percent[['Method', 'Percentage Significant']]
 
             # Create DataFrame for Average Rank and Percent Significant rows
-            avg_rank_row = pd.DataFrame([['Average Rank'] + [''] * 2 + [avg_ranks[avg_ranks['Method'] == method]['Average Rank'].values[0] if not avg_ranks[avg_ranks['Method'] == method].empty else '' for method in prop_methods for _ in range(2)]], columns=pivot_df.columns)
-            percent_sig_row = pd.DataFrame([['Percent Significant'] + [''] * 2 + [sig_percent[sig_percent['Method'] == method]['Percentage Significant'].values[0] if not sig_percent[sig_percent['Method'] == method].empty else '' for method in prop_methods for _ in range(2)]], columns=pivot_df.columns)
+            avg_rank_row = pd.DataFrame([['Average Rank'] + [''] * 4 + [
+                avg_ranks[avg_ranks['Method'] == method]['Average Rank'].values[0] if not avg_ranks[
+                    avg_ranks['Method'] == method].empty else '' for method in prop_methods for _ in range(2)]],
+                                        columns=pivot_df.columns)
+            percent_sig_row = pd.DataFrame([['Percent Significant'] + [''] * 4 + [
+                sig_percent[sig_percent['Method'] == method]['Percentage Significant'].values[0] if not sig_percent[
+                    sig_percent['Method'] == method].empty else '' for method in prop_methods for _ in range(2)]],
+                                           columns=pivot_df.columns)
 
             # Append the summary rows to the pivot DataFrame
             summary_df = pd.concat([pivot_df, avg_rank_row, percent_sig_row], ignore_index=True)
-
+            # sort alphabetically by pathway name
+            summary_df = summary_df.sort_values(by='Pathway')
             # Save the summary DataFrame for each network, pathway_file, and alpha
             summary_output_dir = os.path.join(summary_base_dir, network_name, pathway_file, f"alpha {alpha}")
             os.makedirs(summary_output_dir, exist_ok=True)
-            rankings_output_path = os.path.join(summary_output_dir, f'rankings_summary_{network_name}_{pathway_file}_alpha_{alpha}.xlsx')
+            rankings_output_path = os.path.join(summary_output_dir,
+                                                f'rankings_summary_{network_name}_{pathway_file}_alpha_{alpha}.xlsx')
             summary_df.to_excel(rankings_output_path, index=False)
             logger.info(f"Rankings summary saved to {rankings_output_path}")
 
-end_time = time.time()
-elapsed_time = end_time - start_time
-logger.info(f"Total time taken: {elapsed_time:.2f} seconds")
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        logger.info(f"Total time taken: {elapsed_time:.2f} seconds")

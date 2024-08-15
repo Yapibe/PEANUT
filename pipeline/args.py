@@ -14,12 +14,13 @@ class GeneralArgs:
     run_NGSEA: bool = False
     input_type: str = 'Score'
     network: str = 'H_sapiens'
-    pathway_file: str = 'c2'
+    pathway_file: str = 'kegg'
     run_propagation: bool = True
     run_simulated: bool = False
     run_gsea: bool = True
-    debug: bool = True
+    debug: bool = False
     create_similarity_matrix: bool = False
+    normalization_type: str = 'symmetric'
 
     # Paths and directories
     root_folder: str = field(init=False)
@@ -52,8 +53,14 @@ class GeneralArgs:
         self.Experiment_name = 'Simulated' if self.run_simulated else 'GSE'
         self.date = datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
         self.output_dir = path.join(self.root_folder, 'Outputs')
-        self.similarity_matrix_path = path.join(self.data_dir, 'matrix', f'{self.network}_{self.alpha}.npz')
-        self.tri_similarity_matrix_path = path.join(self.data_dir, 'matrix', f'{self.network}_tri_{self.alpha}.npy')
+
+        # Adjust the similarity matrix paths based on normalization type
+        norm_suffix = 'row' if self.normalization_type == 'row' else 'symmetric'
+        self.similarity_matrix_path = path.join(self.data_dir, 'matrix',
+                                                f'{self.network}_{self.alpha}_{norm_suffix}.npz')
+        self.tri_similarity_matrix_path = path.join(self.data_dir, 'matrix',
+                                                    f'{self.network}_tri_{self.alpha}_{norm_suffix}.npy')
+
         self.input_dir = path.join(self.root_folder, 'Inputs', 'Simulated') if self.run_simulated else path.join(
             self.root_folder,
             'Inputs',
@@ -70,10 +77,20 @@ class GeneralArgs:
         self.genes_names_file_path = path.join(self.data_dir, 'gene_names', self.genes_names_file)
         self.pathway_file_dir = path.join(self.data_dir, 'pathways', self.pathway_file)
 
-    def _create_output_subdir(self, subdir_name: str) -> str:
-        subdir_path = path.join(self.output_dir, subdir_name)
-        makedirs(subdir_path, exist_ok=True)
-        return subdir_path
+    def _create_output_subdir(self, subdir: str) -> str:
+        """
+        Create a subdirectory under the output directory if it does not exist.
+
+        Parameters:
+        - subdir (str): Subdirectory path to create.
+
+        Returns:
+        - str: Full path to the created subdirectory.
+        """
+        full_path = path.join(self.output_dir, subdir)
+        if not path.exists(full_path):
+            makedirs(full_path)
+        return full_path
 
 
 @dataclass
