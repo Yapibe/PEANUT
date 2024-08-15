@@ -143,7 +143,7 @@ def perform_statist_mann_whitney(task: EnrichTask, args, scores: dict):
             task.filtered_pathways[row['Pathway']] = row
 
 
-def perform_enrichment(test_name: str, general_args: GeneralArgs):
+def perform_enrichment(test_name: str, general_args: GeneralArgs, gsea_output_path: str = None):
     """
     Perform pathway enrichment analysis for a given test.
 
@@ -154,6 +154,7 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs):
     Returns:
     - None
     """
+    test_name = test_name.split('.')[0]
     # run enrichment
     propagation_folder = path.join(general_args.propagation_folder, test_name)
     if general_args.run_propagation:

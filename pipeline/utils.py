@@ -99,28 +99,6 @@ def load_pathways_genes(pathways_dir, gmt=False):
         print(f"An error occurred while loading pathways: {e}")
 
     return pathways
-    #
-    # pathways = {}
-    # # Open the file containing pathway data
-    # try:
-    #     with open(pathways_dir, 'r') as file:
-    #         for line in file:
-    #             # Process each line, normalize case (optional), and split by whitespace
-    #             parts = line.strip().split()
-    #             # Skip lines that don't have at least 2 parts
-    #             if len(parts) < 2:
-    #                 continue
-    #             # Parse pathway name
-    #             pathway_name = parts[0]
-    #             # Extract genes from the second part (string)
-    #             genes_str = parts[1]
-    #             genes = [int(gene) for gene in genes_str.split()]  # Split by space and convert to integers
-    #             pathways[pathway_name] = genes
-    # except FileNotFoundError:
-    #     print(f"File not found: {pathways_dir}")
-    # except Exception as e:
-    #     print(f"An error occurred while loading pathways: {e}")
-    # return pathways
 
 
 def load_propagation_file(file_path, decompress=True):
@@ -155,21 +133,10 @@ def load_pathways_and_propagation_scores(general_args, propagation_file_path):
         tuple: A tuple containing the network graph, a list of interesting pathways, and a dictionary mapping
                pathways to their genes.
     """
-    # network_graph = read_network(general_args.network_file_path)
     pathways_with_many_genes = load_pathways_genes(general_args.pathway_file_dir, general_args.run_gsea)
     scores = get_scores(propagation_file_path)
     if general_args.run_gsea:
-        # Convert scores keys to strings for consistency
-        scores = {str(gene): value for gene, value in scores.items()}
-        scores_keys = set(scores.keys())
-
-        # Filter pathways by those having gene counts within the specified range and that intersect with scored genes
-        genes_by_pathway = {pathway: set(map(str, genes)).intersection(scores_keys)
-                            for pathway, genes in pathways_with_many_genes.items()
-                            if general_args.minimum_gene_per_pathway <=
-                            len(set(map(str, genes)).intersection(scores_keys)) <= general_args.maximum_gene_per_pathway}
-
-        return genes_by_pathway, scores
+        return pathways_with_many_genes, scores
     else:
         scores_keys = set(scores.keys())
         # Filter pathways by those having gene counts within the specified range and that intersect with scored genes
@@ -286,19 +253,30 @@ def read_prior_set(excel_dir: str) -> pd.DataFrame:
     """
     prior_data = pd.read_excel(excel_dir, engine='openpyxl')
 
+    # Identify duplicate GeneID values
+    duplicate_gene_ids = prior_data[prior_data.duplicated(subset='GeneID', keep=False)]
+    if not duplicate_gene_ids.empty:
+        print("Duplicate GeneID values found:")
+        print(duplicate_gene_ids)
+
     # Drop duplicate GeneID values
     prior_data = prior_data.drop_duplicates(subset='GeneID')
-    # remove any row with no value in Score column
+
+    # Remove any row with no value in the Score column
     prior_data = prior_data[prior_data['Score'].notna()]
-    # remove any row with "?" in Score column
+
+    # Remove any row with "?" in the Score column
     prior_data = prior_data[prior_data['Score'] != '?']
+
     # Filter out GeneIDs that are not purely numeric (to exclude concatenated IDs)
     prior_data = prior_data[prior_data['GeneID'].apply(lambda x: str(x).isdigit())]
+
     # Convert GeneID to integer
     prior_data['GeneID'] = prior_data['GeneID'].astype(int)
 
     # Reset the DataFrame index
     prior_data = prior_data.reset_index(drop=True)
+
     return prior_data
 
 ####################################################################SAVE FUNCTIONS############################################################################
@@ -338,7 +316,7 @@ def save_propagation_score(propagation_scores: pd.DataFrame, prior_set: pd.DataF
     Returns:
     - None
     """
-    file_name = f"{task.test_name}_{general_args.alpha}_{general_args.date}"
+    file_name = f"{general_args.alpha}_{general_args.date}"
     save_dir = save_dir
     makedirs(save_dir, exist_ok=True)
     propagation_results_path = path.join(save_dir, file_name)
