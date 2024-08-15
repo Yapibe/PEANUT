@@ -90,7 +90,7 @@ import json
 # print("The data has been formatted and saved to", output_path)
 
 # Load the gene name dictionary from a JSON file
-gene_dict_path = '../Data/H_sapiens/gene_names/gene_info.json'
+gene_dict_path = '../Data/Human/gene_names/gene_info.json'
 with open(gene_dict_path, 'r') as f:
     gene_name_dict = json.load(f)
 
