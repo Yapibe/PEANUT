@@ -103,6 +103,7 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
 
     print("Inverting the matrix")
     inverse_matrix = inv(matrix_to_invert_csc)
+    print("Matrix inverted")
     inverse_matrix = args.alpha * inverse_matrix
 
     # Extract the upper triangular part of the inverse matrix
