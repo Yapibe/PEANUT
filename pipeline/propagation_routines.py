@@ -58,6 +58,8 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     - tuple: A tuple containing the inverse of the similarity matrix and the list of genes.
     """
 
+    start = time.time()
+
     genes = sorted(network.nodes())
     gene_index = {gene: index for index, gene in enumerate(genes)}
 
@@ -77,46 +79,48 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     else:
         matrix = network
 
-    # use timer to measure time
-    start = time.time()
-    print("Weight normalization")
-    # Normalize the matrix
-    norm_matrix = sp.diags(1 / np.sqrt(matrix.sum(0).ravel()), format="csr")
-    matrix = norm_matrix * matrix * norm_matrix
+    degrees = np.array(matrix.sum(axis=1)).flatten()
+    # Replace zero degrees with 1 to avoid division by zero
+    degrees[degrees == 0] = 1
+
+    inv_degrees = 1.0 / degrees
+    norm_matrix = sp.diags(inv_degrees)
+    matrix = matrix @ norm_matrix
 
     print("Calculating the inverse")
     # First, let's get the shape of the matrix W
     n = matrix.shape[0]
-
-    # Create an identity matrix of the same shape as W
-    Identity = sp.eye(n)
-
-    # Calculate (I - (1-alpha)*W)
-    matrix_to_invert = Identity - (1 - args.alpha) * matrix
+    identity_matrix = sp.eye(n)
+    matrix_to_invert = identity_matrix - (1 - args.alpha) * matrix
+    matrix_to_invert_csc = matrix_to_invert.tocsc()
 
     print("Inverting the matrix")
-    # Use scipy's sparse linear solver to find the inverse
-    inverse_matrix = inv(matrix_to_invert)
-
-
-    # calculate alpha * (I - (1-alpha)*W)^-1
+    inverse_matrix = inv(matrix_to_invert_csc)
+    print("Matrix inverted")
     inverse_matrix = args.alpha * inverse_matrix
 
-    print("Converting to CSR format")
-    # Convert to CSR format before saving
-    matrix_inverse_csr = sp.csr_matrix(inverse_matrix)
+    # Extract the upper triangular part of the inverse matrix
+    upper_tri_indices = np.triu_indices(n)
+    upper_tri_inverse_matrix = inverse_matrix[upper_tri_indices]
 
+    # Print densities for debugging
+    original_density = matrix.nnz / (matrix.shape[0] * matrix.shape[1])
+    inverse_density = inverse_matrix.nnz / (inverse_matrix.shape[0] * inverse_matrix.shape[1])
+    print(f"Original matrix density: {original_density}")
+    print(f"Inverse matrix density: {inverse_density}")
 
     print("Saving the matrix")
-    # Save the matrix in .npz format
-    # check if path exists, if not create it
     if not os.path.exists(os.path.dirname(args.similarity_matrix_path)):
         os.makedirs(os.path.dirname(args.similarity_matrix_path))
-    sp.save_npz(args.similarity_matrix_path, matrix_inverse_csr)
+    sp.save_npz(args.similarity_matrix_path, inverse_matrix)
+    save_upper_path = args.tri_similarity_matrix_path
+    np.save(save_upper_path, upper_tri_inverse_matrix)
 
     end = time.time()
     print(f"Time elapsed: {end - start} seconds")
     return inverse_matrix, gene_index
+
+
 
 
 def read_sparse_matrix_txt(network: nx.Graph, similarity_matrix_path: str, tri_matrix_path: str, debug: bool) -> tuple:
