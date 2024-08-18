@@ -10,7 +10,7 @@ from visualization_tools import print_aggregated_pathway_information, plot_pathw
 
 
 
-def main(alpha=0.1, run_propagation: bool=True):
+def main(alpha=0.2, run_propagation: bool=True):
     """
     Execute propagation and enrichment analysis based on specified flags.
 
@@ -24,7 +24,7 @@ def main(alpha=0.1, run_propagation: bool=True):
     Returns:
     - None
     """
-    general_args = GeneralArgs(alpha=alpha, network='String_', method='PROP', create_similarity_matrix=True, normalization_type='row')
+    general_args = GeneralArgs(alpha=alpha, network='HumanNet', method='PROP', create_similarity_matrix=True, normalization_type='row')
     test_name_list = [path.splitext(file)[0] for file in listdir(general_args.input_dir) if file.endswith('.xlsx')]
 
     # Perform propagation and enrichment based on flags

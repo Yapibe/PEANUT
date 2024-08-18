@@ -34,7 +34,7 @@ os.makedirs(summary_base_dir, exist_ok=True)
 def run_propagation_and_enrichment(test_name, prior_data, network, network_name, alpha, method, output_path, pathway_file):
     if method in ['PROP', 'ABS_PROP']:
         # Set alpha before initializing GeneralArgs for PROP and ABS_PROP
-        general_args = GeneralArgs(network=network_name, pathway_file=pathway_file, method=method, alpha=alpha)
+        general_args = GeneralArgs(network=network_name, pathway_file=pathway_file, method=method, alpha=alpha, normalization_type='row')
         if method == 'ABS_PROP':
             general_args.input_type = 'abs_Score'
     elif method in ['GSEA', 'NGSEA']:
@@ -140,7 +140,7 @@ def process_file(network, pathway_file, network_name, alpha, prop_method, file_n
 # Start timing the entire process
 start_time = time.time()
 
-networks = ['String', 'HumanNet', 'H_sapiens', 'String_']
+networks = ['H_sapiens']
 pathway_files = ['kegg']
 prop_methods = ['PROP', 'ABS_PROP', 'GSEA', 'NGSEA']
 alphas = [0.1, 0.2]
@@ -248,7 +248,7 @@ for network_name in networks:
             summary_output_dir = os.path.join(summary_base_dir, network_name, pathway_file, f"alpha {alpha}")
             os.makedirs(summary_output_dir, exist_ok=True)
             rankings_output_path = os.path.join(summary_output_dir,
-                                                f'rankings_summary_{network_name}_{pathway_file}_alpha_{alpha}.xlsx')
+                                                f'rankings_summary_{network_name}_{pathway_file}_alpha_{alpha}_row.xlsx')
             summary_df.to_excel(rankings_output_path, index=False)
             logger.info(f"Rankings summary saved to {rankings_output_path}")
 
