@@ -6,7 +6,8 @@ import gseapy as gp
 from utils import load_pathways_and_propagation_scores
 from statsmodels.stats.multitest import multipletests
 from visualization_tools import print_enriched_pathways_to_file
-from statistical_methods import jaccard_index , kolmogorov_smirnov_test, compute_mw_python, run_hyper, global_gene_ranking, kolmogorov_smirnov_test_with_ranking
+from statistical_methods import jaccard_index, kolmogorov_smirnov_test, compute_mw_python, run_hyper, \
+    global_gene_ranking, kolmogorov_smirnov_test_with_ranking
 
 
 def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scores: dict):
@@ -33,15 +34,7 @@ def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scor
     # Create a global ranking of genes
     global_ranking = global_gene_ranking(scores)
 
-    if general_args.run_hyper:
-        hyper_results_path = path.join(general_args.output_dir, f'hyper_results.txt')
-        significant_pathways_hyper = run_hyper(genes_by_pathway, set(scores.keys()), significant_p_vals)
-        # Save the significant pathways to a file
-        with open(hyper_results_path, 'w') as f:
-            for pathway in significant_pathways_hyper:
-                f.write(f"{pathway}\n")
-    else:
-        significant_pathways_hyper = list(genes_by_pathway.keys())
+    significant_pathways_hyper = list(genes_by_pathway.keys())
 
     # # Perform the Kolmogorov-Smirnov test to compare distributions of scores between pathway genes and background
     # ks_p_values = []
@@ -116,7 +109,6 @@ def perform_statist_mann_whitney(task: EnrichTask, args, scores: dict):
     # Apply Benjamini-Hochberg correction to adjust the p-values
     adjusted_mw_p_values = multipletests(mw_p_values, method='fdr_bh')[1]
 
-
     # Collect significant pathways after adjustment
     filtered_pathways = []
     for i, (pathway, genes) in enumerate(task.ks_significant_pathways_with_genes.items()):
@@ -143,7 +135,7 @@ def perform_statist_mann_whitney(task: EnrichTask, args, scores: dict):
             task.filtered_pathways[row['Pathway']] = row
 
 
-def perform_enrichment(test_name: str, general_args: GeneralArgs, gsea_output_path: str = None):
+def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: str = None):
     """
     Perform pathway enrichment analysis for a given test.
 
@@ -158,33 +150,37 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs, gsea_output_pa
     # run enrichment
     propagation_folder = path.join(general_args.propagation_folder, test_name)
 
-    propagation_file = path.join(f'{propagation_folder}', '{}_{}'.format( general_args.alpha, general_args.date))
+    propagation_file = path.join(f'{propagation_folder}', '{}_{}'.format(general_args.alpha, general_args.date))
     enrich_task = EnrichTask(name=test_name, create_scores=True, target_field='gene_prop_scores',
-                                 statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)
+                             statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)
 
     genes_by_pathway, scores = load_pathways_and_propagation_scores(general_args, enrich_task.propagation_file)
 
+    if general_args.run_gsea:
+        # Prepare data for GSEA
+        # Unpack the scores dictionary into separate lists for GeneID and Score
+        gene_ids = list(scores.keys())
+        logfc_scores = [score[0] for score in scores.values()]
+        # Create DataFrame for GSEA with string gene identifiers
+        gene_expression_data = pd.DataFrame({'gene': gene_ids, 'logFC': logfc_scores})
+        gene_expression_data['gene'] = gene_expression_data['gene'].astype(str)
+        # Rank the data by logFC in descending order
+        gene_expression_data = gene_expression_data.sort_values(by='logFC', ascending=False)
+        # Run GSEA
+        gsea_results = gp.prerank(rnk=gene_expression_data, gene_sets=genes_by_pathway, outdir=general_args.gsea_out,
+                                  verbose=True, permutation_num=1000, no_plot=True)
+        # save xlsx
+        gsea_results.res2d.to_excel(output_path)
 
-    # Prepare data for GSEA
-    # Unpack the scores dictionary into separate lists for GeneID and Score
-    gene_ids = list(scores.keys())
-    logfc_scores = [score[0] for score in scores.values()]
-    # Create DataFrame for GSEA with string gene identifiers
-    gene_expression_data = pd.DataFrame({'gene': gene_ids, 'logFC': logfc_scores})
-    gene_expression_data['gene'] = gene_expression_data['gene'].astype(str)
-    # Rank the data by logFC in descending order
-    gene_expression_data = gene_expression_data.sort_values(by='logFC', ascending=False)
-    # Run GSEA
-    gsea_results = gp.prerank(rnk=gene_expression_data, gene_sets=genes_by_pathway, outdir=general_args.gsea_out, verbose=True, permutation_num=1000, no_plot=True)
-    # save xlsx
-    gsea_results.res2d.to_excel(gsea_output_path)
-    # create test xlsx file to check validity of gsea_output_path with columns Rank,Name,Term,ES,NES,NOM p-val,FDR q-val,FWER p-val,Tag %,Gene %,Lead_genes
-    # test_df = pd.DataFrame(columns=['Rank', 'Name', 'Term', 'ES', 'NES', 'NOM p-val', 'FDR q-val', 'FWER p-val', 'Tag %', 'Gene %', 'Lead_genes'])
-    #
-    # # Create a new row as a DataFrame
-    # new_row = pd.DataFrame([{'Rank': 1, 'Name': 'Test', 'Term': 'Test', 'ES': 0.1, 'NES': 0.1, 'NOM p-val': 0.1,
-    #                          'FDR q-val': 0.1, 'FWER p-val': 0.1, 'Tag %': 0.1, 'Gene %': 0.1, 'Lead_genes': 'Test'}])
-    # test_df = pd.concat([test_df, new_row], ignore_index=True)
-    # test_df.to_excel(gsea_output_path, index=False)
-
+    else:
+        # Stage 1 - calculate nominal p-values and directions
+        perform_statist(enrich_task, general_args, genes_by_pathway, scores)
+        # Check if there are significant pathways after the KS test
+        if enrich_task.ks_significant_pathways_with_genes:
+            # Further statistical test using Mann-Whitney U test
+            perform_statist_mann_whitney(enrich_task, general_args, scores)
+        else:
+            print("Skipping Mann-Whitney test.")
+    # Output the enriched pathways to files
+    print_enriched_pathways_to_file(enrich_task, general_args.FDR_threshold)
 

@@ -34,14 +34,12 @@ os.makedirs(summary_base_dir, exist_ok=True)
 def run_propagation_and_enrichment(test_name, prior_data, network, network_name, alpha, method, output_path, pathway_file):
     if method in ['PROP', 'ABS_PROP']:
         # Set alpha before initializing GeneralArgs for PROP and ABS_PROP
-        general_args = GeneralArgs(network=network_name, pathway_file=pathway_file, method=method, alpha=alpha, normalization_type='row')
+        general_args = GeneralArgs(network=network_name, pathway_file=pathway_file, method=method, alpha=alpha)
         if method == 'ABS_PROP':
             general_args.input_type = 'abs_Score'
-    elif method in ['GSEA', 'NGSEA']:
+    else:
         # Initialize GeneralArgs for GSEA without modifying alpha
-        general_args = GeneralArgs(network=network_name, pathway_file=pathway_file, method=method)
-        if method == 'NGSEA':
-            general_args.run_NGSEA = True
+        general_args = GeneralArgs(network=network_name, pathway_file=pathway_file, method=method, run_gsea=True)
 
     perform_propagation(test_name, general_args, network, prior_data)
     perform_enrichment(test_name, general_args, output_path)
