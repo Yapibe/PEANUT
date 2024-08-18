@@ -101,38 +101,34 @@ def perform_statist_mann_whitney(task: EnrichTask, args, scores: dict):
         background_ranks = [scores_rank[gene_id] for gene_id in background_genes]
 
         # Compute the Mann-Whitney U test p-value using scores
-        # mw_pval = wilcoxon_rank_sums_test(pathway_scores, background_scores)
-        # mw_p_values.append(mw_pval)
         _, rmw_pval = compute_mw_python(pathway_ranks, background_ranks)
         mw_p_values.append(rmw_pval)
+
+        # Collect the significant pathways with their corresponding details
+        task.filtered_pathways[pathway] = {
+            'Rank': len(task.filtered_pathways) + 1,
+            'Name': pathway,
+            'Term': pathway,
+            'ES': np.mean(pathway_scores),  # Example ES, adjust if needed
+            'NES': None,  # Adjust or calculate as needed
+            'NOM p-val': None,  # Calculate if needed
+            'FDR q-val': None,  # Placeholder until calculated
+            'FWER p-val': None,  # Placeholder until calculated
+            'Tag %': len(pathway_genes) / len(task.filtered_genes) * 100,
+            'Gene %': len(pathway_genes) / len(scores) * 100,
+            'Lead_genes': ','.join(map(str, pathway_genes))
+        }
 
     # Apply Benjamini-Hochberg correction to adjust the p-values
     adjusted_mw_p_values = multipletests(mw_p_values, method='fdr_bh')[1]
 
-    # Collect significant pathways after adjustment
-    filtered_pathways = []
-    for i, (pathway, genes) in enumerate(task.ks_significant_pathways_with_genes.items()):
-        if adjusted_mw_p_values[i] < args.FDR_threshold:
-            filtered_pathways.append({
-                'Pathway': pathway,
-                'Adjusted_p_value': adjusted_mw_p_values[i],
-                'Genes': genes[0]
-            })
+    # Update the FDR q-values in the filtered pathways dictionary
+    for i, (pathway, _) in enumerate(task.filtered_pathways.items()):
+        task.filtered_pathways[pathway]['FDR q-val'] = adjusted_mw_p_values[i]
 
-    if not filtered_pathways:
-        print("No significant pathways found after Mann-Whitney U test.")
-        return
-
-    # Convert the list of filtered pathways to a DataFrame and sort by p-value
-    pathways_df = pd.DataFrame(filtered_pathways)
-    pathways_df.sort_values(by='Adjusted_p_value', inplace=True)
-
-    # Filter out pathways with high overlap using the Jaccard index
-    for i, row in pathways_df.iterrows():
-        current_genes = set(row['Genes'])
-        if not any(jaccard_index(current_genes, set(filtered_row['Genes'])) > args.JAC_THRESHOLD
-                   for filtered_row in task.filtered_pathways.values()):
-            task.filtered_pathways[row['Pathway']] = row
+    # Filter by FDR threshold
+    task.filtered_pathways = {pathway: details for pathway, details in task.filtered_pathways.items()
+                              if details['FDR q-val'] < args.FDR_threshold}
 
 
 def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: str = None):
@@ -181,6 +177,14 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: s
             perform_statist_mann_whitney(enrich_task, general_args, scores)
         else:
             print("Skipping Mann-Whitney test.")
-    # Output the enriched pathways to files
-    print_enriched_pathways_to_file(enrich_task, general_args.FDR_threshold)
+
+        # If there are filtered pathways, save them to Excel
+        if enrich_task.filtered_pathways:
+            # Convert the filtered pathways dictionary to a DataFrame
+            pathways_df = pd.DataFrame.from_dict(enrich_task.filtered_pathways, orient='index')
+            pathways_df = pathways_df[['Rank', 'Name', 'Term', 'ES', 'NES', 'NOM p-val', 'FDR q-val',
+                                       'FWER p-val', 'Tag %', 'Gene %', 'Lead_genes']]
+            pathways_df.sort_values(by='FDR q-val', inplace=True)
+            # Save the DataFrame to an Excel file
+            pathways_df.to_excel(output_path, index=False)
 

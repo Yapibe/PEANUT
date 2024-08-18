@@ -10,7 +10,7 @@ from visualization_tools import print_aggregated_pathway_information, plot_pathw
 
 
 
-def main(alpha=0.2, run_propagation: bool=True):
+def main(alpha=0.1, run_propagation: bool=True):
     """
     Execute propagation and enrichment analysis based on specified flags.
 
@@ -31,6 +31,7 @@ def main(alpha=0.2, run_propagation: bool=True):
     for test_name in test_name_list:
         if run_propagation:
             network = read_network(general_args.network_file_path)
+            print(f"Running on network {general_args.network_file_path}")
             matrix, network_gene_index = get_similarity_matrix(network, general_args)
             # perform_propagation(test_name, general_args, network=network)
             print(f"Running propagation on {test_name}")
