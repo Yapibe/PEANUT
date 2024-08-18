@@ -140,8 +140,8 @@ start_time = time.time()
 
 networks = ['H_sapiens']
 pathway_files = ['kegg']
-prop_methods = ['PROP']
-alphas = [0.2]
+prop_methods = ['GSEA', 'PROP', 'ABS_PROP', ]
+alphas = [0.1, 0.2]
 
 loaded_networks = {}
 loaded_pathways = {}

@@ -8,6 +8,7 @@ from statsmodels.stats.multitest import multipletests
 from visualization_tools import print_enriched_pathways_to_file
 from statistical_methods import jaccard_index, kolmogorov_smirnov_test, compute_mw_python, run_hyper, \
     global_gene_ranking, kolmogorov_smirnov_test_with_ranking
+import numpy as np
 
 
 def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scores: dict):

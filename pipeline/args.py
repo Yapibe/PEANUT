@@ -18,7 +18,7 @@ class GeneralArgs:
     run_propagation: bool = True
     run_simulated: bool = False
     run_gsea: bool = False
-    debug: bool = True
+    debug: bool = False
     create_similarity_matrix: bool = False
     normalization_type: str = 'symmetric'
 
