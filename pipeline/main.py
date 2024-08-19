@@ -10,7 +10,7 @@ from visualization_tools import print_aggregated_pathway_information, plot_pathw
 
 
 
-def main(alpha=0.2, run_propagation: bool=True):
+def main(alpha=0.1, run_propagation: bool=True):
     """
     Execute propagation and enrichment analysis based on specified flags.
 

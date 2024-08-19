@@ -106,9 +106,9 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     print("Matrix inverted")
     inverse_matrix = args.alpha * inverse_matrix
 
-    # Extract the upper triangular part of the inverse matrix
-    upper_tri_indices = np.triu_indices(n)
-    upper_tri_inverse_matrix = inverse_matrix[upper_tri_indices]
+    # # Extract the upper triangular part of the inverse matrix
+    # upper_tri_indices = np.triu_indices(n)
+    # upper_tri_inverse_matrix = inverse_matrix[upper_tri_indices]
 
     # Print densities for debugging
     original_density = matrix.nnz / (matrix.shape[0] * matrix.shape[1])
@@ -121,7 +121,7 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
         os.makedirs(os.path.dirname(args.similarity_matrix_path))
     sp.save_npz(args.similarity_matrix_path, inverse_matrix)
     save_upper_path = args.tri_similarity_matrix_path
-    np.save(save_upper_path, upper_tri_inverse_matrix)
+    # np.save(save_upper_path, upper_tri_inverse_matrix)
 
     end = time.time()
     print(f"Time elapsed: {end - start} seconds")
