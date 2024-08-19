@@ -46,20 +46,29 @@ def run_propagation_and_enrichment(test_name, prior_data, network, network_name,
 
 
 # Updated get_pathway_rank function
-def get_pathway_rank(gsea_output_path, pathway_name):
+def get_pathway_rank(gsea_output_path, pathway_name, method='PROP'):
     try:
         results_df = pd.read_excel(gsea_output_path)
         pathway_row = results_df[results_df['Term'] == pathway_name]
         if not pathway_row.empty:
-            rank = pathway_row.index[0]
+            # Get the FDR q-val of the pathway
             fdr_p_val = pathway_row['FDR q-val'].values[0]
+
+            if method == 'PROP':
+                # If the method is PROP, find all rows with the same FDR q-val
+                matching_fdr_rows = results_df[results_df['FDR q-val'] == fdr_p_val]
+
+                # Get the rank of the first occurrence (highest rank) of the pathway in the matching rows
+                rank = matching_fdr_rows.index[0]
+            else:
+                # For GSEA or other methods, just return the first occurrence of the pathway
+                rank = pathway_row.index[0]
             return rank, fdr_p_val
     except Exception as e:
         logger.error(f"Error reading {gsea_output_path}: {e}")
     return None, None
 
 
-# Calculate pathway density
 # Calculate pathway density, number of genes, and average diameter
 def calculate_pathway_density(network, genes):
     # Create a subgraph with only the genes in the pathway
@@ -115,7 +124,7 @@ def process_file(network, pathway_file, network_name, alpha, prop_method, file_n
     output_file_path = os.path.join(output_dir, file_name)
 
     run_propagation_and_enrichment(file_name, prior_data, network, network_name, alpha, prop_method, output_file_path, pathway_file)
-    prop_rank, fdr_q_val = get_pathway_rank(output_file_path, pathway_name)
+    prop_rank, fdr_q_val = get_pathway_rank(output_file_path, pathway_name, prop_method)
     significant = 1 if fdr_q_val is not None and fdr_q_val < 0.05 else 0
 
     return {
@@ -138,9 +147,10 @@ def process_file(network, pathway_file, network_name, alpha, prop_method, file_n
 # Start timing the entire process
 start_time = time.time()
 
-networks = ['H_sapiens']
+
+networks = ['H_sapiens', 'String', 'HumanNet', 'String_']
 pathway_files = ['kegg']
-prop_methods = ['GSEA', 'PROP', 'ABS_PROP', ]
+prop_methods = ['GSEA', 'PROP', 'ABS_PROP']
 alphas = [0.1, 0.2]
 
 loaded_networks = {}
@@ -171,7 +181,7 @@ logger.info("Networks loaded and pathway densities calculated.")
 
 # Process files in parallel using ProcessPoolExecutor
 futures = []
-with ProcessPoolExecutor(max_workers=1) as executor:  # Adjust max_workers based on your CPU capabilities
+with ProcessPoolExecutor(max_workers=60) as executor:  # Adjust max_workers based on your CPU capabilities
     for network_name in tqdm(networks, desc='Networks'):
         network = loaded_networks[network_name]
         for pathway_file in tqdm(pathway_files, desc='Pathway Files', leave=False):
@@ -246,9 +256,9 @@ for network_name in networks:
             summary_output_dir = os.path.join(summary_base_dir, network_name, pathway_file, f"alpha {alpha}")
             os.makedirs(summary_output_dir, exist_ok=True)
             rankings_output_path = os.path.join(summary_output_dir,
-                                                f'rankings_summary_{network_name}_{pathway_file}_alpha_{alpha}_row.xlsx')
+                                                f'compare_summary_{network_name}_{pathway_file}_alpha_{alpha}.xlsx')
             summary_df.to_excel(rankings_output_path, index=False)
-            logger.info(f"Rankings summary saved to {rankings_output_path}")
+            logger.info(f"compare summary saved to {rankings_output_path}")
 
         end_time = time.time()
         elapsed_time = end_time - start_time

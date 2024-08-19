@@ -9,8 +9,14 @@ from visualization_tools import print_enriched_pathways_to_file
 from statistical_methods import jaccard_index, kolmogorov_smirnov_test, compute_mw_python, run_hyper, \
     global_gene_ranking, kolmogorov_smirnov_test_with_ranking
 import numpy as np
+import logging
 
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Create a logger
+logger = logging.getLogger(__name__)
 def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scores: dict):
     """
     Perform statistical enrichment analysis on pathways.
@@ -53,7 +59,7 @@ def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scor
         ks_p_values.append(kolmogorov_smirnov_test_with_ranking(genes, global_ranking))
 
     if not ks_p_values:
-        print("No significant pathways found after hypergeometric test. Skipping KS test.")
+        logger.info("No significant pathways found after hypergeometric test. Skipping KS test.")
         return
     # Apply Benjamini-Hochberg correction to the KS P-values
     adjusted_p_values = multipletests(ks_p_values, method='fdr_bh')[1]
@@ -65,7 +71,7 @@ def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scor
         if adjusted_p_values[i] < 0.05
     }
     if not task.ks_significant_pathways_with_genes:
-        print("No significant pathways found after KS test.")
+        logger.info("No significant pathways found after KS test.")
 
 
 def perform_statist_mann_whitney(task: EnrichTask, args, scores: dict):
@@ -177,7 +183,7 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: s
             # Further statistical test using Mann-Whitney U test
             perform_statist_mann_whitney(enrich_task, general_args, scores)
         else:
-            print("Skipping Mann-Whitney test.")
+            logger.info("Skipping Mann-Whitney test.")
 
         # If there are filtered pathways, save them to Excel
         if enrich_task.filtered_pathways:
