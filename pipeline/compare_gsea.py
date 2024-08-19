@@ -140,7 +140,7 @@ def process_file(network, pathway_file, network_name, alpha, prop_method, file_n
 # Start timing the entire process
 start_time = time.time()
 
-networks = ['H_sapiens']
+networks = ['H_sapiens', 'HumanNet', 'String_', 'String']
 pathway_files = ['kegg']
 prop_methods = ['PROP', 'ABS_PROP', 'GSEA', 'NGSEA']
 alphas = [0.1, 0.2]
