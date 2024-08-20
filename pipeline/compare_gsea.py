@@ -173,7 +173,7 @@ logger.info("Networks loaded and pathway densities calculated.")
 
 # Process files in parallel using ProcessPoolExecutor
 futures = []
-with ProcessPoolExecutor(max_workers=60) as executor:  # Adjust max_workers based on your CPU capabilities
+with ProcessPoolExecutor(max_workers=10) as executor:  # Adjust max_workers based on your CPU capabilities
     for network_name in tqdm(networks, desc='Networks'):
         network = loaded_networks[network_name]
         for pathway_file in tqdm(pathway_files, desc='Pathway Files', leave=False):
