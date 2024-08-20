@@ -1,5 +1,5 @@
 import pandas as pd
-from os import path
+from os import path, listdir
 from args import EnrichTask, GeneralArgs
 from scipy.stats import rankdata
 import gseapy as gp
@@ -140,13 +140,25 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: s
     Returns:
     - None
     """
+
     test_name = test_name.split('.')[0]
     # run enrichment
     propagation_folder = path.join(general_args.propagation_folder, test_name)
+    if general_args.run_propagation:
+        propagation_file = path.join(f'{propagation_folder}', '{}_{}'.format(general_args.alpha, general_args.date))
+        enrich_task = EnrichTask(name=test_name, create_scores=True, target_field='gene_prop_scores',
+                                statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)
+    else:
+        files_in_dir = listdir(propagation_folder)
 
-    propagation_file = path.join(f'{propagation_folder}', '{}_{}'.format(general_args.alpha, general_args.date))
-    enrich_task = EnrichTask(name=test_name, create_scores=True, target_field='gene_prop_scores',
-                             statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)
+        if len(files_in_dir) == 1:
+            propagation_file = path.join(propagation_folder, files_in_dir[0])
+        else:
+            raise ValueError(
+                "Expected exactly one file in the propagation directory, but found {} files.".format(len(files_in_dir)))
+
+        enrich_task = EnrichTask(name=test_name, create_scores=True, target_field='gene_prop_scores',
+                                statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)
 
     genes_by_pathway, scores = load_pathways_and_propagation_scores(general_args, enrich_task.propagation_file)
 

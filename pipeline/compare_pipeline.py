@@ -34,7 +34,7 @@ os.makedirs(summary_base_dir, exist_ok=True)
 def run_propagation_and_enrichment(test_name, prior_data, network, network_name, alpha, method, output_path, pathway_file):
     if method in ['PROP', 'ABS_PROP']:
         # Set alpha before initializing GeneralArgs for PROP and ABS_PROP
-        general_args = GeneralArgs(network=network_name, pathway_file=pathway_file, method=method, alpha=alpha, run_propagation=False)
+        general_args = GeneralArgs(network=network_name, pathway_file=pathway_file, method=method, alpha=alpha)
         if method == 'ABS_PROP':
             general_args.input_type = 'abs_Score'
     elif method == 'GSEA':
@@ -42,6 +42,7 @@ def run_propagation_and_enrichment(test_name, prior_data, network, network_name,
         general_args = GeneralArgs(network=network_name, pathway_file=pathway_file, method=method, run_gsea=True)
     elif method == 'MW':
         general_args = GeneralArgs(network=network_name, pathway_file=pathway_file, method=method)
+
     if general_args.run_propagation:
         perform_propagation(test_name, general_args, network, prior_data)
     perform_enrichment(test_name, general_args, output_path)
@@ -214,8 +215,15 @@ for network_name in networks:
                                      (results_df['Alpha'] == alpha)]
 
             # Pivot table to get the desired format
-            pivot_df = filtered_df.pivot_table(index=['Dataset', 'Pathway', 'Density', 'Num Genes', 'Avg Diameter'], columns='Method', values=['Rank', 'Significant'], aggfunc='first').reset_index()
-            pivot_df.columns = ['Dataset', 'Pathway', 'Density', 'Num Genes', 'Avg Diameter'] + [f'{col[1]} {col[0]}' for col in pivot_df.columns[5:]]
+            pivot_df = filtered_df.pivot_table(index=['Dataset', 'Pathway'],
+                                               columns='Method',
+                                               values=['Rank', 'Significant'],
+                                               aggfunc='first').reset_index()
+
+            # Adjust the column names based on the pivot table's current structure
+            base_columns = ['Dataset', 'Pathway']  # Only the base columns left after removal
+            pivot_columns = [f'{col[1]} {col[0]}' for col in pivot_df.columns[len(base_columns):]]  # Adjust index range
+            pivot_df.columns = base_columns + pivot_columns
 
             # Ensure all expected columns are present
             for method in prop_methods:
@@ -225,7 +233,7 @@ for network_name in networks:
                     pivot_df[f'{method} Significant'] = np.nan
 
             # Reorder columns to the desired order
-            column_order = ['Dataset', 'Pathway', 'Density', 'Num Genes', 'Avg Diameter']
+            column_order = base_columns
             for method in prop_methods:
                 column_order.append(f'{method} Rank')
                 column_order.append(f'{method} Significant')
@@ -241,27 +249,28 @@ for network_name in networks:
             sig_percent = sig_percent[['Method', 'Percentage Significant']]
 
             # Create DataFrame for Average Rank and Percent Significant rows
-            avg_rank_row = pd.DataFrame([['Average Rank'] + [''] * 4 + [
+            avg_rank_row = pd.DataFrame([['Average Rank'] + [''] * (len(base_columns) - 2) + [
                 avg_ranks[avg_ranks['Method'] == method]['Average Rank'].values[0] if not avg_ranks[
                     avg_ranks['Method'] == method].empty else '' for method in prop_methods for _ in range(2)]],
                                         columns=pivot_df.columns)
-            percent_sig_row = pd.DataFrame([['Percent Significant'] + [''] * 4 + [
+            percent_sig_row = pd.DataFrame([['Percent Significant'] + [''] * (len(base_columns) - 2) + [
                 sig_percent[sig_percent['Method'] == method]['Percentage Significant'].values[0] if not sig_percent[
                     sig_percent['Method'] == method].empty else '' for method in prop_methods for _ in range(2)]],
                                            columns=pivot_df.columns)
 
             # Append the summary rows to the pivot DataFrame
             summary_df = pd.concat([pivot_df, avg_rank_row, percent_sig_row], ignore_index=True)
-            # sort alphabetically by pathway name
+            # Sort alphabetically by pathway name
             summary_df = summary_df.sort_values(by='Pathway')
             # Save the summary DataFrame for each network, pathway_file, and alpha
             summary_output_dir = os.path.join(summary_base_dir, network_name, pathway_file, f"alpha {alpha}")
             os.makedirs(summary_output_dir, exist_ok=True)
             rankings_output_path = os.path.join(summary_output_dir,
-                                                f'compare_summary_{network_name}_{pathway_file}_alpha_{alpha}.xlsx')
+                                                f'MW_summary_{network_name}_{pathway_file}_alpha_{alpha}.xlsx')
             summary_df.to_excel(rankings_output_path, index=False)
-            logger.info(f"compare summary saved to {rankings_output_path}")
+            logger.info(f"MW summary saved to {rankings_output_path}")
 
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        logger.info(f"Total time taken: {elapsed_time:.2f} seconds")
+end_time = time.time()
+elapsed_time = end_time - start_time
+logger.info(f"Total time taken: {elapsed_time:.2f} seconds")
+
