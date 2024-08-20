@@ -30,10 +30,6 @@ def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scor
     Returns:
     - None
     """
-    # Identify genes with P-values below the significance threshold
-    significant_p_vals = {gene_id: p_value for gene_id, (score, p_value) in scores.items()
-                          if p_value < general_args.FDR_threshold}
-
     # Populate a set with all genes from the filtered pathways
     for genes in genes_by_pathway.values():
         task.filtered_genes.update(genes)
@@ -99,10 +95,9 @@ def perform_statist_mann_whitney(task: EnrichTask, args, scores: dict):
 
     # Iterate over pathways that passed the KS test to perform the Mann-Whitney U test
     for pathway, genes_info in task.ks_significant_pathways_with_genes.items():
-        pathway_genes = set(genes_info[0])
+        pathway_genes = set(genes_info)
         pathway_scores = [scores[gene_id][0] for gene_id in pathway_genes]
         background_genes = task.filtered_genes - pathway_genes
-        background_scores = [scores[gene_id][0] for gene_id in background_genes]
 
         pathway_ranks = [scores_rank[gene_id] for gene_id in pathway_genes]
         background_ranks = [scores_rank[gene_id] for gene_id in background_genes]
@@ -116,11 +111,11 @@ def perform_statist_mann_whitney(task: EnrichTask, args, scores: dict):
             'Rank': len(task.filtered_pathways) + 1,
             'Name': pathway,
             'Term': pathway,
-            'ES': np.mean(pathway_scores),  # Example ES, adjust if needed
-            'NES': None,  # Adjust or calculate as needed
-            'NOM p-val': None,  # Calculate if needed
-            'FDR q-val': None,  # Placeholder until calculated
-            'FWER p-val': None,  # Placeholder until calculated
+            'ES': np.mean(pathway_scores),
+            'NES': None,
+            'NOM p-val': None,
+            'FDR q-val': None,
+            'FWER p-val': None,
             'Tag %': len(pathway_genes) / len(task.filtered_genes) * 100,
             'Gene %': len(pathway_genes) / len(scores) * 100,
             'Lead_genes': ','.join(map(str, pathway_genes))
@@ -132,10 +127,6 @@ def perform_statist_mann_whitney(task: EnrichTask, args, scores: dict):
     # Update the FDR q-values in the filtered pathways dictionary
     for i, (pathway, _) in enumerate(task.filtered_pathways.items()):
         task.filtered_pathways[pathway]['FDR q-val'] = adjusted_mw_p_values[i]
-
-    # Filter by FDR threshold
-    task.filtered_pathways = {pathway: details for pathway, details in task.filtered_pathways.items()
-                              if details['FDR q-val'] < args.FDR_threshold}
 
 
 def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: str = None):
@@ -176,9 +167,13 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: s
         gsea_results.res2d.to_excel(output_path)
 
     else:
-        # Stage 1 - calculate nominal p-values and directions
-        perform_statist(enrich_task, general_args, genes_by_pathway, scores)
+        # # Stage 1 - calculate nominal p-values and directions
+        # perform_statist(enrich_task, general_args, genes_by_pathway, scores)
         # Check if there are significant pathways after the KS test
+        enrich_task.ks_significant_pathways_with_genes = genes_by_pathway
+        # Populate a set with all genes from the filtered pathways
+        for genes in genes_by_pathway.values():
+            enrich_task.filtered_genes.update(genes)
         if enrich_task.ks_significant_pathways_with_genes:
             # Further statistical test using Mann-Whitney U test
             perform_statist_mann_whitney(enrich_task, general_args, scores)

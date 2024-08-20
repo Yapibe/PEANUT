@@ -34,14 +34,16 @@ os.makedirs(summary_base_dir, exist_ok=True)
 def run_propagation_and_enrichment(test_name, prior_data, network, network_name, alpha, method, output_path, pathway_file):
     if method in ['PROP', 'ABS_PROP']:
         # Set alpha before initializing GeneralArgs for PROP and ABS_PROP
-        general_args = GeneralArgs(network=network_name, pathway_file=pathway_file, method=method, alpha=alpha)
+        general_args = GeneralArgs(network=network_name, pathway_file=pathway_file, method=method, alpha=alpha, run_propagation=False)
         if method == 'ABS_PROP':
             general_args.input_type = 'abs_Score'
-    else:
+    elif method == 'GSEA':
         # Initialize GeneralArgs for GSEA without modifying alpha
         general_args = GeneralArgs(network=network_name, pathway_file=pathway_file, method=method, run_gsea=True)
-
-    perform_propagation(test_name, general_args, network, prior_data)
+    elif method == 'MW':
+        general_args = GeneralArgs(network=network_name, pathway_file=pathway_file, method=method)
+    if general_args.run_propagation:
+        perform_propagation(test_name, general_args, network, prior_data)
     perform_enrichment(test_name, general_args, output_path)
 
 
@@ -116,7 +118,7 @@ def calculate_pathway_density(network, genes):
 
 
 # The rest of your script would remain largely the same, with the relevant adjustments:
-def process_file(network, pathway_file, network_name, alpha, prop_method, file_name, pathway_density, num_genes, avg_diameter):
+def process_file(network, pathway_file, network_name, alpha, prop_method, file_name):
     dataset_name, pathway_name = file_name.replace('.xlsx', '').split('_', 1)
     prior_data = read_prior_set(os.path.join(input_dir, file_name))
     output_dir = os.path.join(output_base_dir, prop_method, network_name, pathway_file, f"alpha_{alpha}")
@@ -137,9 +139,9 @@ def process_file(network, pathway_file, network_name, alpha, prop_method, file_n
         'Rank': prop_rank,
         'FDR q-val': fdr_q_val,
         'Significant': significant,
-        'Density': pathway_density,
-        'Num Genes': num_genes,
-        'Avg Diameter': avg_diameter
+        # 'Density': pathway_density,
+        # 'Num Genes': num_genes,
+        # 'Avg Diameter': avg_diameter
     }
 
 
@@ -150,7 +152,7 @@ start_time = time.time()
 
 networks = ['H_sapiens', 'String', 'HumanNet', 'String_']
 pathway_files = ['kegg']
-prop_methods = ['GSEA', 'PROP', 'ABS_PROP']
+prop_methods = ['MW', 'PROP', 'ABS_PROP']
 alphas = [0.1, 0.2]
 
 loaded_networks = {}
@@ -176,7 +178,7 @@ for network_name in networks:
                 pathway_densities[network_name] = {}
             if pathway_file not in pathway_densities[network_name]:
                 pathway_densities[network_name][pathway_file] = {}
-            pathway_densities[network_name][pathway_file][pathway_name] = calculate_pathway_density(network, pathway_genes)
+            # pathway_densities[network_name][pathway_file][pathway_name] = calculate_pathway_density(network, pathway_genes)
 logger.info("Networks loaded and pathway densities calculated.")
 
 # Process files in parallel using ProcessPoolExecutor
@@ -190,11 +192,11 @@ with ProcessPoolExecutor(max_workers=60) as executor:  # Adjust max_workers base
                 for file_name in file_list:
                     dataset_name, pathway_name = file_name.replace('.xlsx', '').split('_', 1)
                     if pathway_name in pathways:
-                        pathway_density, num_genes, avg_diameter = pathway_densities[network_name][pathway_file].get(pathway_name, (np.inf, 0, np.inf))
-                        if pathway_density != np.inf:
-                            logger.info(f"Parsing {dataset_name} and {pathway_name} with density {pathway_density}, num genes {num_genes}, and avg diameter {avg_diameter}")
+                        # pathway_density, num_genes, avg_diameter = pathway_densities[network_name][pathway_file].get(pathway_name, (np.inf, 0, np.inf))
+                        # if pathway_density != np.inf:
+                        #     logger.info(f"Parsing {dataset_name} and {pathway_name} with density {pathway_density}, num genes {num_genes}, and avg diameter {avg_diameter}")
                         for prop_method in prop_methods:
-                            futures.append(executor.submit(process_file, network, pathway_file, network_name, alpha, prop_method, file_name, pathway_density, num_genes, avg_diameter))
+                            futures.append(executor.submit(process_file, network, pathway_file, network_name, alpha, prop_method, file_name))
 
 results = []
 for future in tqdm(as_completed(futures), total=len(futures), desc='Processing Files'):
