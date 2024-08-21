@@ -34,14 +34,14 @@ os.makedirs(summary_base_dir, exist_ok=True)
 def run_propagation_and_enrichment(test_name, prior_data, network, network_name, alpha, method, output_path, pathway_file):
     if method in ['PROP', 'ABS_PROP']:
         # Set alpha before initializing GeneralArgs for PROP and ABS_PROP
-        general_args = GeneralArgs(network=network_name, pathway_file=pathway_file, method=method, alpha=alpha)
+        general_args = GeneralArgs(network=network_name, pathway_file=pathway_file, method=method, alpha=alpha, run_propagation=False)
         if method == 'ABS_PROP':
             general_args.input_type = 'abs_Score'
     elif method == 'GSEA':
         # Initialize GeneralArgs for GSEA without modifying alpha
         general_args = GeneralArgs(network=network_name, pathway_file=pathway_file, method=method, run_gsea=True)
     elif method == 'MW':
-        general_args = GeneralArgs(network=network_name, pathway_file=pathway_file, method=method)
+        general_args = GeneralArgs(network=network_name, pathway_file=pathway_file, method=method, run_propagation=False)
 
     if general_args.run_propagation:
         perform_propagation(test_name, general_args, network, prior_data)
@@ -49,7 +49,7 @@ def run_propagation_and_enrichment(test_name, prior_data, network, network_name,
 
 
 # Updated get_pathway_rank function
-def get_pathway_rank(gsea_output_path, pathway_name, method='PROP'):
+def get_pathway_rank(gsea_output_path, pathway_name):
     try:
         results_df = pd.read_excel(gsea_output_path)
         pathway_row = results_df[results_df['Term'] == pathway_name]
@@ -57,15 +57,20 @@ def get_pathway_rank(gsea_output_path, pathway_name, method='PROP'):
             # Get the FDR q-val of the pathway
             fdr_p_val = pathway_row['FDR q-val'].values[0]
 
-            if method == 'PROP':
-                # If the method is PROP, find all rows with the same FDR q-val
-                matching_fdr_rows = results_df[results_df['FDR q-val'] == fdr_p_val]
+            # Convert the FDR q-val to a high-precision format for consistency
+            fdr_p_val = np.format_float_scientific(fdr_p_val, precision=15)
 
-                # Get the rank of the first occurrence (highest rank) of the pathway in the matching rows
-                rank = matching_fdr_rows.index[0]
-            else:
-                # For GSEA or other methods, just return the first occurrence of the pathway
-                rank = pathway_row.index[0]
+            # Ensure all FDR q-vals in the DataFrame are formatted the same way
+            results_df['FDR q-val'] = results_df['FDR q-val'].apply(
+                lambda x: np.format_float_scientific(x, precision=15)
+            )
+
+            # Find all rows with the same FDR q-val
+            matching_fdr_rows = results_df[results_df['FDR q-val'] == fdr_p_val]
+
+            # Get the rank of the first occurrence (highest rank) of the pathway in the matching rows
+            rank = matching_fdr_rows.index[0]
+
             return rank, fdr_p_val
     except Exception as e:
         logger.error(f"Error reading {gsea_output_path}: {e}")
@@ -119,7 +124,7 @@ def calculate_pathway_density(network, genes):
 
 
 # The rest of your script would remain largely the same, with the relevant adjustments:
-def process_file(network, pathway_file, network_name, alpha, prop_method, file_name):
+def process_file(network, pathway_file, network_name, alpha, prop_method, file_name, pathway_density, num_genes, avg_diameter):
     dataset_name, pathway_name = file_name.replace('.xlsx', '').split('_', 1)
     prior_data = read_prior_set(os.path.join(input_dir, file_name))
     output_dir = os.path.join(output_base_dir, prop_method, network_name, pathway_file, f"alpha_{alpha}")
@@ -127,7 +132,7 @@ def process_file(network, pathway_file, network_name, alpha, prop_method, file_n
     output_file_path = os.path.join(output_dir, file_name)
 
     run_propagation_and_enrichment(file_name, prior_data, network, network_name, alpha, prop_method, output_file_path, pathway_file)
-    prop_rank, fdr_q_val = get_pathway_rank(output_file_path, pathway_name, prop_method)
+    prop_rank, fdr_q_val = get_pathway_rank(output_file_path, pathway_name)
     significant = 1 if fdr_q_val is not None and fdr_q_val < 0.05 else 0
 
     return {
@@ -140,9 +145,9 @@ def process_file(network, pathway_file, network_name, alpha, prop_method, file_n
         'Rank': prop_rank,
         'FDR q-val': fdr_q_val,
         'Significant': significant,
-        # 'Density': pathway_density,
-        # 'Num Genes': num_genes,
-        # 'Avg Diameter': avg_diameter
+        'Density': pathway_density,
+        'Num Genes': num_genes,
+        'Avg Diameter': avg_diameter
     }
 
 
@@ -179,7 +184,7 @@ for network_name in networks:
                 pathway_densities[network_name] = {}
             if pathway_file not in pathway_densities[network_name]:
                 pathway_densities[network_name][pathway_file] = {}
-            # pathway_densities[network_name][pathway_file][pathway_name] = calculate_pathway_density(network, pathway_genes)
+            pathway_densities[network_name][pathway_file][pathway_name] = calculate_pathway_density(network, pathway_genes)
 logger.info("Networks loaded and pathway densities calculated.")
 
 # Process files in parallel using ProcessPoolExecutor
@@ -193,11 +198,11 @@ with ProcessPoolExecutor(max_workers=60) as executor:  # Adjust max_workers base
                 for file_name in file_list:
                     dataset_name, pathway_name = file_name.replace('.xlsx', '').split('_', 1)
                     if pathway_name in pathways:
-                        # pathway_density, num_genes, avg_diameter = pathway_densities[network_name][pathway_file].get(pathway_name, (np.inf, 0, np.inf))
-                        # if pathway_density != np.inf:
-                        #     logger.info(f"Parsing {dataset_name} and {pathway_name} with density {pathway_density}, num genes {num_genes}, and avg diameter {avg_diameter}")
+                        pathway_density, num_genes, avg_diameter = pathway_densities[network_name][pathway_file].get(pathway_name, (np.inf, 0, np.inf))
+                        if pathway_density != np.inf:
+                            logger.info(f"Parsing {dataset_name} and {pathway_name} with density {pathway_density}, num genes {num_genes}, and avg diameter {avg_diameter}")
                         for prop_method in prop_methods:
-                            futures.append(executor.submit(process_file, network, pathway_file, network_name, alpha, prop_method, file_name))
+                            futures.append(executor.submit(process_file, network, pathway_file, network_name, alpha, prop_method, file_name, pathway_density, num_genes, avg_diameter))
 
 results = []
 for future in tqdm(as_completed(futures), total=len(futures), desc='Processing Files'):
@@ -215,15 +220,8 @@ for network_name in networks:
                                      (results_df['Alpha'] == alpha)]
 
             # Pivot table to get the desired format
-            pivot_df = filtered_df.pivot_table(index=['Dataset', 'Pathway'],
-                                               columns='Method',
-                                               values=['Rank', 'Significant'],
-                                               aggfunc='first').reset_index()
-
-            # Adjust the column names based on the pivot table's current structure
-            base_columns = ['Dataset', 'Pathway']  # Only the base columns left after removal
-            pivot_columns = [f'{col[1]} {col[0]}' for col in pivot_df.columns[len(base_columns):]]  # Adjust index range
-            pivot_df.columns = base_columns + pivot_columns
+            pivot_df = filtered_df.pivot_table(index=['Dataset', 'Pathway', 'Density', 'Num Genes', 'Avg Diameter'], columns='Method', values=['Rank', 'Significant'], aggfunc='first').reset_index()
+            pivot_df.columns = ['Dataset', 'Pathway', 'Density', 'Num Genes', 'Avg Diameter'] + [f'{col[1]} {col[0]}' for col in pivot_df.columns[5:]]
 
             # Ensure all expected columns are present
             for method in prop_methods:
@@ -233,7 +231,7 @@ for network_name in networks:
                     pivot_df[f'{method} Significant'] = np.nan
 
             # Reorder columns to the desired order
-            column_order = base_columns
+            column_order = ['Dataset', 'Pathway', 'Density', 'Num Genes', 'Avg Diameter']
             for method in prop_methods:
                 column_order.append(f'{method} Rank')
                 column_order.append(f'{method} Significant')
@@ -249,28 +247,28 @@ for network_name in networks:
             sig_percent = sig_percent[['Method', 'Percentage Significant']]
 
             # Create DataFrame for Average Rank and Percent Significant rows
-            avg_rank_row = pd.DataFrame([['Average Rank'] + [''] * (len(base_columns) - 2) + [
+            avg_rank_row = pd.DataFrame([['Average Rank'] + [''] * 4 + [
                 avg_ranks[avg_ranks['Method'] == method]['Average Rank'].values[0] if not avg_ranks[
                     avg_ranks['Method'] == method].empty else '' for method in prop_methods for _ in range(2)]],
                                         columns=pivot_df.columns)
-            percent_sig_row = pd.DataFrame([['Percent Significant'] + [''] * (len(base_columns) - 2) + [
+            percent_sig_row = pd.DataFrame([['Percent Significant'] + [''] * 4 + [
                 sig_percent[sig_percent['Method'] == method]['Percentage Significant'].values[0] if not sig_percent[
                     sig_percent['Method'] == method].empty else '' for method in prop_methods for _ in range(2)]],
                                            columns=pivot_df.columns)
 
             # Append the summary rows to the pivot DataFrame
             summary_df = pd.concat([pivot_df, avg_rank_row, percent_sig_row], ignore_index=True)
-            # Sort alphabetically by pathway name
+            # sort alphabetically by pathway name
             summary_df = summary_df.sort_values(by='Pathway')
             # Save the summary DataFrame for each network, pathway_file, and alpha
             summary_output_dir = os.path.join(summary_base_dir, network_name, pathway_file, f"alpha {alpha}")
             os.makedirs(summary_output_dir, exist_ok=True)
             rankings_output_path = os.path.join(summary_output_dir,
-                                                f'MW_summary_{network_name}_{pathway_file}_alpha_{alpha}.xlsx')
+                                                f'MW_rankings_summary_{network_name}_{pathway_file}_alpha_{alpha}_row.xlsx')
             summary_df.to_excel(rankings_output_path, index=False)
-            logger.info(f"MW summary saved to {rankings_output_path}")
+            logger.info(f"MW Rankings summary saved to {rankings_output_path}")
 
-end_time = time.time()
-elapsed_time = end_time - start_time
-logger.info(f"Total time taken: {elapsed_time:.2f} seconds")
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        logger.info(f"Total time taken: {elapsed_time:.2f} seconds")
 

@@ -89,9 +89,7 @@ def perform_statist_mann_whitney(task: EnrichTask, args, scores: dict):
 
     # Rank the scores only for the filtered genes and reverse the ranks
     ranks = rankdata(filtered_scores)
-    scores_rank = {
-        gene_id: rank for gene_id, rank in zip(task.filtered_genes, ranks)
-    }
+    scores_rank = {gene_id: rank for gene_id, rank in zip(task.filtered_genes, ranks)}
 
     # Iterate over pathways that passed the KS test to perform the Mann-Whitney U test
     for pathway, genes_info in task.ks_significant_pathways_with_genes.items():
@@ -114,7 +112,7 @@ def perform_statist_mann_whitney(task: EnrichTask, args, scores: dict):
             'ES': np.mean(pathway_scores),
             'NES': None,
             'NOM p-val': None,
-            'FDR q-val': None,
+            'FDR q-val': None,  # Placeholder, to be filled after correction
             'FWER p-val': None,
             'Tag %': len(pathway_genes) / len(task.filtered_genes) * 100,
             'Gene %': len(pathway_genes) / len(scores) * 100,
@@ -126,8 +124,8 @@ def perform_statist_mann_whitney(task: EnrichTask, args, scores: dict):
 
     # Update the FDR q-values in the filtered pathways dictionary
     for i, (pathway, _) in enumerate(task.filtered_pathways.items()):
-        task.filtered_pathways[pathway]['FDR q-val'] = adjusted_mw_p_values[i]
-
+        # Store the FDR q-val with full precision
+        task.filtered_pathways[pathway]['FDR q-val'] = np.format_float_scientific(adjusted_mw_p_values[i], precision=15)
 
 def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: str = None):
     """
@@ -161,7 +159,7 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: s
                                 statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)
 
     genes_by_pathway, scores = load_pathways_and_propagation_scores(general_args, enrich_task.propagation_file)
-
+    logger.info("Running enrichment analysis for test: {}".format(test_name))
     if general_args.run_gsea:
         # Prepare data for GSEA
         # Unpack the scores dictionary into separate lists for GeneID and Score
@@ -196,9 +194,28 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: s
         if enrich_task.filtered_pathways:
             # Convert the filtered pathways dictionary to a DataFrame
             pathways_df = pd.DataFrame.from_dict(enrich_task.filtered_pathways, orient='index')
+
+            # Ensure that FDR q-val is stored with high precision and is a float
+            def format_fdr_q_val(x):
+                if pd.isna(x):  # Check for NaN values and leave them unchanged
+                    return x
+                if isinstance(x, str):
+                    try:
+                        x = float(x)
+                    except ValueError:
+                        logger.error(f"Cannot convert FDR q-val to float: {x}")
+                        return x  # Return as is if conversion fails
+                return np.format_float_scientific(x, precision=15)
+
+            pathways_df['FDR q-val'] = pathways_df['FDR q-val'].apply(format_fdr_q_val)
+
             pathways_df = pathways_df[['Rank', 'Name', 'Term', 'ES', 'NES', 'NOM p-val', 'FDR q-val',
                                        'FWER p-val', 'Tag %', 'Gene %', 'Lead_genes']]
+
+            # Sort by the FDR q-val, which is now a high-precision string
             pathways_df.sort_values(by='FDR q-val', inplace=True)
+
             # Save the DataFrame to an Excel file
             pathways_df.to_excel(output_path, index=False)
+
 
