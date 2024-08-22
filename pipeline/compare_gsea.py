@@ -22,12 +22,10 @@ logger = logging.getLogger(__name__)
 # Define directories
 input_dir = os.path.join('Inputs', 'experiments_data', 'GSE', 'XLSX')
 output_base_dir = os.path.join('Outputs', 'NGSEA')
-plot_output_dir = os.path.join(output_base_dir, 'Plots')
 summary_base_dir = os.path.join(output_base_dir, 'Summary')
 pathways_dir = os.path.join('Data', 'Human', 'pathways')
 
 # Ensure plot and summary output directories exist
-os.makedirs(plot_output_dir, exist_ok=True)
 os.makedirs(summary_base_dir, exist_ok=True)
 
 
@@ -140,9 +138,9 @@ def process_file(network, pathway_file, network_name, alpha, prop_method, file_n
 # Start timing the entire process
 start_time = time.time()
 
-networks = ['H_sapiens', 'String_']
+networks = ['HumanNet', 'String_', 'H_sapiens']
 pathway_files = ['kegg']
-prop_methods = ['PROP', 'ABS_PROP', 'GSEA', 'NGSEA']
+prop_methods = ['GSEA', 'PROP', 'ABS_PROP', 'NGSEA']
 alphas = [0.1, 0.2]
 
 loaded_networks = {}
