@@ -99,16 +99,65 @@ that of other annotated genes. Pathways with FDR-corrected p-values smaller than
 
 ### Directory Structure
 - **Data:**
-  - `H_sapiens`:
+  - `Human`:
     - `gene_names`: contains dictionaries of gene names and their corresponding IDs.
     - `pathways`: contains lists of pathways and their corresponding genes.
     - `network`: contains the PPI network data.
+    - `matrix`: contains the similarity matrix for the network.
 - **Inputs:**
   - `experiments_data/`:
-    - `Parkinson`: contains the Parkinson's disease data.
+    - `GSE`: contains the experimental data for each condition.
+      - `GCT`: Each experiment has a file that contains name,description, and score for each gene.
+      - `RNK`: Each experiment has a file that contains name and score for each gene.
+      - `xlsx`: Each experiment has a file that contains GeneID, Symbol, score and P-value for each gene.
 - **Outputs:**
-  - `Plots`: contains plots generated during the analysis.
-  - `Text`: contains text files with the results of the analysis.
+  - `NGSEA`:
+    - `ABS_PROP`:
+      - `H_sapiens`:
+        - `c2`: contains the result of the gsea run with absolute propagation values and H_sapiens network and c2 pathways.
+        - `kegg`: contains the result of the gsea run with absolute propagation values and H_sapiens network and kegg pathways.
+      - `HumanNet`:
+        - `c2`: contains the result of the gsea run with absolute propagation values and HumanNet network and c2 pathways.
+        - `kegg`: contains the result of the gsea run with absolute propagation values and HumanNet network and kegg pathways.
+    - `PROP`: 
+        - `H_sapiens`:
+            - `c2`: contains the result of the gsea run with propagation values and H_sapiens network and c2 pathways.
+            - `kegg`: contains the result of the gsea run with propagation values and H_sapiens network and kegg pathways.
+        - `HumanNet`:
+            - `c2`: contains the result of the gsea run with propagation values and HumanNet network and c2 pathways.
+            - `kegg`: contains the result of the gsea run with propagation values and HumanNet network and kegg pathways.
+    - `GSEA`:
+      - `H_sapiens`:
+        - `c2`: contains the result of the gsea run with normal values and H_sapiens network and c2 pathways.
+        - `kegg`: contains the result of the gsea run with normal values and H_sapiens network and kegg pathways.
+      - `HumanNet`:
+        - `c2`: contains the result of the gsea run with normal values and HumanNet network and c2 pathways.
+        - `kegg`: contains the result of the gsea run with normal values and HumanNet network and kegg pathways.
+    - `NGSEA`:
+      - `H_sapiens`:
+        - `c2`: contains the result of the gsea run with average neighbor values H_sapiens network and c2 pathways.
+        - `kegg`: contains the result of the gsea run with average neighbor H_sapiens network and kegg pathways.
+    - `Plots`: 
+      - `H_sapiens`:
+        - `c2`: contains the plots of the gsea run with H_sapiens network and c2 pathways.
+        - `kegg`: contains the plots of the gsea run with H_sapiens network and kegg pathways.
+      - `HumanNet`:
+        - `c2`: contains the plots of the gsea run with HumanNet network and c2 pathways.
+        - `kegg`: contains the plots of the gsea run with HumanNet network and kegg pathways.
+    - `Summary`:
+        - `H_sapiens`:
+            - `c2`: contains the summary of the gsea run with H_sapiens network and c2 pathways.
+            - `kegg`: contains the summary of the gsea run with H_sapiens network and kegg pathways.
+        - `HumanNet`:
+            - `c2`: contains the summary of the gsea run with HumanNet network and c2 pathways.
+            - `kegg`: contains the summary of the gsea run with HumanNet network and kegg pathways.
+        
+
+
+
+
+
+
 
 ### Statistical Methods
 - **Hypergeometric Test:** <br>

@@ -24,8 +24,8 @@ output_path = os.path.join(root_path, 'Outputs')
 # Configuration for the experiment
 Experiment_name = 'Parkinson'  # Name of the experiment, used for labeling outputs
 data_folder_name = 'Data'  # Folder name where data files are stored
-species = 'H_sapiens'  # Species identifier, used to fetch species-specific files
-genes_info_filename = 'H_sapiens.gene_info'  # File containing gene information
+species = 'Human'  # Species identifier, used to fetch species-specific files
+genes_info_filename = 'Human.gene_info'  # File containing gene information
 pathway_filename = 'pathways'  # File containing pathway data
 
 # Constructing paths for data directories

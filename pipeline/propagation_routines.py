@@ -57,7 +57,6 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     Returns:
     - tuple: A tuple containing the inverse of the similarity matrix and the list of genes.
     """
-
     start = time.time()
 
     genes = sorted(network.nodes())
@@ -83,12 +82,20 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     # Replace zero degrees with 1 to avoid division by zero
     degrees[degrees == 0] = 1
 
-    inv_degrees = 1.0 / degrees
-    norm_matrix = sp.diags(inv_degrees)
-    matrix = matrix @ norm_matrix
+    if args.normalization_type == 'symmetric':
+        # Symmetric normalization: A' = D^(-1/2) * A * D^(-1/2)
+        inv_sqrt_degrees = 1.0 / np.sqrt(degrees)
+        norm_matrix = sp.diags(inv_sqrt_degrees)
+        matrix = norm_matrix @ matrix @ norm_matrix
+    elif args.normalization_type == 'row':
+        # Left normalization: A' = A * D^(-1)
+        inv_degrees = 1.0 / degrees
+        norm_matrix = sp.diags(inv_degrees)
+        matrix = matrix @ norm_matrix
+    else:
+        raise ValueError(f"Unknown normalization type: {args.normalization_type}")
 
-    print("Calculating the inverse")
-    # First, let's get the shape of the matrix W
+
     n = matrix.shape[0]
     identity_matrix = sp.eye(n)
     matrix_to_invert = identity_matrix - (1 - args.alpha) * matrix
@@ -119,8 +126,6 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     end = time.time()
     print(f"Time elapsed: {end - start} seconds")
     return inverse_matrix, gene_index
-
-
 
 
 def read_sparse_matrix_txt(network: nx.Graph, similarity_matrix_path: str, tri_matrix_path: str, debug: bool) -> tuple:
@@ -455,41 +460,3 @@ def perform_propagation(test_name: str,general_args, network=None, prior_data=No
     # Save the results
     _save_propagation_results(propagation_input_df, full_propagated_scores_df, prop_task, general_args)
     print(f"Propagation for {test_name} completed successfully.")
-    del matrix
-
-# def propagate(seeds, propagation_input, matrix, gene_indexes, num_genes, inverted_scores, alpha=0.1, n_max_iterations=100000,
-#               convergence_th=1e-6):
-#     # Initialize the vector F_t with zeros, with a shape of (num_genes,)
-#     F_t = np.zeros(num_genes)
-#
-#     # If no propagation_input is given, set it to 1 for all seed genes
-#     if not propagation_input:
-#         propagation_input = {x: 1 for x in seeds}
-#
-#     # Set the initial propagation values
-#     for seed in seeds:
-#         if seed in gene_indexes:
-#             F_t[gene_indexes[seed]] = propagation_input[seed]
-#
-#     # Calculate Y = alpha * F_t (initial values scaled by alpha)
-#     Y = alpha * F_t
-#
-#     # Initialize F_t with Y
-#     F_t = Y.copy()
-#
-#     iterations_to_similarity = -1
-#
-#     # Iterate to propagate values through the network
-#     for iteration in range(n_max_iterations):
-#         # Save the previous F_t for convergence check
-#         F_t_1 = F_t.copy()
-#
-#         # Update F_t using the inverse matrix
-#         F_t = matrix.dot(F_t_1) + Y
-#
-#         # Check for similarity with inverted_scores
-#         if np.linalg.norm(F_t - inverted_scores) < convergence_th:
-#             print(f"Converged after {iteration} iterations")
-#             break
-#
-#     return F_t
