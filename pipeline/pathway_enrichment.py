@@ -5,11 +5,11 @@ from scipy.stats import rankdata
 import gseapy as gp
 from utils import load_pathways_and_propagation_scores
 from statsmodels.stats.multitest import multipletests
-from visualization_tools import print_enriched_pathways_to_file
-from statistical_methods import jaccard_index, kolmogorov_smirnov_test, compute_mw_python, run_hyper, \
+from statistical_methods import kolmogorov_smirnov_test, compute_mw_python, \
     global_gene_ranking, kolmogorov_smirnov_test_with_ranking
 import numpy as np
 import logging
+import decimal
 
 
 # Configure logging
@@ -125,7 +125,7 @@ def perform_statist_mann_whitney(task: EnrichTask, args, scores: dict):
     # Update the FDR q-values in the filtered pathways dictionary
     for i, (pathway, _) in enumerate(task.filtered_pathways.items()):
         # Store the FDR q-val with full precision
-        task.filtered_pathways[pathway]['FDR q-val'] = np.format_float_scientific(adjusted_mw_p_values[i], precision=15)
+        task.filtered_pathways[pathway]['FDR q-val'] = decimal.Decimal(adjusted_mw_p_values[i])
 
 def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: str = None):
     """
@@ -197,25 +197,13 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: s
 
             # Ensure that FDR q-val is stored with high precision and is a float
             def format_fdr_q_val(x):
-                if pd.isna(x):  # Check for NaN values and leave them unchanged
+                try:
+                    return decimal.Decimal(x)
+                except (ValueError, TypeError):
                     return x
-                if isinstance(x, str):
-                    try:
-                        x = float(x)
-                    except ValueError:
-                        logger.error(f"Cannot convert FDR q-val to float: {x}")
-                        return x  # Return as is if conversion fails
-                return np.format_float_scientific(x, precision=15)
 
             pathways_df['FDR q-val'] = pathways_df['FDR q-val'].apply(format_fdr_q_val)
-
-            pathways_df = pathways_df[['Rank', 'Name', 'Term', 'ES', 'NES', 'NOM p-val', 'FDR q-val',
-                                       'FWER p-val', 'Tag %', 'Gene %', 'Lead_genes']]
-
-            # Sort by the FDR q-val, which is now a high-precision string
             pathways_df.sort_values(by='FDR q-val', inplace=True)
-
-            # Save the DataFrame to an Excel file
             pathways_df.to_excel(output_path, index=False)
 
 
