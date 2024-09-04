@@ -20,10 +20,6 @@ async def pipeline_main(prior_data: pd.DataFrame, settings: SettingsInput):
     Returns:
     - None
     """
-
-    # Configure logging
-    logging.basicConfig(level=logging.INFO, format='%(message)s:        ')
-    logger = logging.getLogger(__name__)
     run_settings = Settings(
         experiment_name= settings.test_name,
         species=settings.species,
