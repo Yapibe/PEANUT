@@ -3,14 +3,14 @@ import networkx as nx
 from utils import read_network
 
 # Assuming the read_network function is already defined and returns a networkx Graph object
-networks = ['H_sapiens', 'HumanNet', 'String_',  'String']
+networks = ['Anat', 'HumanNet', 'String_',  'String']
 
 # Dictionary to store metrics for each network
 network_metrics = {}
 
 # Load networks and calculate metrics
 for network_name in networks:
-    network_file = os.path.join('../Data', 'Human', 'network', network_name)
+    network_file = os.path.join('../Data', 'Anat', 'network', network_name)
     network = read_network(network_file)
 
     # Calculate metrics

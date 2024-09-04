@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Load the files
-h_sapiens_file_path = 'Outputs/NGSEA/Summary/H_sapiens/kegg/alpha 0.2/rankings_summary_H_sapiens_kegg_alpha_0.2.xlsx'
-string_file_path = 'Outputs/NGSEA/Summary/String/kegg/alpha 0.2/rankings_summary_String_kegg_alpha_0.2.xlsx'
-Hnet_file_path = 'Outputs/NGSEA/Summary/HumanNet/kegg/alpha 0.2/rankings_summary_HumanNet_kegg_alpha_0.2.xlsx'
+h_sapiens_file_path = '../Outputs/NGSEA/Summary/Anat/kegg/alpha 0.2/rankings_summary_H_sapiens_kegg_alpha_0.2.xlsx'
+string_file_path = '../Outputs/NGSEA/Summary/String/kegg/alpha 0.2/rankings_summary_String_kegg_alpha_0.2.xlsx'
+Hnet_file_path = '../Outputs/NGSEA/Summary/HumanNet/kegg/alpha 0.2/rankings_summary_HumanNet_kegg_alpha_0.2.xlsx'
 
 df_h_sapiens = pd.read_excel(h_sapiens_file_path)
 df_string = pd.read_excel(string_file_path)
@@ -36,17 +36,17 @@ result_string = wilcoxon(abs_prop_ranks_string, gsea_ranks_string)
 result_human_net = wilcoxon(abs_prop_ranks_human_net, gsea_ranks_human_net)
 
 # Output the results
-print(f"H_sapiens file - Wilcoxon statistic: {result_hs.statistic}, p-value: {result_hs.pvalue}")
+print(f"Anat file - Wilcoxon statistic: {result_hs.statistic}, p-value: {result_hs.pvalue}")
 print(f"String file - Wilcoxon statistic: {result_string.statistic}, p-value: {result_string.pvalue}")
 print(f"HumanNet file - Wilcoxon statistic: {result_human_net.statistic}, p-value: {result_human_net.pvalue}")
 
 
 
 # Specify the directory containing the data
-data_dir = 'Outputs/NGSEA/Summary'
+data_dir = '../Outputs/NGSEA/Summary'
 
 # List of networks and alpha values
-networks = ['String_', 'H_sapiens', 'HumanNet']
+networks = ['String_', 'Anat', 'HumanNet']
 alphas = [0.1, 0.2]
 methods = ['GSEA', 'NGSEA', 'PROP', 'ABS_PROP']
 
@@ -72,7 +72,7 @@ for file_path in file_paths:
     df['Alpha'] = alpha
 
     # Correct network name if it's listed as 'H'
-    df['Network'].replace({'H': 'H_sapiens'}, inplace=True)
+    df['Network'].replace({'H': 'Anat'}, inplace=True)
     df['Network'].replace({'String': 'String_'}, inplace=True)
 
     dataframes.append(df)
@@ -91,7 +91,7 @@ pathway_df = combined_df.groupby('Pathway').agg({
 
 # Network metrics
 network_metrics = {
-    'Network': ['HumanNet', 'H_sapiens', 'String_'],
+    'Network': ['HumanNet', 'Anat', 'String_'],
     'Num Nodes': [18459, 19950, 17991],
     'Num Edges': [977495, 899737, 712446],
     'Network Density': [0.005737883534057266, 0.004521489698480498, 0.004402460633689089],

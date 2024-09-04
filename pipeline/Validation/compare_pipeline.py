@@ -4,7 +4,7 @@ import numpy as np
 import networkx as nx
 import logging
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from args import GeneralArgs
+from settings import Settings
 from pathway_enrichment import perform_enrichment
 from propagation_routines import perform_propagation
 from utils import load_pathways_genes, read_network, read_prior_set
@@ -15,11 +15,11 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Directories and settings
-input_dir = os.path.join('Inputs', 'experiments_data', 'GSE', 'XLSX')
-output_base_dir = os.path.join('Outputs', 'NGSEA')
+input_dir = os.path.join('../Inputs', 'experiments_data', 'GSE', 'XLSX')
+output_base_dir = os.path.join('../Outputs', 'NGSEA')
 summary_base_dir = os.path.join(output_base_dir, 'Summary')
-pathways_dir = os.path.join('Data', 'Human', 'pathways')
-networks = ['H_sapiens', 'String', 'HumanNet','String_']
+pathways_dir = os.path.join('../Data', 'Anat', 'pathways')
+networks = ['Anat', 'String', 'HumanNet','String_']
 pathway_files = ['kegg']
 prop_methods = ['MW', 'PROP', 'ABS_PROP']
 alphas = [0.1, 0.2]
@@ -33,13 +33,13 @@ file_list = [f for f in os.listdir(input_dir) if f.endswith('.xlsx')]
 
 # Load network and pathways data
 def load_data():
-    loaded_networks = {name: read_network(os.path.join('Data', 'Human', 'network', name)) for name in networks}
+    loaded_networks = {name: read_network(os.path.join('../Data', 'Anat', 'network', name)) for name in networks}
     loaded_pathways = {file: load_pathways_genes(os.path.join(pathways_dir, file)) for file in pathway_files}
     return loaded_networks, loaded_pathways
 
 
 def run_analysis(test_name, prior_data, network, network_name, alpha, method, output_path, pathway_file):
-    general_args = GeneralArgs(
+    general_args = Settings(
         network=network_name, pathway_file=pathway_file, method=method,
         alpha=alpha if method in ['PROP', 'ABS_PROP'] else 1,
         run_propagation=True

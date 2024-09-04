@@ -1,7 +1,7 @@
-/pipeline/Data/Human/matrix/H_sapiens_tri_0.2.npy
-/pipeline/Data/Human/matrix/HumanNet_tri_0.1.npy
-/pipeline/Data/Human/matrix/HumanNet_tri_0.2.npy
-/pipeline/Data/Human/matrix/small_graph_0.1_row.npz
-/pipeline/Data/Human/matrix/small_graph_tri_0.1_row.npy
-/pipeline/Data/Human/matrix/String_tri_0.1.npy
-/pipeline/Data/Human/matrix/String_tri_0.2.npy
+/pipeline/Data/H_sapiens/matrix/H_sapiens_tri_0.2.npy
+/pipeline/Data/H_sapiens/matrix/HumanNet_tri_0.1.npy
+/pipeline/Data/H_sapiens/matrix/HumanNet_tri_0.2.npy
+/pipeline/Data/H_sapiens/matrix/small_graph_0.1_row.npz
+/pipeline/Data/H_sapiens/matrix/small_graph_tri_0.1_row.npy
+/pipeline/Data/H_sapiens/matrix/String_tri_0.1.npy
+/pipeline/Data/H_sapiens/matrix/String_tri_0.2.npy

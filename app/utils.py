@@ -1,51 +1,52 @@
-import os
-from zipfile import ZipFile
-from shutil import rmtree
-from pipeline.args import GeneralArgs
-from pipeline.propagation_routines import perform_propagation
-from pipeline.pathway_enrichment import perform_enrichment
-from pipeline.utils import read_temp_scores, process_condition
-from pipeline.visualization_tools import print_aggregated_pathway_information, plot_pathways_mean_scores
+from fastapi import HTTPException
+import pandas as pd
+import io
+from pipeline.utils import read_prior_set
+import logging
 
-def run_pipeline(run_propagation=True, run_enrichment=True):
-    general_args = GeneralArgs(run_propagation=run_propagation, alpha=0.1)
+logger = logging.getLogger(__name__)
 
-    test_file_paths = [os.path.join(general_args.input_dir, file) for file in os.listdir(general_args.input_dir) if file.endswith('.xlsx')]
-    test_name_list = [os.path.splitext(file)[0] for file in os.listdir(general_args.input_dir) if file.endswith('.xlsx')]
+async def validate_file(file_content: bytes, filename: str) -> pd.DataFrame:
+    logger.info("Validating uploaded file")
 
-    for test_name in test_name_list:
-        if run_propagation:
-            print(f"Running propagation on {test_name}")
-            perform_propagation(test_name, general_args)
+    # Ensure the file is an Excel file
+    if not filename.endswith(('.xlsx', '.xls')):
+        logger.error("Invalid file type: %s", filename)
+        raise HTTPException(status_code=400, detail="Invalid file type. Please upload an Excel file.")
 
-        if run_enrichment:
-            print(f"Running enrichment on {test_name}")
-            perform_enrichment(test_name, general_args)
-            print("-----------------------------------------")
+    try:
+        # Wrap the file contents in a BytesIO object
+        excel_data = io.BytesIO(file_content)
 
-    print("Finished enrichment")
+        # Apply preprocessing to the DataFrame using read_prior_set
+        df = read_prior_set(excel_data, is_bytes=True)
+        logger.info("File preprocessed successfully")
 
-    condition_files = [os.path.join(general_args.temp_output_folder, file) for file in os.listdir(general_args.temp_output_folder)]
-    all_pathways = {}
+        # Expected columns in the file
+        required_columns = ["GeneID", "Symbol", "Score", "P-value"]
 
-    for condition_file in condition_files:
-        enriched_pathway_dict = read_temp_scores(condition_file)
-        for pathway in enriched_pathway_dict:
-            if pathway not in all_pathways:
-                all_pathways[pathway] = {}
+        # Check if the required columns are present in the DataFrame
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            logger.error("Missing required columns: %s", ', '.join(missing_columns))
+            raise HTTPException(
+                status_code=400,
+                detail=f"Missing required columns: {', '.join(missing_columns)}. "
+                       f"Expected columns are: {', '.join(required_columns)}"
+            )
 
-    for condition_file, experiment_file in zip(condition_files, test_file_paths):
-        process_condition(condition_file, experiment_file, general_args.pathway_file_dir, all_pathways)
+        # Optionally, further validate the contents of each column (e.g., checking data types)
+        if not pd.api.types.is_numeric_dtype(df["Score"]):
+            logger.error("The 'Score' column must contain numeric values")
+            raise HTTPException(status_code=400, detail="The 'Score' column must contain numeric values.")
+        if not pd.api.types.is_numeric_dtype(df["P-value"]):
+            logger.error("The 'P-value' column must contain numeric values")
+            raise HTTPException(status_code=400, detail="The 'P-value' column must contain numeric values.")
 
-    aggregated_text_file = print_aggregated_pathway_information(general_args, all_pathways)
-    plot_file = plot_pathways_mean_scores(general_args, all_pathways)
+        logger.info("File validation successful")
+        # If all checks pass, return the preprocessed DataFrame
+        return df
 
-    if os.path.exists(general_args.temp_output_folder):
-        rmtree(general_args.temp_output_folder)
-
-    result_zip_path = os.path.join(general_args.output_dir, "results.zip")
-    with ZipFile(result_zip_path, 'w') as result_zip:
-        result_zip.write(aggregated_text_file, arcname=os.path.basename(aggregated_text_file))
-        result_zip.write(plot_file, arcname=os.path.basename(plot_file))
-
-    return result_zip_path
+    except Exception as e:
+        logger.error(f"Error processing file: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")

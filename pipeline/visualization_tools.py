@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
-from args import EnrichTask, GeneralArgs
+from .settings import Settings
 from os import path, makedirs
 import matplotlib.pyplot as plt
 
-def print_aggregated_pathway_information(args: GeneralArgs, all_pathways: dict) -> str:
+def print_aggregated_pathway_information(args: Settings, all_pathways: dict) -> str:
     """
     Print aggregated pathway information including P-values, trends, and significant genes
     for each pathway to a text file based on a given experiment.
@@ -17,7 +17,7 @@ def print_aggregated_pathway_information(args: GeneralArgs, all_pathways: dict) 
     - file_path (str): Path to the output file.
     """
     # Define the path for the output file
-    file_path = path.join(args.output_dir, 'Text', f'{args.Experiment_name}_{args.pathway_file}'
+    file_path = path.join(args.output_path, 'Text', f'{args.experiment_name}_{args.pathway_file}'
                                                    f'_{args.alpha}_aggregated.txt')
 
     if not all_pathways:
@@ -87,7 +87,7 @@ def print_enriched_pathways_to_file(task: EnrichTask, FDR_threshold: float) -> N
 
     print(f"Total significant pathways written: {significant_count}")
 
-def plot_pathways_mean_scores(args: GeneralArgs, all_pathways: dict) -> str:
+def plot_pathways_mean_scores(args: Settings, all_pathways: dict) -> str:
     """
     Plot mean scores of pathways across all conditions and save the plot as a PNG file.
 
@@ -176,7 +176,7 @@ def plot_pathways_mean_scores(args: GeneralArgs, all_pathways: dict) -> str:
     plt.subplots_adjust(left=0.4)
 
     # Save the figure to a PDF file in the specified output directory
-    output_file_path = path.join(args.output_dir, 'Plots', f"{args.Experiment_name}_{args.pathway_file}"
+    output_file_path = path.join(args.output_path, 'Plots', f"{args.experiment_name}_{args.pathway_file}"
                                                            f"_{args.alpha}_plot.pdf")
     makedirs(path.dirname(output_file_path), exist_ok=True)
     plt.savefig(output_file_path, format='pdf', bbox_inches='tight')

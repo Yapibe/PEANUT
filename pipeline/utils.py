@@ -4,83 +4,32 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 from os import path, makedirs
-from args import GeneralArgs, PropagationTask
+from .settings import Settings
+import time
+from typing import Union
+from io import BytesIO
 
-
-def filter_network_by_prior_data(network_filename: str, prior_data: pd.DataFrame) -> nx.Graph:
-    """
-    Filter a network to only include nodes present in the prior_data DataFrame.
-
-    Parameters:
-    - network_filename (str): Path to the network file.
-    - prior_data (pd.DataFrame): DataFrame containing gene information.
-
-    Returns:
-    - nx.Graph: A filtered graph object.
-    """
-    # Read the network
-    network = read_network(network_filename)
-
-    # Get the set of gene IDs from prior_data
-    gene_ids_in_prior_data = set(prior_data['GeneID'])
-
-    # Filter the network
-    filtered_network = network.copy()
-    for node in network.nodes:
-        if node not in gene_ids_in_prior_data:
-            filtered_network.remove_node(node)
-
-    return filtered_network
 
 ####################################################################LOAD FUNCTIONS############################################################################
 
-def load_pathways_genes(pathways_dir, gmt=False):
+def load_pathways_genes(pathways_dir):
     """
     Loads the pathways and their associated genes from a file.
 
     Args:
         pathways_dir (str): Path to the file containing the pathway data.
-        gmt (bool): Whether the file is in GMT format.
+
     Returns:
         dict: A dictionary mapping pathway names to lists of genes in each pathway.
     """
-    if not gmt:
-        pathways = {}
-        # Open the file containing pathway data
-        try:
-            with open(pathways_dir, 'r') as file:
-                for line in file:
-                    # Process each line, normalize case, and split by tab
-                    parts = line.strip().split()
-                    # Skip lines that don't have at least 3 parts or where the second part isn't a digit
-                    if len(parts) < 3 or not parts[1].isdigit():
-                        continue
-
-                    # Parse pathway name
-                    pathway_name = parts[0]
-
-                    # Pathway does not include size, extract all parts starting from the second part as genes
-                    genes = [int(gene) for gene in parts[1:] if gene.isdigit()]
-
-                    pathways[pathway_name] = genes
-
-        except FileNotFoundError:
-            print(f"File not found: {pathways_dir}")
-        except Exception as e:
-            print(f"An error occurred while loading pathways: {e}")
-
-        return pathways
-
-    # gmt
     pathways = {}
     # Open the file containing pathway data
     try:
         with open(pathways_dir, 'r') as file:
             for line in file:
                 # Process each line, split by tab
-                # parts = line.strip().split('\t')
-                #decoy
                 parts = line.strip().split()
+
                 # Skip lines that don't have at least 3 parts
                 if len(parts) < 3:
                     continue
@@ -88,8 +37,12 @@ def load_pathways_genes(pathways_dir, gmt=False):
                 # Parse pathway name
                 pathway_name = parts[0]
 
-                # Extract all parts starting from the third part as genes
-                genes = [str(gene) for gene in parts[2:]]
+                # Extract all parts starting from the third part as genes, converting them to integers
+                try:
+                    genes = [int(gene) for gene in parts[2:]]
+                except ValueError:
+                    print(f"Non-integer gene ID found in pathway {pathway_name}, skipping pathway.")
+                    continue
 
                 pathways[pathway_name] = genes
 
@@ -99,6 +52,7 @@ def load_pathways_genes(pathways_dir, gmt=False):
         print(f"An error occurred while loading pathways: {e}")
 
     return pathways
+
 
 
 def load_propagation_file(file_path, decompress=True):
@@ -126,50 +80,48 @@ def load_propagation_scores(propagation_file_path):
     return propagation_result_dict
 
 
-def load_pathways_and_propagation_scores(general_args, propagation_file_path):
+def load_pathways_and_propagation_scores(settings, scores_df):
     """
     Loads the pathways based on the provided configuration and the propagation scores.
     Returns:
         tuple: A tuple containing the network graph, a list of interesting pathways, and a dictionary mapping
                pathways to their genes.
     """
-    pathways_with_many_genes = load_pathways_genes(general_args.pathway_file_dir, general_args.run_gsea)
-    scores = get_scores(propagation_file_path)
-    if general_args.run_gsea:
+    pathways_with_many_genes = load_pathways_genes(settings.pathway_file_dir)
+    sorted_scores = scores_df.sort_values(by='GeneID').reset_index(drop=True)
+    scores = {gene_id: (score, pvalue) for gene_id, score, pvalue
+                   in zip(sorted_scores['GeneID'], sorted_scores['Score'], sorted_scores['P-value'])}
+    if settings.run_gsea:
         return pathways_with_many_genes, scores
     else:
         scores_keys = set(scores.keys())
         # Filter pathways by those having gene counts within the specified range and that intersect with scored genes
         genes_by_pathway = {pathway: set(genes).intersection(scores_keys)
-                                for pathway, genes in pathways_with_many_genes.items()
-                                if general_args.minimum_gene_per_pathway <=
-                                len(set(genes).intersection(scores_keys)) <= general_args.maximum_gene_per_pathway}
+                            for pathway, genes in pathways_with_many_genes.items()
+                            if settings.minimum_gene_per_pathway <=
+                            len(set(genes).intersection(scores_keys)) <= settings.maximum_gene_per_pathway}
 
     return genes_by_pathway, scores
 
 ####################################################################GET FUNCTIONS############################################################################
 
-def set_input_type(prior_data, input_type='Score'):
+def set_input_type(prior_data, norm: bool = False):
     """
     Modifies the 'Score' column based on the specified input type.
 
     Args:
         prior_data (pandas.DataFrame): DataFrame containing all experimental data.
-        input_type (str): Type of input to generate (e.g., 'ones', 'abs_Score', etc.).
+        norm (bool): Flag indicating whether to normalize the 'Score' column. Default is False.
 
     Returns:
         pandas.DataFrame: DataFrame with the modified 'Score' column.
     """
-    if input_type not in {'ones', 'abs_Score', 'Score'}:
-        raise ValueError(f'{input_type} is not a valid input type')
-
     modified_prior_data = prior_data.copy()
 
-    if input_type == 'ones':
+    if norm:
         modified_prior_data['Score'] = 1
-    elif input_type == 'abs_Score':
+    else:
         modified_prior_data['Score'] = prior_data['Score'].abs()
-    # If input_type is 'Score', we don't need to do anything as we want to keep the original scores
 
     return modified_prior_data
 
@@ -241,17 +193,21 @@ def read_network(network_filename: str) -> nx.Graph:
     return nx.from_pandas_edgelist(network, 0, 1, 2)
 
 
-def read_prior_set(excel_dir: str) -> pd.DataFrame:
+def read_prior_set(excel_input: Union[str, BytesIO], is_bytes: bool = False) -> pd.DataFrame:
     """
     Read prior data set from an Excel file and apply preprocessing.
 
     Parameters:
-    - excel_dir (str): Path to the Excel file containing the prior data.
+    - excel_input (str or BytesIO): Path to the Excel file or a BytesIO object containing the prior data.
+    - is_bytes (bool): Flag indicating if the input is a BytesIO object. Default is False.
 
     Returns:
     - pd.DataFrame: DataFrame containing the preprocessed prior data.
     """
-    prior_data = pd.read_excel(excel_dir, engine='openpyxl')
+    if is_bytes:
+        prior_data = pd.read_excel(excel_input, engine='openpyxl')
+    else:
+        prior_data = pd.read_excel(excel_input, engine='openpyxl')
 
     # Identify duplicate GeneID values
     duplicate_gene_ids = prior_data[prior_data.duplicated(subset='GeneID', keep=False)]
@@ -299,8 +255,8 @@ def save_file(obj, save_dir=None, compress=True):
 
 
 def save_propagation_score(propagation_scores: pd.DataFrame, prior_set: pd.DataFrame,
-                           propagation_input: dict, genes_id_to_idx: dict, task: PropagationTask,
-                           save_dir: str, general_args: GeneralArgs) -> None:
+                           propagation_input: dict, genes_id_to_idx: dict, task,
+                           save_dir: str, general_args: Settings) -> None:
     """
     Save the propagation scores to a compressed file.
 
@@ -328,7 +284,7 @@ def save_propagation_score(propagation_scores: pd.DataFrame, prior_set: pd.DataF
 
     save_file(save_dict, propagation_results_path)
 
-##############################################################################################################################################
+####################################################################ELSE######################################################
 
 def process_condition(condition_file, experiment_file, pathways_file, all_pathways, P_VALUE_THRESHOLD=0.05):
     """
@@ -396,3 +352,41 @@ def process_condition(condition_file, experiment_file, pathways_file, all_pathwa
         else:
             all_pathways[pathway][condition_name]['P-value'] = 1  # Default P-value if not in enriched dictionary
             all_pathways[pathway][condition_name]['Trend'] = "Up" if mean_score > 0 else "Down"
+
+
+
+def filter_network_by_prior_data(network_filename: str, prior_data: pd.DataFrame) -> nx.Graph:
+    """
+    Filter a network to only include nodes present in the prior_data DataFrame.
+
+    Parameters:
+    - network_filename (str): Path to the network file.
+    - prior_data (pd.DataFrame): DataFrame containing gene information.
+
+    Returns:
+    - nx.Graph: A filtered graph object.
+    """
+    # Read the network
+    network = read_network(network_filename)
+
+    # Get the set of gene IDs from prior_data
+    gene_ids_in_prior_data = set(prior_data['GeneID'])
+
+    # Filter the network
+    filtered_network = network.copy()
+    for node in network.nodes:
+        if node not in gene_ids_in_prior_data:
+            filtered_network.remove_node(node)
+
+    return filtered_network
+
+
+
+def calculate_time(func):
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)  # Store the result
+        end_time = time.time()
+        print(f"Execution time: {end_time - start_time:.2f} seconds")
+        return result  # Return the result
+    return wrapper

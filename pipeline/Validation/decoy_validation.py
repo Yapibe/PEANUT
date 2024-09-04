@@ -77,7 +77,7 @@ def process_file(network, network_name, alpha, prop_method, file_name):
 # Start timing the entire process
 start_time = time.time()
 
-network_names = ['HumanNet', 'String_', 'H_sapiens', 'String']
+network_names = ['HumanNet', 'String_', 'Anat', 'String']
 prop_methods = ['PROP', 'GSEA', 'NGSEA', 'ABS_PROP']
 alpha_values = [0.2, 0.1]
 
@@ -89,7 +89,7 @@ logger.info("Loading network and processing files...")
 futures = []
 with ProcessPoolExecutor(max_workers=60) as executor:
     for network_name in network_names:
-        network_file = os.path.join(pipeline_dir, 'Data', 'Human', 'network', network_name)
+        network_file = os.path.join(pipeline_dir, 'Data', 'Anat', 'network', network_name)
         network = read_network(network_file)
 
         for alpha in alpha_values:

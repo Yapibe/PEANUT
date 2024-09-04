@@ -21,7 +21,7 @@ This program is designed for pathway analysis in RNA-seq data, focusing on filte
 2. **Install required packages**:
    Ensure you have Python 3.8 or higher. Install dependencies using pip:
    ```sh
-    pip install -r requirements.txt
+    pip install -r dependencies.txt
     ```
    requirements.txt should include:
    ```plaintext

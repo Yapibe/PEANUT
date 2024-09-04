@@ -50,8 +50,8 @@ def simulate_scores(pathways, delta=1.0, num_decoy_pathways=10, seed=None):
 
 
 def run_pipeline(alpha, run_propagation: bool = True, run_gsea: bool = False, run_simulated: bool = True):
-    from pipeline.main import main
-    main(run_propagation=run_propagation, alpha=alpha, run_gsea=run_gsea, run_simulated=run_simulated)
+    from pipeline.pipeline_main import pipeline_main
+    pipeline_main(run_propagation=run_propagation, alpha=alpha, run_gsea=run_gsea, run_simulated=run_simulated)
 
 
 # Function to calculate precision, recall, and AUPR
@@ -74,7 +74,7 @@ def calculate_metrics(true_decoys, identified_pathways, all_pathways):
 
 # Main script
 root_dir = path.dirname(path.abspath(__file__))
-pathways_file = path.join(root_dir, 'pipeline', 'Data', 'Human', 'pathways', 'c2')
+pathways_file = path.join(root_dir, 'pipeline', 'Data', 'Anat', 'pathways', 'c2')
 pathways = load_pathways_genes(pathways_file)
 
 deltas = [100, 1000, 10000]

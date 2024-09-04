@@ -1,40 +1,302 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>RNA-seq Analysis Pipeline</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PEANUT - Pathway Enrichment Analysis through Network Utilization</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 10px;
+            background-color: #f0f0f0;
+            line-height: 1.6;
+        }
+        .container {
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(200, 7, 7, 0.1);
+        }
+        h1, h2 {
+            color: #333;
+            background-color: #b089bd;
+            padding: 10px;
+            margin-top: 0;
+            border-radius: 3px;
+        }
+        .description {
+            margin-bottom: 20px;
+        }
+        form {
+            margin-top: 20px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            box-sizing: border-box;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button[type="reset"] {
+            background-color: #f44336;
+        }
+        button[type="reset"]:hover {
+            background-color: #da190b;
+        }
+        .info {
+            margin-top: 20px;
+            font-style: italic;
+            color: #666;
+        }
+        .advanced-settings {
+            display: none;
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .advanced-toggle {
+            cursor: pointer;
+            color: #0066cc;
+            text-decoration: underline;
+        }
+        #result {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e6e6fa;
+            border-radius: 5px;
+        }
+        #jobStatusForm {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+        .hidden {
+            display: none;
+        }
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+    </style>
 </head>
 <body>
-    <h1>RNA-seq Analysis Pipeline</h1>
-    <button id="run-button">Run Analysis</button>
-    <div id="result-message"></div>
+    <div class="container">
+        <h1>PEANUT</h1>
+        <div class="description">
+            <p><strong>PEANUT</strong> (Pathway Enrichment Analysis through Network Utilization) is a web-server designed to perform pathway enrichment analysis by leveraging network propagation techniques on up-to-date Protein-Protein Interaction (PPI) networks. The tool enables researchers to propagate gene scores through the PPI network, allowing for the identification of pathways that are significantly associated with a set of seed genes.</p>
+        
+            <p>Users can customize several parameters in PEANUT:</p>
+            <ul>
+                <li><strong>Propagation Alpha:</strong> This parameter controls the extent to which information is propagated through the network. A higher alpha emphasizes the direct interactions of the seed genes, while a lower alpha allows for more diffusion across the network.</li>
+                <li><strong>FDR Threshold:</strong> False Discovery Rate (FDR) correction is applied to control for multiple testing, ensuring that only pathways that meet the user-defined significance threshold are considered.</li>
+                <li><strong>Species Selection:</strong> PEANUT uses up-to-date PPI networks for different species, with Homo sapiens being the primary network currently supported.</li>
+            </ul>
+        
+            <p>PEANUT also offers the ability to import custom gene sets and pathway files, allowing for flexible analysis of various biological datasets. Pathway enrichment results can be downloaded for further analysis, providing users with a comprehensive list of significantly enriched pathways based on the network propagation results.</p>
+        
+            <p>Whether you're studying disease pathways or biological processes, PEANUT helps uncover biologically significant pathways that may be missed by traditional enrichment approaches by integrating network-based analysis.</p>
+        
+            <p><em>Last updated on [insert date here] based on [insert PPI network version here].</em></p>
+        </div>
+        <h2>Start a new PEANUT job</h2>
+        <form id="pipelineForm">
+            <label for="test_name">Test Name</label>
+            <input type="text" id="test_name" name="test_name" required>
+
+            <label for="species">Species</label>
+            <select id="species" name="species" required>
+                <option value="H_sapiens">Homo Sapiens (PPI)</option>
+            </select>
+
+            <label for="alpha">Propagation alpha</label>
+            <input type="number" id="alpha" name="alpha" step="0.1" min="0" value="1" required>
+
+            <label for="network">Network</label>
+            <select id="network" name="network" required>
+                <option value="Anat">Anat</option>
+                <option value="HumanNet">HumanNet</option>
+            </select>
+
+            <label for="pathway_file">Gene Set</label>
+            <select id="pathway_file" name="pathway_file" required>
+                <option value="kegg">KEGG</option>
+                <option value="reactome">Reactome</option>
+            </select>
+
+            <label for="file">Input preranked table</label>
+            <input type="file" id="file" name="file" accept=".xlsx,.xls" required>
+
+            <div class="advanced-toggle" onclick="toggleAdvancedSettings()">Advanced Settings ▼</div>
+            <div class="advanced-settings" id="advancedSettings">
+                <label for="min_genes_per_pathway">Minimum Genes per Pathway</label>
+                <input type="number" id="min_genes_per_pathway" name="min_genes_per_pathway" value="15">
+
+                <label for="max_genes_per_pathway">Maximum Genes per Pathway</label>
+                <input type="number" id="max_genes_per_pathway" name="max_genes_per_pathway" value="500">
+
+                <label for="fdr_threshold">FDR threshold</label>
+                <input type="number" id="fdr_threshold" name="fdr_threshold" step="0.01" min="0" value="0.05">
+
+                <label for="JAC_threshold">Jaccard threshold</label>
+                <input type="number" id="JAC_threshold" name="JAC_threshold" step="0.1" value="0.2">
+            </div>
+
+            <button type="submit" id="submitButton">Submit</button>
+            <button type="reset">Clear</button>
+        </form>
+
+        <div class="info">
+            <p>Note: Running the analysis might take 1-5 minutes. Please be patient.</p>
+        </div>
+
+        <div id="result"></div>
+
+        <div id="jobStatusForm">
+            <h2>Check your job status</h2>
+            <form id="statusForm">
+                <label for="jobCode">Job Code:</label>
+                <input type="text" id="jobCode" name="jobCode" required>
+                <button type="submit">Check Status</button>
+            </form>
+            <div id="statusResult"></div>
+        </div>
+    </div>
+
     <script>
-        document.getElementById("run-button").addEventListener("click", function() {
-            fetch('/run/', {
-                method: 'POST'
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.blob();
-            })
-            .then(blob => {
-                // Create a link to download the result
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = 'results.zip';
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.getElementById("result-message").innerText = "Analysis completed. Results downloaded.";
-            })
-            .catch(error => {
-                console.error('There was a problem with the fetch operation:', error);
-                document.getElementById("result-message").innerText = "An error occurred while running the analysis.";
-            });
+        let statusCheckInterval = null;
+
+        function updateJobStatus(result, jobCode) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <h2>Job Status</h2>
+                <p>Job Code: <strong>${jobCode}</strong></p>
+                <p id="jobStatus">Status: ${result.status}</p>
+                <p id="downloadLink"></p>
+            `;
+
+            const downloadElement = document.getElementById('downloadLink');
+            
+            switch(result.status) {
+                case 'Finished':
+                    downloadElement.innerHTML = `<a href="${result.download_url}">Download Results</a>`;
+                    break;
+                case 'Processing':
+                    downloadElement.innerHTML = '<p>Your job is still processing. Please check again later.</p>';
+                    break;
+                case 'Failed':
+                    downloadElement.innerHTML = '<p>Your job has failed. Please try submitting again or contact support if the issue persists.</p>';
+                    break;
+                default:
+                    downloadElement.innerHTML = '<p>Unexpected job status. Please contact support.</p>';
+            }
+        }
+
+        function checkJobStatus(jobCode, isNewSubmission = false) {
+            fetch(`/check-status/${jobCode}`)
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return response.json();
+                })
+                .then(result => {
+                    updateJobStatus(result, jobCode);
+                    if (isNewSubmission && result.status === 'Processing') {
+                        // Only set interval for newly submitted jobs
+                        statusCheckInterval = setInterval(() => checkJobStatus(jobCode, true), 5000);
+                    } else if (result.status !== 'Processing') {
+                        clearInterval(statusCheckInterval);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('result').innerHTML = `<p>Error: ${error.message}</p>`;
+                    clearInterval(statusCheckInterval);
+                });
+        }
+
+        document.getElementById('pipelineForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const submitButton = document.getElementById('submitButton');
+            submitButton.disabled = true;
+            submitButton.textContent = "Submitting...";
+
+            try {
+                const response = await fetch('/run-pipeline', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                const result = await response.json();
+                const resultDiv = document.getElementById('result');
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `
+                    <h2>Job Submitted Successfully</h2>
+                    <p>Your job code is: <strong>${result.job_code}</strong></p>
+                    <p id="jobStatus">Status: Processing</p>
+                    <p id="downloadLink"></p>
+                `;
+                
+                document.getElementById('jobStatusForm').style.display = 'none';
+                clearInterval(statusCheckInterval);
+                checkJobStatus(result.job_code, true);
+            } catch (error) {
+                console.error('Error:', error);
+                const resultDiv = document.getElementById('result');
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `<p>Error: ${error.message}</p>`;
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = "Submit";
+            }
         });
+
+        document.getElementById('statusForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const jobCode = document.getElementById('jobCode').value;
+            clearInterval(statusCheckInterval);
+            checkJobStatus(jobCode, false);
+            document.getElementById('jobStatusForm').style.display = 'none';
+        });
+
+        function toggleAdvancedSettings() {
+            const advancedSettings = document.getElementById("advancedSettings");
+            const toggleButton = document.querySelector(".advanced-toggle");
+            if (advancedSettings.style.display === "none" || advancedSettings.style.display === "") {
+                advancedSettings.style.display = "block";
+                toggleButton.innerHTML = "Advanced Settings ▲";
+            } else {
+                advancedSettings.style.display = "none";
+                toggleButton.innerHTML = "Advanced Settings ▼";
+            }
+        }
     </script>
 </body>
 </html>

@@ -2,7 +2,7 @@ import pandas as pd
 import json
 
 # Load the first file (edges with weights) using space as the delimiter, and skip the header row
-edges_file = '../Data/Human/network/protein.links'
+edges_file = '../Data/H_sapiens/network/protein.links'
 edges_df = pd.read_csv(edges_file, sep='\s+', names=['protein1', 'protein2', 'experimental', 'database', 'textmining', 'combined_score'],
                        dtype={'protein1': str, 'protein2': str, 'experimental': float, 'database': float, 'textmining': float, 'combined_score': float}, skiprows=1)
 
@@ -16,7 +16,7 @@ edges_df = edges_df[edges_df['experimental'] != 0]
 edges_df = edges_df.drop(columns=['database', 'textmining', 'combined_score'])
 
 # Load the second file (node translation dictionary)
-dictionary_file = '../Data/Human/network/protein.info'
+dictionary_file = '../Data/H_sapiens/network/protein.info'
 dictionary_df = pd.read_csv(dictionary_file, sep='\t', usecols=['#string_protein_id', 'preferred_name', 'annotation'])
 
 # Remove rows where 'annotation' contains "novel" or "Uncharacterized"
@@ -33,7 +33,7 @@ edges_df['protein1'] = edges_df['protein1'].str.strip().map(translation_dict).fi
 edges_df['protein2'] = edges_df['protein2'].str.strip().map(translation_dict).fillna(edges_df['protein2'])
 
 # Load the gene_info.json file
-with open('../Data/Human/gene_names/gene_info.json', 'r') as f:
+with open('../Data/H_sapiens/gene_names/gene_info.json', 'r') as f:
     gene_info = json.load(f)
 
 # Map gene symbols to their gene IDs using the gene_info dictionary
@@ -64,7 +64,7 @@ edges_df['protein1'] = edges_df['protein1'].astype(int)
 edges_df['protein2'] = edges_df['protein2'].astype(int)
 
 # Save the final output to a new file
-output_file = '../Data/Human/network/String_'
+output_file = '../Data/H_sapiens/network/String_'
 edges_df.to_csv(output_file, sep='\t', index=False, header=False)
 
 print(f"Network file saved to {output_file}")
