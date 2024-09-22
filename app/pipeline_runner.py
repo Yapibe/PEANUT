@@ -4,14 +4,19 @@ from pipeline.pipeline_main import pipeline_main
 import pandas as pd
 import logging
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
-async def run_pipeline(file_content: bytes, filename: str, settings: SettingsInput, job_storage, job_code):
+
+async def run_pipeline(
+    file_content: bytes, filename: str, settings: SettingsInput, job_storage, job_code
+):
     try:
         # Validate and convert the uploaded file to a DataFrame
         df = await validate_file(file_content, filename)
-        
+
         # Actual pipeline execution
         output_file_path = await pipeline_main(df, settings)
 

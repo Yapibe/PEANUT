@@ -23,14 +23,19 @@ def simulate_scores(pathways, delta=1.0, num_decoy_pathways=10, seed=None):
     tail_probabilities = norm.cdf(-abs_scores)
     p_values = tail_probabilities * 2
 
-    gene_score_pvalue_dict = {gene: (score, p_value) for gene, score, p_value in zip(all_genes, scores, p_values)}
+    gene_score_pvalue_dict = {
+        gene: (score, p_value)
+        for gene, score, p_value in zip(all_genes, scores, p_values)
+    }
 
     # Initialize selected genes and pathways
     selected_genes = set()
     selected_pathways = set()
 
     # Iteratively select genes ensuring the number of pathways is under the desired amount
-    while len(selected_pathways) <= num_decoy_pathways and len(selected_genes) < len(all_genes):
+    while len(selected_pathways) <= num_decoy_pathways and len(selected_genes) < len(
+        all_genes
+    ):
         candidate_gene = np.random.choice(all_genes)
         candidate_pathways = {k for k, v in pathways.items() if candidate_gene in v}
 
@@ -49,9 +54,20 @@ def simulate_scores(pathways, delta=1.0, num_decoy_pathways=10, seed=None):
     return gene_score_pvalue_dict, selected_pathways
 
 
-def run_pipeline(alpha, run_propagation: bool = True, run_gsea: bool = False, run_simulated: bool = True):
+def run_pipeline(
+    alpha,
+    run_propagation: bool = True,
+    run_gsea: bool = False,
+    run_simulated: bool = True,
+):
     from pipeline.pipeline_main import pipeline_main
-    pipeline_main(run_propagation=run_propagation, alpha=alpha, run_gsea=run_gsea, run_simulated=run_simulated)
+
+    pipeline_main(
+        run_propagation=run_propagation,
+        alpha=alpha,
+        run_gsea=run_gsea,
+        run_simulated=run_simulated,
+    )
 
 
 # Function to calculate precision, recall, and AUPR
@@ -60,8 +76,16 @@ def calculate_metrics(true_decoys, identified_pathways, all_pathways):
     false_positives = len(set(identified_pathways) - set(true_decoys))
     false_negatives = len(set(true_decoys) - set(identified_pathways))
 
-    precision = true_positives / (true_positives + false_positives) if (true_positives + false_positives) > 0 else 0
-    recall = true_positives / (true_positives + false_negatives) if (true_positives + false_negatives) > 0 else 0
+    precision = (
+        true_positives / (true_positives + false_positives)
+        if (true_positives + false_positives) > 0
+        else 0
+    )
+    recall = (
+        true_positives / (true_positives + false_negatives)
+        if (true_positives + false_negatives) > 0
+        else 0
+    )
 
     y_true = [1 if pathway in true_decoys else 0 for pathway in all_pathways]
     y_scores = [1 if pathway in identified_pathways else 0 for pathway in all_pathways]
@@ -74,23 +98,27 @@ def calculate_metrics(true_decoys, identified_pathways, all_pathways):
 
 # Main script
 root_dir = path.dirname(path.abspath(__file__))
-pathways_file = path.join(root_dir, 'pipeline', 'Data', 'Anat', 'pathways', 'c2')
+pathways_file = path.join(root_dir, "pipeline", "Data", "Anat", "pathways", "c2")
 pathways = load_pathways_genes(pathways_file)
 
 deltas = [100, 1000, 10000]
 alphas = [0.1, 0.2, 1]  # Different alpha values to loop through
-num_decoy_pathways_list = [50, 60, 100]  # Different numbers of decoy pathways to loop through
+num_decoy_pathways_list = [
+    50,
+    60,
+    100,
+]  # Different numbers of decoy pathways to loop through
 n_runs = 10  # Number of runs for each combination
 run_gsea_options = [True, False]  # Run GSEA and non-GSEA options
 
 results_dict = {
-    'delta': [],
-    'alpha': [],
-    'num_decoy_pathways': [],
-    'run_gsea': [],
-    'precision': [],
-    'recall': [],
-    'aupr': [],
+    "delta": [],
+    "alpha": [],
+    "num_decoy_pathways": [],
+    "run_gsea": [],
+    "precision": [],
+    "recall": [],
+    "aupr": [],
 }
 
 for delta in deltas:
@@ -102,29 +130,49 @@ for delta in deltas:
                 aupr_values = []
 
                 for _ in range(n_runs):
-                    gene_score_pvalue_dict, true_decoys = simulate_scores(pathways, delta=delta,
-                                                                          num_decoy_pathways=num_decoy_pathways,
-                                                                          seed=None)
-                    simulated_scores_path = path.join(root_dir, 'pipeline', 'Inputs', 'Simulated',
-                                                      f'simulated_scores_delta:{delta}_alpha:{alpha}_NumOfDecoyPaths:{num_decoy_pathways}_gsea:{run_gsea}.xlsx')
-                    result_file_path = path.join(root_dir, 'pipeline', 'Outputs', 'Temp',
-                                                 f'simulated_scores_delta:{delta}_alpha:{alpha}_NumOfDecoyPaths:{num_decoy_pathways}_gsea:{run_gsea}.txt')
+                    gene_score_pvalue_dict, true_decoys = simulate_scores(
+                        pathways,
+                        delta=delta,
+                        num_decoy_pathways=num_decoy_pathways,
+                        seed=None,
+                    )
+                    simulated_scores_path = path.join(
+                        root_dir,
+                        "pipeline",
+                        "Inputs",
+                        "Simulated",
+                        f"simulated_scores_delta:{delta}_alpha:{alpha}_NumOfDecoyPaths:{num_decoy_pathways}_gsea:{run_gsea}.xlsx",
+                    )
+                    result_file_path = path.join(
+                        root_dir,
+                        "pipeline",
+                        "Outputs",
+                        "Temp",
+                        f"simulated_scores_delta:{delta}_alpha:{alpha}_NumOfDecoyPaths:{num_decoy_pathways}_gsea:{run_gsea}.txt",
+                    )
                     print(true_decoys)
                     # Save the simulated scores
-                    results = pd.DataFrame.from_dict(gene_score_pvalue_dict, orient='index',
-                                                     columns=['Score', 'P-value'])
+                    results = pd.DataFrame.from_dict(
+                        gene_score_pvalue_dict,
+                        orient="index",
+                        columns=["Score", "P-value"],
+                    )
                     results.reset_index(inplace=True)
-                    results.rename(columns={'index': 'GeneID'}, inplace=True)
+                    results.rename(columns={"index": "GeneID"}, inplace=True)
                     results.to_excel(simulated_scores_path, index=False)
 
                     # Run the pipeline
                     run_pipeline(alpha=alpha, run_gsea=run_gsea)
 
-                    with open(result_file_path, 'r') as f:
-                        identified_pathways = [line.split()[0] for line in f.readlines()]
+                    with open(result_file_path, "r") as f:
+                        identified_pathways = [
+                            line.split()[0] for line in f.readlines()
+                        ]
 
                     # Calculate metrics for the whole run
-                    precision, recall, aupr = calculate_metrics(true_decoys, identified_pathways, list(pathways.keys()))
+                    precision, recall, aupr = calculate_metrics(
+                        true_decoys, identified_pathways, list(pathways.keys())
+                    )
                     precision_values.append(precision)
                     recall_values.append(recall)
                     aupr_values.append(aupr)
@@ -135,21 +183,34 @@ for delta in deltas:
                     if path.exists(result_file_path):
                         remove(result_file_path)
                     # Erase each folder and its contents in Outputs/Propagation_Scores that start with simulated_scores
-                    for folder in [f for f in listdir(path.join(root_dir, 'pipeline', 'Outputs', 'Propagation_Scores'))
-                                   if f.startswith('simulated_scores')]:
-                        folder_path = path.join(root_dir, 'pipeline', 'Outputs', 'Propagation_Scores', folder)
+                    for folder in [
+                        f
+                        for f in listdir(
+                            path.join(
+                                root_dir, "pipeline", "Outputs", "Propagation_Scores"
+                            )
+                        )
+                        if f.startswith("simulated_scores")
+                    ]:
+                        folder_path = path.join(
+                            root_dir,
+                            "pipeline",
+                            "Outputs",
+                            "Propagation_Scores",
+                            folder,
+                        )
                         for file in listdir(folder_path):
                             remove(path.join(folder_path, file))
                         rmdir(folder_path)
 
                 # Average the precision, recall, and AUPR values
-                results_dict['delta'].append(delta)
-                results_dict['alpha'].append(alpha)
-                results_dict['num_decoy_pathways'].append(num_decoy_pathways)
-                results_dict['run_gsea'].append(run_gsea)
-                results_dict['precision'].append(np.mean(precision_values))
-                results_dict['recall'].append(np.mean(recall_values))
-                results_dict['aupr'].append(np.mean(aupr_values))
+                results_dict["delta"].append(delta)
+                results_dict["alpha"].append(alpha)
+                results_dict["num_decoy_pathways"].append(num_decoy_pathways)
+                results_dict["run_gsea"].append(run_gsea)
+                results_dict["precision"].append(np.mean(precision_values))
+                results_dict["recall"].append(np.mean(recall_values))
+                results_dict["aupr"].append(np.mean(aupr_values))
 
 # Convert results to DataFrame
 results_df = pd.DataFrame(results_dict)
@@ -161,20 +222,44 @@ for delta in deltas:
 
         for run_gsea in run_gsea_options:
             subset = results_df[
-                (results_df['delta'] == delta) & (results_df['num_decoy_pathways'] == num_decoy_pathways) & (
-                            results_df['run_gsea'] == run_gsea)]
-            label = 'GSEA' if run_gsea else 'No GSEA'
-            plt.plot(subset['alpha'].values, subset['precision'].values, marker='o', label=f'Precision ({label})')
-            plt.plot(subset['alpha'].values, subset['recall'].values, marker='o', label=f'Recall ({label})')
-            plt.plot(subset['alpha'].values, subset['aupr'].values, marker='o', label=f'AUPR ({label})')
+                (results_df["delta"] == delta)
+                & (results_df["num_decoy_pathways"] == num_decoy_pathways)
+                & (results_df["run_gsea"] == run_gsea)
+            ]
+            label = "GSEA" if run_gsea else "No GSEA"
+            plt.plot(
+                subset["alpha"].values,
+                subset["precision"].values,
+                marker="o",
+                label=f"Precision ({label})",
+            )
+            plt.plot(
+                subset["alpha"].values,
+                subset["recall"].values,
+                marker="o",
+                label=f"Recall ({label})",
+            )
+            plt.plot(
+                subset["alpha"].values,
+                subset["aupr"].values,
+                marker="o",
+                label=f"AUPR ({label})",
+            )
 
-        plt.xlabel('Alpha')
-        plt.ylabel('Value')
-        plt.title(f'Precision, Recall, and AUPR (Delta: {delta}, Decoy Pathways: {num_decoy_pathways})')
+        plt.xlabel("Alpha")
+        plt.ylabel("Value")
+        plt.title(
+            f"Precision, Recall, and AUPR (Delta: {delta}, Decoy Pathways: {num_decoy_pathways})"
+        )
         plt.xticks(alphas)
         plt.legend()
         plt.grid(True)
-        plt.savefig(path.join(root_dir, f'precision_recall_aupr_chart_delta_{delta}_decoy_{num_decoy_pathways}.png'))
+        plt.savefig(
+            path.join(
+                root_dir,
+                f"precision_recall_aupr_chart_delta_{delta}_decoy_{num_decoy_pathways}.png",
+            )
+        )
         plt.show()
 
 print(results_df)

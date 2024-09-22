@@ -13,9 +13,11 @@ class SettingsInput(BaseModel):
     fdr_threshold: float
     JAC_threshold: float
 
+
 class PipelineOutput(BaseModel):
     result: str
     job_code: str
+
 
 class JobStatus(BaseModel):
     status: str
