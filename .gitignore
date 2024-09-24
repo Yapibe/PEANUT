@@ -1,0 +1,13 @@
+/pipeline/Data/H_sapiens/matrix/
+/pipeline/config.yaml
+pyproject.toml
+.idea
+__pycache__/
+/pipeline/Outputs
+pyproject.toml
+pipeline/scripts/
+pipeline/__pycache__/
+/home/yair/projects/Yair_propagation/pipeline/__pycache__/settings.cpython-310.pyc
+app/__pycache__/
+pipeline/Inputs/
+.idea/
