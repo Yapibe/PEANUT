@@ -18,7 +18,6 @@ async def validate_file(
 
     # Ensure the file is an Excel file
     if not filename.endswith((".xlsx", ".xls")):
-    if not filename.endswith((".xlsx", ".xls")):
         logger.error("Invalid file type: %s", filename)
         raise HTTPException(
             status_code=400,

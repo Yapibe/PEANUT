@@ -54,7 +54,6 @@ async def execute_pipeline(
     max_genes_per_pathway: int = Form(None),
     fdr_threshold: float = Form(...),
     JAC_threshold: float = Form(...),
-    JAC_threshold: float = Form(...),
 ):
     """Execute the pipeline with the given parameters."""
     logger.info("Received request to run pipeline")
@@ -130,11 +129,6 @@ async def check_job_status(job_code: str):
 
     return JobStatus(
         status=job["status"],
-        download_url=(
-            f"/download-file/{job['output_file']}"
-            if job["status"] == "Finished" and job["output_file"]
-            else None
-        ),
         download_url=(
             f"/download-file/{job['output_file']}"
             if job["status"] == "Finished" and job["output_file"]
