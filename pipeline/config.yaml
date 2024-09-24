@@ -1,0 +1,13 @@
+test_name: 'test'
+species: 'H_sapiens'
+alpha: 1
+network: 'Anat'
+pathway_file: 'kegg'
+min_genes_per_pathway: 15
+max_genes_per_pathway: 500
+fdr_threshold: 0.05
+jac_threshold: 0.2
+condition_data_files:
+  - 'pipeline/Inputs/experiments_data/GSE/XLSX/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.xlsx'
+  - 'pipeline/Inputs/experiments_data/GSE/XLSX/GSE5281HIP_KEGG_ALZHEIMERS_DISEASE.xlsx'
+  - 'pipeline/Inputs/experiments_data/GSE/XLSX/GSE5281EC_KEGG_ALZHEIMERS_DISEASE.xlsx'

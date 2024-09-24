@@ -2,11 +2,11 @@
 
 ## Overview
 
-This program is designed for pathway analysis in RNA-seq data, focusing on filtering and statistical enrichment analysis within a biological protein-protein interaction (PPI) network. It leverages various statistical methods and network propagation to identify significant pathways associated with a given experiment.
+PEANUT is a web-based tool designed to perform pathway enrichment analysis on RNA-seq data using network propagation techniques. By leveraging protein-protein interaction (PPI) networks, PEANUT helps identify significant biological pathways associated with a given experiment. The web interface allows easy customization of parameters and processing of multiple conditions, while providing downloadable results and visualizations.
 
 ## Features
-- **Experimental Data Loading**: Reads and processes RNA-seq data from CSV files.
-- **Network Propagation**: Propagates gene scores through a PPI network to enhance biological data analysis.
+- **Web Interface for Ease of Use**: Upload gene sets and customize parameters directly through a web interface.
+- **Multiple Condition Support**: Analyze multiple gene sets in one run and compare the results across different conditions.
 - **Pathway Data Loading and filtering**: Loads and parses pathway data and filters based on various criteria.
 - **Statistical Analysis**: Performs a series of statistical tests to identify significant pathways.
 - **Multiple Testing Correction**: Adjusts p-values using the False Discovery Rate (FDR) method.
@@ -98,67 +98,30 @@ that of other annotated genes. Pathways with FDR-corrected p-values smaller than
   - `P_VALUE_THRESHOLD`: P-value threshold for statistical significance.
 
 ### Directory Structure
-- **Data:**
-  - `Human`:
-    - `gene_names`: contains dictionaries of gene names and their corresponding IDs.
-    - `pathways`: contains lists of pathways and their corresponding genes.
-    - `network`: contains the PPI network data.
-    - `matrix`: contains the similarity matrix for the network.
-- **Inputs:**
-  - `experiments_data/`:
-    - `GSE`: contains the experimental data for each condition.
-      - `GCT`: Each experiment has a file that contains name,description, and score for each gene.
-      - `RNK`: Each experiment has a file that contains name and score for each gene.
-      - `xlsx`: Each experiment has a file that contains GeneID, Symbol, score and P-value for each gene.
-- **Outputs:**
-  - `NGSEA`:
-    - `ABS_PROP`:
-      - `H_sapiens`:
-        - `c2`: contains the result of the gsea run with absolute propagation values and H_sapiens network and c2 pathways.
-        - `kegg`: contains the result of the gsea run with absolute propagation values and H_sapiens network and kegg pathways.
-      - `HumanNet`:
-        - `c2`: contains the result of the gsea run with absolute propagation values and HumanNet network and c2 pathways.
-        - `kegg`: contains the result of the gsea run with absolute propagation values and HumanNet network and kegg pathways.
-    - `PROP`: 
-        - `H_sapiens`:
-            - `c2`: contains the result of the gsea run with propagation values and H_sapiens network and c2 pathways.
-            - `kegg`: contains the result of the gsea run with propagation values and H_sapiens network and kegg pathways.
-        - `HumanNet`:
-            - `c2`: contains the result of the gsea run with propagation values and HumanNet network and c2 pathways.
-            - `kegg`: contains the result of the gsea run with propagation values and HumanNet network and kegg pathways.
-    - `GSEA`:
-      - `H_sapiens`:
-        - `c2`: contains the result of the gsea run with normal values and H_sapiens network and c2 pathways.
-        - `kegg`: contains the result of the gsea run with normal values and H_sapiens network and kegg pathways.
-      - `HumanNet`:
-        - `c2`: contains the result of the gsea run with normal values and HumanNet network and c2 pathways.
-        - `kegg`: contains the result of the gsea run with normal values and HumanNet network and kegg pathways.
-    - `NGSEA`:
-      - `H_sapiens`:
-        - `c2`: contains the result of the gsea run with average neighbor values H_sapiens network and c2 pathways.
-        - `kegg`: contains the result of the gsea run with average neighbor H_sapiens network and kegg pathways.
-    - `Plots`: 
-      - `H_sapiens`:
-        - `c2`: contains the plots of the gsea run with H_sapiens network and c2 pathways.
-        - `kegg`: contains the plots of the gsea run with H_sapiens network and kegg pathways.
-      - `HumanNet`:
-        - `c2`: contains the plots of the gsea run with HumanNet network and c2 pathways.
-        - `kegg`: contains the plots of the gsea run with HumanNet network and kegg pathways.
-    - `Summary`:
-        - `H_sapiens`:
-            - `c2`: contains the summary of the gsea run with H_sapiens network and c2 pathways.
-            - `kegg`: contains the summary of the gsea run with H_sapiens network and kegg pathways.
-        - `HumanNet`:
-            - `c2`: contains the summary of the gsea run with HumanNet network and c2 pathways.
-            - `kegg`: contains the summary of the gsea run with HumanNet network and kegg pathways.
-        
-
-
-
-
-
-
-
+- **YAIR_PROPAGATION**
+  - **app**
+    - **static/**
+    - `__init__.py`
+    - `app_main.py`
+    - `models.py`
+    - `pipeline_runner.py`
+    - `routes.py`
+    - `utils.py`
+  - **pipeline**
+    - **Data**
+      - `Human`: contains gene names, pathways, network, and matrix data
+    - **Inputs**
+      - `experiments_data`: contains experimental data for each condition
+    - **Outputs**
+      - `NGSEA`: contains results and plots for various analysis methods
+    - `pipeline_main.py`
+    - `settings.py`
+    - `propagation_routines.py`
+    - `pathway_enrichment.py`
+    - `visualization_tools.py`
+    - `utils.py`
+    - `statistical_methods.py`
+    
 ### Statistical Methods
 - **Hypergeometric Test:** <br>
   Used to identify statistically significant pathways by comparing the observed number of genes in a pathway to the expected number under a null model.
