@@ -17,76 +17,58 @@ PEANUT is a web-based tool designed to perform pathway enrichment analysis on RN
 1. **Clone the repository**:
    ```sh
    git clone https://github.com/Yapibe/PEANUT.git
-    ```
+   ```
 2. **Install required packages**:
    Ensure you have Python 3.8 or higher. Install dependencies using pip:
    ```sh
-    pip install -r dependencies.txt
-    ```
-   requirements.txt should include:
-   ```plaintext
-    numpy==1.21.2
-    pandas==1.3.3
-    scipy==1.7.3
-    statsmodels==0.12.2
-    networkx==2.6.3
-    matplotlib==3.4.3
-    seaborn==0.11.2
-    ```
-   
-## Usage
-
-1. **Configure the program**:
-   Modify the configuration file `config.yaml` to specify input and output directories, as well as filtering thresholds and statistical parameters.
-2. **Run the program**:
-   Execute the main script `main.py` to perform pathway analysis on the specified data.
-   ```sh
-   python main.py
+   pip install -r requirements.txt
    ```
-3. **View the results**:
-   Results will be saved in the Outputs directory, including filtered pathways and statistical analysis results.
+3. **Run the application**:
+   Use FastAPI to start the web server
+   ```sh
+   uvicorn app.app_main:app --reload
+   ```
 
-## Detailed Explanation
+4. **Access the web interface**:
+    Open a browser and go to `http://127.0.0.1:8000` to access the PEANUT interface.
 
-### Pipeline Stages
-####  Data Loading
-Load the experimental data from the specified input directory. The data should be in the form of a CSV file with columns
-for GeneID, Symbol, Score and P-value for each condition.
+## Web Interface Usage
 
-#### Propagation 
-Propagate gene scores through a protein-protein interaction (PPI) network to obtain updated scores which are saved for
-further analysis. The default network is the Human PPI network which is loaded from the data directory.
+1. **Start a New Job**:
+    - Enter a test name and upload one or more preranked gene set files (Excel format).
+    - Select species, network type, propagation alpha, and gene set (e.g., KEGG, Reactome).
+    - (Optional) Customize advanced settings, including minimum/maximum genes per pathway, FDR threshold, and Jaccard index threshold.
+    - Submit the form to start the analysis.
+2. **Monitor Job Status**:
+    - After submitting a job, you will receive a job code to check the status.
+    - Use the provided job code to monitor progress. Once the job is completed, you can download the results as a zip file.
+3. **Download Results**:
+    - The results will include significant pathways and gene information for each condition, along with comparative visualizations in a PNG file.
 
-#### Pathway Filtering
-Initially, pathways are filtered based on their size and overlap with differentially expressed genes (DEGs) to focus on those
-most relevant to the study's conditions using a hypergeometric test.
+## Backend Usage (Optional)
 
-#### Statistical Tests for Enrichment
-Each pathway is scored using the Kolmogorov-Smirnov test to assess if the expression changes of its genes deviate
-significantly from all other genes. Those pathways which are found significant after an FDR correction
-(p<0.05) are maintained.
+1. **Configure the Program**: Modify config.yaml to specify input/output directories and statistical parameters for advanced usage outside the web interface.
 
-#### Additional Filtering
-To control for potential differences between genes in annotated pathways vs. other genes, we perform a 
-final Mann-Whitney test with the remaining pathways to compare the distribution of their expression changes to
-that of other annotated genes. Pathways with FDR-corrected p-values smaller than 0.05 are reported.
+2. **Run the Backend Pipeline**: For those who prefer command-line execution:
+   ```sh
+   python pipeline/pipeline_main.py
+   ```
 
-#### Propagation Steps
-1. **Load Prior Data:** Load the initial gene scores and P-values from the experimental data.
-2. **Filter Network:** Filter the PPI network to include only genes present in the prior data.
-3. **Create or Load Similarity Matrix:** Generate or load the similarity matrix for the network.
-4. **Propagate Scores:** Propagate the gene scores through the network.
-5. **Normalize Scores:** Normalize the propagated scores using ones vector.
-6. **Save Results:** Save the propagated scores and the updated gene data.
+## Pipeline Overview
+### Web Pipeline
+- **Gene Set Upload**: Upload multiple preranked tables for analysis.
+- **Network Propagation**: Propagate gene scores through the PPI network to identify enriched pathways.
+- **Pathway Enrichment**: Perform statistical tests (Kolmogorov-Smirnov, Mann-Whitney) to assess significance.
+- **Visualization**: Generate plots comparing pathway significance across conditions.
 
-#### Enrichment Steps
-1. **Identify Significant Genes:** Identify genes with P-values below the significance threshold.
-2. **Filter Pathways:** Filter pathways based on gene count criteria.
-3. **Hypergeometric Test:** Calculate hypergeometric P-values for each pathway with enough genes.
-4. **Kolmogorov-Smirnov Test:** Perform the KS test to compare distributions of scores.
-5. **Mann-Whitney Test:** Perform the Mann-Whitney test for additional filtering.
-6. **Adjust P-values:** Apply Benjamini-Hochberg correction to the P-values.
-7. **Save Results:** Save the significant pathways and their associated genes.
+
+### Backend Pipeline (Detailed)
+For users preferring command-line execution, the pipeline consists of:
+1. **Data Loading**: Load experimental data from CSV files with columns for GeneID, Symbol, Score, and P-value.
+2. **Network Propagation**: Propagate gene scores through a PPI network and filter based on significance.
+3. **Statistical Enrichment**: Perform statistical tests to identify significant pathways.
+4. **Result Compilation**: Compile and save results and plots for each condition.
+
 
 ### Constants and parameters
 - **Thresholds:**
@@ -99,28 +81,26 @@ that of other annotated genes. Pathways with FDR-corrected p-values smaller than
 
 ### Directory Structure
 - **YAIR_PROPAGATION**
-  - **app**
-    - **static/**
-    - `__init__.py`
-    - `app_main.py`
-    - `models.py`
-    - `pipeline_runner.py`
-    - `routes.py`
-    - `utils.py`
-  - **pipeline**
-    - **Data**
+  - **app/**: Contains the FastAPI web server and associated routes.
+    - `static/`: Static assets for the web interface.
+    - `app_main.py`: FastAPI entry point.
+    - `models.py`: Defines the data models.
+    - `pipeline_runner.py`: Executes the backend pipeline.
+    - `routes.py`: Handles file uploads, job status, and result download routes.
+    - `utils.py`: Utility functions for data processing and file handling.
+  - **pipeline/**: Backend code for pathway analysis.
+    - **Data/**
       - `Human`: contains gene names, pathways, network, and matrix data
-    - **Inputs**
+    - **Inputs/**
       - `experiments_data`: contains experimental data for each condition
-    - **Outputs**
-      - `NGSEA`: contains results and plots for various analysis methods
-    - `pipeline_main.py`
-    - `settings.py`
-    - `propagation_routines.py`
-    - `pathway_enrichment.py`
-    - `visualization_tools.py`
-    - `utils.py`
-    - `statistical_methods.py`
+    - **Outputs/**: Generates plots for pathway comparison.
+    - `pipeline_main.py`: Main script for pathway analysis.
+    - `settings.py`: Contains settings for the pipeline.
+    - `propagation_routines.py`: Handles network propagation.
+    - `pathway_enrichment.py`: Contains statistical analysis methods.
+    - `visualization_tools.py`: Generates plots for pathway comparison.
+    - `utils.py`: Utility functions for data processing and file handling.
+    - `statistical_methods.py`: Contains statistical analysis methods.
     
 ### Statistical Methods
 - **Hypergeometric Test:** <br>
@@ -136,7 +116,7 @@ that of other annotated genes. Pathways with FDR-corrected p-values smaller than
     Adjusts p-values to account for multiple testing, controlling the false discovery rate.
 
 ## Plot Explanation
-
-For each pathway in the generated plots, you can see its trends for each condition. If the bar is solid, it means that 
-it's significantly changing in that condition. In the accompanying text file, you can find full information on
-pathway p-values, trends, and scores of significant genes that are part of the pathways.
+The output plots display pathway trends across conditions:
+- **Colored Bars**: Show the mean score for each pathway in a given condition.
+- **Solid Bars**:  Indicate significant pathways based on the FDR threshold.
+- **Text File**: Includes full details on p-values, trends, and significant genes.
