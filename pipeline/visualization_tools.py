@@ -248,6 +248,5 @@ def plot_pathways_mean_scores(
     )
     plt.savefig(output_file_path, format="png", bbox_inches="tight", bbox_extra_artists=[legend])
     plt.close()
-
-    logger.info(f"Plot saved at: {output_file_path}")
     return output_file_path
+
