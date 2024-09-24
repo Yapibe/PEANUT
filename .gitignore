@@ -12,3 +12,4 @@ app/__pycache__/
 pipeline/Inputs/
 .idea/
 /home/yair/projects/Yair_propagation/pipeline/Inputs/
+app/static/
