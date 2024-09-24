@@ -37,6 +37,7 @@ def bh_correction(p_values: np.ndarray) -> np.ndarray:
 
     Returns:
     - np.ndarray: Array of adjusted p-values.
+    - np.ndarray: Array of adjusted p-values.
     """
     p_values = np.asarray(p_values)
     n = len(p_values)
@@ -65,6 +66,7 @@ def kolmogorov_smirnov_test(
     - control_scores (array_like): Scores from the control group.
 
     Returns:
+    - float: The P-value from the KS test indicating statistical difference.
     - float: The P-value from the KS test indicating statistical difference.
     """
     result = ks_2samp(
@@ -170,6 +172,7 @@ def kolmogorov_smirnov_test_with_ranking(
     Perform the Kolmogorov-Smirnov test using global ranking.
 
     Parameters:
+    - pathway_genes (set): Set of gene IDs in the pathway.
     - pathway_genes (set): Set of gene IDs in the pathway.
     - global_ranking (pd.Series): Global ranking of all genes.
 

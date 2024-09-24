@@ -17,6 +17,7 @@ async def lifespan(app: FastAPI):
     logger.info("Application is shutting down")
 
 
+
 class AddCacheControlHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         response = await call_next(request)
@@ -28,6 +29,8 @@ class AddCacheControlHeadersMiddleware(BaseHTTPMiddleware):
             response.headers["Expires"] = "0"
         return response
 
+
+middleware = [Middleware(AddCacheControlHeadersMiddleware)]
 
 middleware = [Middleware(AddCacheControlHeadersMiddleware)]
 

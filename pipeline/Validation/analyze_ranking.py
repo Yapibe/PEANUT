@@ -16,6 +16,9 @@ from sklearn.preprocessing import StandardScaler
 h_sapiens_file_path = "../Outputs/NGSEA/Summary/Anat/kegg/alpha 0.2/rankings_summary_H_sapiens_kegg_alpha_0.2.xlsx"
 string_file_path = "../Outputs/NGSEA/Summary/String/kegg/alpha 0.2/rankings_summary_String_kegg_alpha_0.2.xlsx"
 Hnet_file_path = "../Outputs/NGSEA/Summary/HumanNet/kegg/alpha 0.2/rankings_summary_HumanNet_kegg_alpha_0.2.xlsx"
+h_sapiens_file_path = "../Outputs/NGSEA/Summary/Anat/kegg/alpha 0.2/rankings_summary_H_sapiens_kegg_alpha_0.2.xlsx"
+string_file_path = "../Outputs/NGSEA/Summary/String/kegg/alpha 0.2/rankings_summary_String_kegg_alpha_0.2.xlsx"
+Hnet_file_path = "../Outputs/NGSEA/Summary/HumanNet/kegg/alpha 0.2/rankings_summary_HumanNet_kegg_alpha_0.2.xlsx"
 
 df_h_sapiens = pd.read_excel(h_sapiens_file_path)
 df_string = pd.read_excel(string_file_path)
@@ -24,10 +27,16 @@ df_human_net = pd.read_excel(Hnet_file_path)
 # Extract the ranks for ABS_PROP and GSEA
 abs_prop_ranks_hs = df_h_sapiens["ABS_PROP Rank"]
 gsea_ranks_hs = df_h_sapiens["GSEA Rank"]
+abs_prop_ranks_hs = df_h_sapiens["ABS_PROP Rank"]
+gsea_ranks_hs = df_h_sapiens["GSEA Rank"]
 
 abs_prop_ranks_string = df_string["ABS_PROP Rank"]
 gsea_ranks_string = df_string["GSEA Rank"]
+abs_prop_ranks_string = df_string["ABS_PROP Rank"]
+gsea_ranks_string = df_string["GSEA Rank"]
 
+abs_prop_ranks_human_net = df_human_net["ABS_PROP Rank"]
+gsea_ranks_human_net = df_human_net["GSEA Rank"]
 abs_prop_ranks_human_net = df_human_net["ABS_PROP Rank"]
 gsea_ranks_human_net = df_human_net["GSEA Rank"]
 
@@ -46,20 +55,34 @@ print(
 print(
     f"HumanNet file - Wilcoxon statistic: {result_human_net.statistic}, p-value: {result_human_net.pvalue}"
 )
+print(
+    f"Anat file - Wilcoxon statistic: {result_hs.statistic}, p-value: {result_hs.pvalue}"
+)
+print(
+    f"String file - Wilcoxon statistic: {result_string.statistic}, p-value: {result_string.pvalue}"
+)
+print(
+    f"HumanNet file - Wilcoxon statistic: {result_human_net.statistic}, p-value: {result_human_net.pvalue}"
+)
 
 
 # Specify the directory containing the data
 data_dir = "../Outputs/NGSEA/Summary"
+data_dir = "../Outputs/NGSEA/Summary"
 
 # List of networks and alpha values
 networks = ["String_", "Anat", "HumanNet"]
+networks = ["String_", "Anat", "HumanNet"]
 alphas = [0.1, 0.2]
+methods = ["GSEA", "NGSEA", "PROP", "ABS_PROP"]
 methods = ["GSEA", "NGSEA", "PROP", "ABS_PROP"]
 
 # Construct the file paths dynamically
 file_paths = []
 for network in networks:
     for alpha in alphas:
+        file_name = f"rankings_summary_{network}_kegg_alpha_{alpha}.xlsx"
+        file_path = os.path.join(data_dir, network, "kegg", f"alpha {alpha}", file_name)
         file_name = f"rankings_summary_{network}_kegg_alpha_{alpha}.xlsx"
         file_path = os.path.join(data_dir, network, "kegg", f"alpha {alpha}", file_name)
         file_paths.append(file_path)
@@ -69,6 +92,7 @@ dataframes = []
 for file_path in file_paths:
     df = pd.read_excel(file_path)
     df = df[~df["Dataset"].str.contains("average|percent", case=False, na=False)]
+    df = df[~df["Dataset"].str.contains("average|percent", case=False, na=False)]
 
     # Extract network and alpha from file name
     filename = os.path.basename(file_path)
@@ -76,8 +100,14 @@ for file_path in file_paths:
     alpha = float(filename.split("_")[-1].replace(".xlsx", ""))
     df["Network"] = network
     df["Alpha"] = alpha
+    network = filename.split("_")[2]
+    alpha = float(filename.split("_")[-1].replace(".xlsx", ""))
+    df["Network"] = network
+    df["Alpha"] = alpha
 
     # Correct network name if it's listed as 'H'
+    df["Network"].replace({"H": "Anat"}, inplace=True)
+    df["Network"].replace({"String": "String_"}, inplace=True)
     df["Network"].replace({"H": "Anat"}, inplace=True)
     df["Network"].replace({"String": "String_"}, inplace=True)
 
@@ -87,6 +117,19 @@ for file_path in file_paths:
 combined_df = pd.concat(dataframes, ignore_index=True)
 
 # Aggregate data by Pathway
+pathway_df = (
+    combined_df.groupby("Pathway")
+    .agg(
+        {
+            "Density": "mean",
+            "Num Genes": "mean",
+            "Avg Diameter": "mean",
+            "PROP Rank": "mean",
+            "ABS_PROP Rank": "mean",
+        }
+    )
+    .reset_index()
+)
 pathway_df = (
     combined_df.groupby("Pathway")
     .agg(
@@ -119,6 +162,22 @@ network_metrics = {
         0.13695278983250672,
         0.18843538587424444,
     ],
+    "Network": ["HumanNet", "Anat", "String_"],
+    "Num Nodes": [18459, 19950, 17991],
+    "Num Edges": [977495, 899737, 712446],
+    "Network Density": [
+        0.005737883534057266,
+        0.004521489698480498,
+        0.004402460633689089,
+    ],
+    "Avg Degree": [105.90985427162902, 90.19919799498747, 79.2002668000667],
+    "Connected Components": [3, 2, 4],
+    "Largest Component Size": [18454, 19948, 17984],
+    "Avg Clustering Coefficient": [
+        0.22184569149353095,
+        0.13695278983250672,
+        0.18843538587424444,
+    ],
 }
 
 # Convert to DataFrame
@@ -126,8 +185,10 @@ network_metrics_df = pd.DataFrame(network_metrics)
 
 # Merge the network metrics with the combined dataset
 combined_df = pd.merge(combined_df, network_metrics_df, on="Network", how="left")
+combined_df = pd.merge(combined_df, network_metrics_df, on="Network", how="left")
 
 # Group by 'Dataset' to get unique GSEA and NGSEA results (no need to group by network)
+unique_gsea_ngsea_df = combined_df.groupby("Dataset").first().reset_index()
 unique_gsea_ngsea_df = combined_df.groupby("Dataset").first().reset_index()
 
 # Calculate Pearson correlations using the unique sets for GSEA and NGSEA, and the full data for PROP and ABS_PROP
@@ -137,9 +198,20 @@ correlation_results = {}
 for network in networks:
     # Filter the data for the current network
     network_df = combined_df[combined_df["Network"] == network]
+    network_df = combined_df[combined_df["Network"] == network]
 
     # Calculate correlations
     correlation_results[network] = {
+        "GSEA": unique_gsea_ngsea_df[["GSEA Rank", "GSEA Significant"]]
+        .corr()
+        .iloc[0, 1],
+        "NGSEA": unique_gsea_ngsea_df[["NGSEA Rank", "NGSEA Significant"]]
+        .corr()
+        .iloc[0, 1],
+        "PROP": network_df[["PROP Rank", "PROP Significant"]].corr().iloc[0, 1],
+        "ABS_PROP": network_df[["ABS_PROP Rank", "ABS_PROP Significant"]]
+        .corr()
+        .iloc[0, 1],
         "GSEA": unique_gsea_ngsea_df[["GSEA Rank", "GSEA Significant"]]
         .corr()
         .iloc[0, 1],
@@ -163,6 +235,12 @@ def perform_paired_ttest(network, method):
     alpha_0_2 = combined_df[
         (combined_df["Network"] == network) & (combined_df["Alpha"] == 0.2)
     ][f"{method} Rank"]
+    alpha_0_1 = combined_df[
+        (combined_df["Network"] == network) & (combined_df["Alpha"] == 0.1)
+    ][f"{method} Rank"]
+    alpha_0_2 = combined_df[
+        (combined_df["Network"] == network) & (combined_df["Alpha"] == 0.2)
+    ][f"{method} Rank"]
 
     t_stat, p_value = ttest_rel(alpha_0_1, alpha_0_2)
     return t_stat, p_value
@@ -172,12 +250,19 @@ ttest_results = {}
 for network in networks:
     ttest_results[network] = {}
     for method in ["PROP", "ABS_PROP"]:
+    for method in ["PROP", "ABS_PROP"]:
         t_stat, p_value = perform_paired_ttest(network, method)
+        ttest_results[network][method] = {"t_stat": t_stat, "p_value": p_value}
         ttest_results[network][method] = {"t_stat": t_stat, "p_value": p_value}
 
 print("Paired T-Test Results:", ttest_results)
 
 # Updated factors to include network metrics
+factors = (
+    'Network + Alpha + Density + Q("Num Genes") + Q("Avg Diameter") + '
+    'Q("Num Nodes") + Q("Num Edges") + Q("Network Density") + Q("Avg Degree") + '
+    'Q("Connected Components") + Q("Largest Component Size") + Q("Avg Clustering Coefficient")'
+)
 factors = (
     'Network + Alpha + Density + Q("Num Genes") + Q("Avg Diameter") + '
     'Q("Num Nodes") + Q("Num Edges") + Q("Network Density") + Q("Avg Degree") + '
@@ -226,7 +311,13 @@ def determine_best_clusters(data):
         kmeans = KMeans(
             n_clusters=k, random_state=42, n_init=10
         )  # Explicitly set n_init to 10
+        kmeans = KMeans(
+            n_clusters=k, random_state=42, n_init=10
+        )  # Explicitly set n_init to 10
         kmeans.fit(data)
+        sse.append(
+            kmeans.inertia_
+        )  # Sum of squared distances to the nearest cluster center
         sse.append(
             kmeans.inertia_
         )  # Sum of squared distances to the nearest cluster center
@@ -243,8 +334,10 @@ def determine_best_clusters(data):
 for file_path in file_paths:
     df = pd.read_excel(file_path)
     df = df[~df["Dataset"].str.contains("average|percent", case=False, na=False)]
+    df = df[~df["Dataset"].str.contains("average|percent", case=False, na=False)]
 
     # Standardize the data, excluding the ranks
+    clustering_data = pathway_df[["Density", "Num Genes", "Avg Diameter"]].dropna()
     clustering_data = pathway_df[["Density", "Num Genes", "Avg Diameter"]].dropna()
     scaler = StandardScaler()
     clustering_data_scaled = scaler.fit_transform(clustering_data)
@@ -255,10 +348,12 @@ for file_path in file_paths:
     # Perform K-means clustering using the best number of clusters
     kmeans = KMeans(n_clusters=best_k, random_state=42, n_init=10)
     pathway_df["Cluster"] = kmeans.fit_predict(clustering_data_scaled)
+    pathway_df["Cluster"] = kmeans.fit_predict(clustering_data_scaled)
 
     # Print the pathways in each cluster
     print(f"\nClusters for pathways:")
     for cluster in range(best_k):
+        pathways_in_cluster = pathway_df[pathway_df["Cluster"] == cluster]["Pathway"]
         pathways_in_cluster = pathway_df[pathway_df["Cluster"] == cluster]["Pathway"]
         print(f"Cluster {cluster + 1}:")
         print(pathways_in_cluster.to_list())
@@ -275,13 +370,34 @@ for file_path in file_paths:
     pca_df["ABS_PROP Rank"] = pathway_df[
         "ABS_PROP Rank"
     ]  # Keep track of the ABS_PROP Rank
+    pca_df = pd.DataFrame(data=pca_components, columns=["PC1", "PC2"])
+    pca_df["Cluster"] = pathway_df["Cluster"]
+    pca_df["Pathway"] = pathway_df[
+        "Pathway"
+    ]  # Add the pathway names to the PCA DataFrame
+    pca_df["PROP Rank"] = pathway_df["PROP Rank"]  # Keep track of the PROP Rank
+    pca_df["ABS_PROP Rank"] = pathway_df[
+        "ABS_PROP Rank"
+    ]  # Keep track of the ABS_PROP Rank
 
     # Visualize the PCA results with clusters and pathway names
     plt.figure(figsize=(10, 6))
     for cluster in pca_df["Cluster"].unique():
         subset = pca_df[pca_df["Cluster"] == cluster]
         plt.scatter(subset["PC1"], subset["PC2"], label=f"Cluster {cluster}")
+    for cluster in pca_df["Cluster"].unique():
+        subset = pca_df[pca_df["Cluster"] == cluster]
+        plt.scatter(subset["PC1"], subset["PC2"], label=f"Cluster {cluster}")
         for i in range(subset.shape[0]):
+            plt.text(
+                subset["PC1"].iloc[i],
+                subset["PC2"].iloc[i],
+                subset["Pathway"].iloc[i],
+                fontsize=8,
+            )
+    plt.title(f"PCA of Pathways")
+    plt.xlabel("Principal Component 1")
+    plt.ylabel("Principal Component 2")
             plt.text(
                 subset["PC1"].iloc[i],
                 subset["PC2"].iloc[i],
@@ -302,11 +418,18 @@ for file_path in file_paths:
         columns=clustering_data.columns,
         index=[f"PC{i + 1}" for i in range(pca.n_components_)],
     )
+    pca_components_df = pd.DataFrame(
+        pca.components_,
+        columns=clustering_data.columns,
+        index=[f"PC{i + 1}" for i in range(pca.n_components_)],
+    )
 
     print(f"Explained Variance by Principal Components: {pca_explained_variance}")
     print("\nPrincipal Components:\n", pca_components_df)
 
     # Optionally: Correlate the PCA components with PROP and ABS_PROP Rank
+    corr_prop = pca_df[["PC1", "PC2"]].corrwith(pca_df["PROP Rank"])
+    corr_abs_prop = pca_df[["PC1", "PC2"]].corrwith(pca_df["ABS_PROP Rank"])
     corr_prop = pca_df[["PC1", "PC2"]].corrwith(pca_df["PROP Rank"])
     corr_abs_prop = pca_df[["PC1", "PC2"]].corrwith(pca_df["ABS_PROP Rank"])
 
@@ -328,17 +451,36 @@ features = [
     "Largest Component Size",
     "Avg Clustering Coefficient",
 ]
+features = [
+    "Density",
+    "Num Genes",
+    "Avg Diameter",
+    "Network",
+    "Alpha",
+    "Num Nodes",
+    "Num Edges",
+    "Network Density",
+    "Avg Degree",
+    "Connected Components",
+    "Largest Component Size",
+    "Avg Clustering Coefficient",
+]
 
 rf_results = {}
 
 for method in ["PROP Rank", "ABS_PROP Rank"]:
+for method in ["PROP Rank", "ABS_PROP Rank"]:
     X = combined_df[features]
+    X = pd.get_dummies(X, columns=["Network", "Alpha"], drop_first=True)
     X = pd.get_dummies(X, columns=["Network", "Alpha"], drop_first=True)
     y = combined_df[method].dropna()
 
     rf = RandomForestRegressor(random_state=42)
     rf.fit(X, y)
 
+    importance = pd.Series(rf.feature_importances_, index=X.columns).sort_values(
+        ascending=False
+    )
     importance = pd.Series(rf.feature_importances_, index=X.columns).sort_values(
         ascending=False
     )
@@ -351,6 +493,17 @@ for method, importance in rf_results.items():
 # Plotting Density vs. PROP Rank by Network
 plt.figure(figsize=(10, 6))
 for network in networks:
+    subset = combined_df[combined_df["Network"] == network]
+    plt.scatter(subset["Density"], subset["PROP Rank"], label=network)
+    plt.plot(
+        np.unique(subset["Density"]),
+        np.poly1d(np.polyfit(subset["Density"], subset["PROP Rank"], 1))(
+            np.unique(subset["Density"])
+        ),
+    )
+plt.title("Density vs. PROP Rank by Network")
+plt.xlabel("Density")
+plt.ylabel("PROP Rank")
     subset = combined_df[combined_df["Network"] == network]
     plt.scatter(subset["Density"], subset["PROP Rank"], label=network)
     plt.plot(
@@ -380,6 +533,17 @@ for network in networks:
 plt.title("Density vs. ABS_PROP Rank by Network")
 plt.xlabel("Density")
 plt.ylabel("ABS_PROP Rank")
+    subset = combined_df[combined_df["Network"] == network]
+    plt.scatter(subset["Density"], subset["ABS_PROP Rank"], label=network)
+    plt.plot(
+        np.unique(subset["Density"]),
+        np.poly1d(np.polyfit(subset["Density"], subset["ABS_PROP Rank"], 1))(
+            np.unique(subset["Density"])
+        ),
+    )
+plt.title("Density vs. ABS_PROP Rank by Network")
+plt.xlabel("Density")
+plt.ylabel("ABS_PROP Rank")
 plt.legend()
 plt.grid(True)
 plt.show()
@@ -387,8 +551,13 @@ plt.show()
 # Pathway attribute analysis for both PROP and ABS_PROP ranks
 # Define the pathway attributes to analyze
 pathway_attributes = ["Density", "Num Genes", "Avg Diameter"]
+pathway_attributes = ["Density", "Num Genes", "Avg Diameter"]
 attribute_results = {}
 
+for method in ["PROP Rank", "ABS_PROP Rank"]:
+    formula = f'Q("{method}") ~ ' + " + ".join(
+        [f'Q("{attr}")' for attr in pathway_attributes]
+    )
 for method in ["PROP Rank", "ABS_PROP Rank"]:
     formula = f'Q("{method}") ~ ' + " + ".join(
         [f'Q("{attr}")' for attr in pathway_attributes]
@@ -410,9 +579,20 @@ for method in ["PROP Rank", "ABS_PROP Rank"]:
         data=combined_df,
     ).fit()
     coefficients = model.params.drop("Intercept")
+for method in ["PROP Rank", "ABS_PROP Rank"]:
+    model = smf.ols(
+        f'Q("{method}") ~ '
+        + " + ".join([f'Q("{attr}")' for attr in pathway_attributes]),
+        data=combined_df,
+    ).fit()
+    coefficients = model.params.drop("Intercept")
 
     # Increase the figure size and adjust layout to prevent cutoff
     plt.figure(figsize=(12, 8))
+    coefficients.plot(kind="barh")
+    plt.title(f"Impact of Pathway Attributes on {method}")
+    plt.xlabel("Coefficient Value")
+    plt.ylabel("Pathway Attributes")
     coefficients.plot(kind="barh")
     plt.title(f"Impact of Pathway Attributes on {method}")
     plt.xlabel("Coefficient Value")

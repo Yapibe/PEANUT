@@ -38,3 +38,4 @@ async def run_pipeline(
         job_storage[job_code]["status"] = "Failed"
         job_storage[job_code]["error"] = str(e)
         raise
+

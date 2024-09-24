@@ -24,7 +24,7 @@ def load_pathways_genes(pathways_dir: Path) -> dict:
         pathways_dir (Path): Path to the file containing the pathway data.
 
     Returns:
-        dict: A dictionary mapping pathway names to lists of genes in each pathway.
+    - dict: A dictionary mapping pathway names to lists of genes in each pathway.
     """
     pathways = {}
     try:
@@ -60,7 +60,7 @@ def load_propagation_file(
         decompress (bool): Whether to decompress the file.
 
     Returns:
-        dict: The loaded data containing propagation scores and other information.
+    - dict: The loaded data containing propagation scores and other information.
     """
     try:
         with file_path.open("rb") as file:
@@ -172,6 +172,7 @@ def set_input_type(
     modified_prior_data = prior_data.copy()
     if norm:
         modified_prior_data["Score"] = 1
+        modified_prior_data["Score"] = 1
     else:
         modified_prior_data["Score"] = prior_data["Score"].abs()
     return modified_prior_data
@@ -236,6 +237,14 @@ def read_temp_scores(file_name: Path) -> dict:
         dict: A dictionary mapping pathways to their scores.
     """
     try:
+        scores = pd.read_csv(
+            file_name,
+            sep=" ",
+            header=None,
+            names=["Pathway", "Score"],
+            index_col="Pathway",
+        )
+        return scores["Score"].to_dict()
         scores = pd.read_csv(
             file_name,
             sep=" ",
@@ -355,7 +364,7 @@ def save_file(obj, save_dir: Path, compress: bool = True) -> None:
         compress (bool): Whether to compress the file.
 
     Returns:
-        None
+    - None
     """
     try:
         obj = pickle.dumps(obj)

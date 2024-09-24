@@ -10,7 +10,10 @@ class Settings:
 
     experiment_name: str
     species: str = "H_sapiens"
+    species: str = "H_sapiens"
     alpha: float = 1
+    network: str = "Anat"
+    pathway_file: str = "kegg"
     network: str = "Anat"
     pathway_file: str = "kegg"
     minimum_gene_per_pathway: int = 15

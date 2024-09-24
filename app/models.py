@@ -20,6 +20,8 @@ class PipelineOutput(BaseModel):
     job_code: str
 
 
+
 class JobStatus(BaseModel):
     status: str
     download_url: Optional[str] = None
+
