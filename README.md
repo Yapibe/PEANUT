@@ -7,16 +7,16 @@ PEANUT is a web-based tool designed to perform pathway enrichment analysis on RN
 ## Features
 - **Web Interface for Ease of Use**: Upload gene sets and customize parameters directly through a web interface.
 - **Multiple Condition Support**: Analyze multiple gene sets in one run and compare the results across different conditions.
-- **Pathway Data Loading and filtering**: Loads and parses pathway data and filters based on various criteria.
-- **Statistical Analysis**: Performs a series of statistical tests to identify significant pathways.
-- **Multiple Testing Correction**: Adjusts p-values using the False Discovery Rate (FDR) method.
-- **Output Generation**: Saves results in specified directories for further analysis.
+- **Network Propagation**: Propagate gene scores through a PPI network to enhance biological data analysis.
+- **Statistical Enrichment**: Perform statistical tests (Kolmogorov-Smirnov, Mann-Whitney) for pathway enrichment, with False Discovery Rate (FDR) correction.
+- **Downloadable Results**: Results and visualizations are packaged and downloadable as a zip file.
+- **Pathway Comparison**: View and compare pathway trends across conditions in generated plots.
 
 ## Installation
 
 1. **Clone the repository**:
    ```sh
-   git clone https://github.com/Yapibe/Yair_propagation.git
+   git clone https://github.com/Yapibe/PEANUT.git
     ```
 2. **Install required packages**:
    Ensure you have Python 3.8 or higher. Install dependencies using pip:
