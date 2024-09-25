@@ -10,10 +10,7 @@ class Settings:
 
     experiment_name: str
     species: str = "H_sapiens"
-    species: str = "H_sapiens"
     alpha: float = 1
-    network: str = "Anat"
-    pathway_file: str = "kegg"
     network: str = "Anat"
     pathway_file: str = "kegg"
     minimum_gene_per_pathway: int = 15
@@ -32,6 +29,7 @@ class Settings:
     genes_names_file_path: Path = field(init=False)
     pathway_file_dir: Path = field(init=False)
     run_gsea: bool = field(default=False)
+    plot_output_path: Path = field(init=False)
 
     def __post_init__(self):
         """Post-initialization to set up directories, file paths, and other settings."""
@@ -54,6 +52,7 @@ class Settings:
         self.pathway_file_dir = (
             self.data_dir / "pathways" / self.pathway_file
         )
+        self.plot_output_path = self.root_folder / "Outputs" / "Plots"
 
 
 @dataclass

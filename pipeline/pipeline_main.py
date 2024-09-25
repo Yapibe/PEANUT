@@ -132,17 +132,16 @@ async def main():
 
 if __name__ == "__main__":
     try:
-        config_path = Path(
-            "/home/yair/projects/Yair_propagation/pipeline/config.yaml"
-        )
+        # Changed the config_path to use a relative path
+        config_path = Path(__file__).resolve().parent / "config.yaml"
         with config_path.open("r") as f:
             config = yaml.safe_load(f)
-
+        
         settings = SettingsInput(**config)
         condition_data_files = [
             Path(file) for file in config["condition_data_files"]
         ]
-
+        
         asyncio.run(main())
     except Exception as e:
         logger.error(f"An error occurred in __main__: {e}")

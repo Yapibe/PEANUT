@@ -7,7 +7,6 @@ __pycache__/
 pyproject.toml
 pipeline/scripts/
 pipeline/__pycache__/
-/home/yair/projects/Yair_propagation/pipeline/__pycache__/settings.cpython-310.pyc
 app/__pycache__/
 pipeline/Inputs/
 .idea/
