@@ -1,8 +1,9 @@
 /pipeline/Data/H_sapiens/matrix/
-/pipeline/config.yaml
 pyproject.toml
 .idea
 __pycache__/
+*.pyc
+.DS_Store
 /pipeline/Outputs
 pyproject.toml
 pipeline/scripts/
@@ -12,3 +13,4 @@ pipeline/Inputs/
 .idea/
 /home/yair/projects/Yair_propagation/pipeline/Inputs/
 app/static/
+peanut.tar
