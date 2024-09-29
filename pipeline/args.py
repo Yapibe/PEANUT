@@ -36,7 +36,6 @@ class GeneralArgs:
     figure_title: str = 'Pathway Enrichment'
     output_dir: str = field(init=False)
     input_dir: str = field(init=False)
-    temp_output_folder: str = field(init=False)
     propagation_folder: str = field(init=False)
     gsea_out: Optional[str] = field(init=False)
     network_file_path: str = field(init=False)
@@ -54,12 +53,8 @@ class GeneralArgs:
         self.date = datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
         self.output_dir = path.join(self.root_folder, 'Outputs')
 
-        # Adjust the similarity matrix paths based on normalization type
-        norm_suffix = 'row' if self.normalization_type == 'row' else 'symmetric'
         self.similarity_matrix_path = path.join(self.data_dir, 'matrix',
-                                                f'{self.network}_{self.alpha}_{norm_suffix}.npz')
-        self.tri_similarity_matrix_path = path.join(self.data_dir, 'matrix',
-                                                    f'{self.network}_tri_{self.alpha}_{norm_suffix}.npy')
+                                                f'Anat_{self.alpha}.npz')
 
         self.input_dir = path.join(self.root_folder, 'Inputs', 'Simulated') if self.run_simulated else path.join(
             self.root_folder,
@@ -67,8 +62,6 @@ class GeneralArgs:
             'experiments_data',
             self.Experiment_name,
             'XLSX')
-        self.temp_output_folder = self._create_output_subdir(
-            path.join('Temp', self.method or '', self.network, self.pathway_file))
         self.propagation_folder = self._create_output_subdir(
             path.join('Propagation_Scores', self.method or '', self.network, self.pathway_file, f'alpha_{self.alpha}'))
         self.gsea_out = self._create_output_subdir(
@@ -132,7 +125,6 @@ class EnrichTask:
     - filtered_genes (set): Set of filtered genes.
     - filtered_pathways (dict): Dictionary of filtered pathways.
     - ks_significant_pathways_with_genes (dict): Dictionary of significant pathways with genes.
-    - temp_output_folder (str): Directory for temporary output files.
     """
     name: str
     statistic_test: Callable
@@ -143,10 +135,3 @@ class EnrichTask:
     filtered_genes: set = field(default_factory=set)
     filtered_pathways: dict = field(default_factory=dict)
     ks_significant_pathways_with_genes: dict = field(default_factory=dict)
-    temp_output_folder: str = field(init=False)
-
-    def __post_init__(self):
-        """
-        Post-initialization to set up the temporary output folder.
-        """
-        self.temp_output_folder = path.join(path.dirname(path.realpath(__file__)), 'Outputs', 'Temp')

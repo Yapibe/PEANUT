@@ -14,8 +14,9 @@ import time
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Hardcode the project root directory
-project_root = '/home/yair/projects/Yair_propagation'
+# Get the project root directory dynamically
+import os
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
 # Directories and settings
 input_dir = os.path.join(project_root, 'pipeline', 'Inputs', 'experiments_data', 'GSE', 'XLSX')
@@ -25,8 +26,8 @@ pathways_dir = os.path.join(project_root, 'pipeline', 'Data', 'H_sapiens', 'path
 networks = ['H_sapiens']
 pathway_files = ['kegg']
 prop_methods = ['NGSEA', 'GSEA',  'ABS_PROP']
-alphas = [0.1]
-max_workers = 1
+alphas = [0.1, 0.2]
+max_workers = 60
 
 # Ensure output directories exist
 os.makedirs(summary_base_dir, exist_ok=True)
@@ -51,8 +52,10 @@ def load_data():
 
 def run_analysis(test_name, prior_data, network, network_name, alpha, method, output_path, pathway_file):
     general_args = GeneralArgs(
-        network=network_name, pathway_file=pathway_file, method=method,
-        alpha=alpha if method in ['PROP', 'ABS_PROP'] else 1,
+        network=network_name,
+        pathway_file=pathway_file,
+        method=method,
+        alpha=alpha if method == 'ABS_PROP' else 1,
         run_propagation=True
     )
 
@@ -203,9 +206,9 @@ for network_name in networks:
 
             summary_output_dir = os.path.join(summary_base_dir, network_name, pathway_file, f"alpha {alpha}")
             os.makedirs(summary_output_dir, exist_ok=True)
-            rankings_output_path = os.path.join(summary_output_dir, f'MW_rankings_summary_{network_name}_{pathway_file}_alpha_{alpha}.xlsx')
+            rankings_output_path = os.path.join(summary_output_dir, f'rankings_summary_{network_name}_{pathway_file}_alpha_{alpha}.xlsx')
             summary_df.to_excel(rankings_output_path, index=False)
-            logger.info(f"MW Rankings summary saved to {rankings_output_path}")
+            logger.info(f"Rankings summary saved to {rankings_output_path}")
 
 elapsed_time = time.time() - start_time
 logger.info(f"Total time taken: {elapsed_time:.2f} seconds")

@@ -128,15 +128,13 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     return inverse_matrix, gene_index
 
 
-def read_sparse_matrix_txt(network: nx.Graph, similarity_matrix_path: str, tri_matrix_path: str, debug: bool) -> tuple:
+def read_sparse_matrix_txt(network: nx.Graph, similarity_matrix_path: str) -> tuple:
     """
     Reads a precomputed sparse similarity matrix from a file.
 
     Parameters:
     - network (nx.Graph): Network graph used to generate the similarity matrix.
     - similarity_matrix_path (str): Path to the file containing the sparse matrix.
-    - tri_matrix_path (str): Path to the file containing the upper triangular part of the sparse matrix.
-    - debug (bool): Flag to indicate whether to use the full matrix or the upper triangular part.
 
     Returns:
     - tuple: A tuple containing the sparse matrix and the list of genes.
@@ -144,15 +142,8 @@ def read_sparse_matrix_txt(network: nx.Graph, similarity_matrix_path: str, tri_m
     genes = sorted(network.nodes())
     gene_index = {gene: index for index, gene in enumerate(genes)}
 
-    if not os.path.exists(similarity_matrix_path) and not os.path.exists(tri_matrix_path):
-        raise FileNotFoundError(f"Neither specified file {similarity_matrix_path} nor {tri_matrix_path} exists.")
-
-    if debug:
-        upper_tri_inverse_matrix = np.load(tri_matrix_path)
-        return upper_tri_inverse_matrix, gene_index
-    else:
-        matrix = sp.load_npz(similarity_matrix_path)
-        return matrix, gene_index
+    matrix = sp.load_npz(similarity_matrix_path)
+    return matrix, gene_index
 
 def symmetric_matrix_vector_multiply(upper_tri_matrix: np.ndarray, F_0: np.ndarray) -> np.ndarray:
     """
@@ -403,7 +394,7 @@ def get_similarity_matrix(network, general_args):
     if general_args.create_similarity_matrix:
         return generate_similarity_matrix(network, general_args)
     else:
-        return read_sparse_matrix_txt(network, general_args.similarity_matrix_path, general_args.tri_similarity_matrix_path, general_args.debug)
+        return read_sparse_matrix_txt(network, general_args.similarity_matrix_path)
 
 
 def handle_no_propagation_cases(prior_data, prop_task, general_args, network):

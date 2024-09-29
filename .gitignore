@@ -85,3 +85,6 @@ venv.bak/
 
 # Ignore peanut.tar file
 peanut.tar
+
+# Ignore all app directory
+app/
