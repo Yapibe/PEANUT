@@ -17,7 +17,7 @@ class GeneralArgs:
     pathway_file: str = 'kegg'
     run_propagation: bool = True
     run_simulated: bool = False
-    run_gsea: bool = False
+    run_gsea: bool = True
     debug: bool = False
     create_similarity_matrix: bool = False
     normalization_type: str = 'symmetric'
@@ -49,7 +49,7 @@ class GeneralArgs:
         Post-initialization to set up directories, file paths, and other settings.
         """
         self.root_folder = path.dirname(path.abspath(__file__))
-        self.data_dir = path.join(self.root_folder, 'Data', 'Human')
+        self.data_dir = path.join(self.root_folder, 'Data', 'H_sapiens')
         self.Experiment_name = 'Simulated' if self.run_simulated else 'GSE'
         self.date = datetime.today().strftime('%d_%m_%Y__%H_%M_%S')
         self.output_dir = path.join(self.root_folder, 'Outputs')

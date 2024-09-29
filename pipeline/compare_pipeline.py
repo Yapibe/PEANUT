@@ -14,26 +14,37 @@ import time
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# Hardcode the project root directory
+project_root = '/home/yair/projects/Yair_propagation'
+
 # Directories and settings
-input_dir = os.path.join('Inputs', 'experiments_data', 'GSE', 'XLSX')
-output_base_dir = os.path.join('Outputs', 'NGSEA')
+input_dir = os.path.join(project_root, 'pipeline', 'Inputs', 'experiments_data', 'GSE', 'XLSX')
+output_base_dir = os.path.join(project_root, 'pipeline', 'Outputs', 'NGSEA')
 summary_base_dir = os.path.join(output_base_dir, 'Summary')
-pathways_dir = os.path.join('Data', 'Human', 'pathways')
-networks = ['H_sapiens', 'String', 'HumanNet','String_']
+pathways_dir = os.path.join(project_root, 'pipeline', 'Data', 'H_sapiens', 'pathways')
+networks = ['H_sapiens']
 pathway_files = ['kegg']
-prop_methods = ['MW', 'PROP', 'ABS_PROP']
-alphas = [0.1, 0.2]
-max_workers = 60
+prop_methods = ['NGSEA', 'GSEA',  'ABS_PROP']
+alphas = [0.1]
+max_workers = 1
 
 # Ensure output directories exist
 os.makedirs(summary_base_dir, exist_ok=True)
 
+# Check if input directory exists
+if not os.path.exists(input_dir):
+    logger.error(f"Input directory does not exist: {input_dir}")
+    logger.info(f"Current working directory: {os.getcwd()}")
+    logger.info(f"Project root directory: {project_root}")
+    raise FileNotFoundError(f"Input directory not found: {input_dir}")
+
 # List all files to be processed
 file_list = [f for f in os.listdir(input_dir) if f.endswith('.xlsx')]
+logger.info(f"Found {len(file_list)} .xlsx files in {input_dir}")
 
 # Load network and pathways data
 def load_data():
-    loaded_networks = {name: read_network(os.path.join('Data', 'Human', 'network', name)) for name in networks}
+    loaded_networks = {name: read_network(os.path.join(project_root, 'pipeline', 'Data', 'H_sapiens', 'network', name)) for name in networks}
     loaded_pathways = {file: load_pathways_genes(os.path.join(pathways_dir, file)) for file in pathway_files}
     return loaded_networks, loaded_pathways
 
@@ -47,6 +58,9 @@ def run_analysis(test_name, prior_data, network, network_name, alpha, method, ou
 
     if method == 'ABS_PROP':
         general_args.input_type = 'abs_Score'
+
+    elif method == 'NGSEA':
+        general_args.run_NGSEA = True
 
     if general_args.run_propagation:
         perform_propagation(test_name, general_args, network, prior_data)
