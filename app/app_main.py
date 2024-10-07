@@ -4,7 +4,6 @@ import yaml
 from fastapi import FastAPI
 from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
-
 from .routes import router
 
 try:
