@@ -113,19 +113,16 @@ async def execute_pipeline(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-
 @router.get("/check-status/{job_code}", response_model=JobStatus)
 async def check_job_status(job_code: str):
     """Check the status of a job."""
     if job_code not in job_storage:
         raise HTTPException(status_code=404, detail="Job not found")
 
-
     job = job_storage[job_code]
     if datetime.now() > job["expiry"]:
         del job_storage[job_code]
         raise HTTPException(status_code=404, detail="Job expired")
-
 
     return JobStatus(
         status=job["status"],
@@ -135,7 +132,6 @@ async def check_job_status(job_code: str):
             else None
         ),
     )
-
 
 
 @router.get("/download-file/{file_path:path}")
@@ -158,4 +154,3 @@ async def download_file(file_path: str):
     except Exception as e:
         logger.error(f"Error occurred while sending file: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-

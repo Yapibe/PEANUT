@@ -24,7 +24,7 @@ async def run_pipeline(
             condition_name = Path(filename).stem
             conditions_data.append((condition_name, df))
 
-        # Actual pipeline execution
+        # Actual pipeline execution using the loaded configuration
         output_file_path = await pipeline_main(conditions_data, settings)
 
         # Update job status to Finished
