@@ -7,8 +7,13 @@
   </title>
   <meta name="description" content="PEANUT: Perform pathway enrichment analysis using network propagation techniques. Customize alpha propagation, FDR thresholds, and species selection for in-depth biological research.">
   <meta name="keywords" content="pathway enrichment, network propagation, bioinformatics, PPI networks, alpha propagation, Homo sapiens, protein interaction">
-  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="icon" type="image/png" href="{{ url_for('static', path='favicon.png') }}">
+
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Add a meta tag to store the root path -->
+  <meta name="root-path" content="{{ request.scope.get('root_path', '') }}">
 
   <style>
     body {
@@ -249,8 +254,11 @@
   </div>
 
   <script>
+    // Retrieve the root path from the meta tag
+    const ROOT_PATH = document.querySelector('meta[name="root-path"]').content;
+  
     let statusCheckInterval = null;
-
+  
     function updateJobStatus(result, jobCode) {
       const resultDiv = document.getElementById('result');
       resultDiv.style.display = 'block';
@@ -260,12 +268,12 @@
         <p id="jobStatus">Status: ${result.status}</p>
         <p id="downloadLink"></p>
       `;
-
+  
       const downloadElement = document.getElementById('downloadLink');
-
+  
       if (result.status === 'Finished' && result.download_url) {
         downloadElement.innerHTML = `
-          <a href="${result.download_url}">Download Results</a>`;
+        <a href="${result.download_url}">Download Results</a>`;
       } else if (result.status === 'Processing') {
         downloadElement.innerHTML = `
             <p>Your job is still processing.
@@ -281,10 +289,9 @@
             Please contact support.</p>`;
       }
     }
-
-
+  
     function checkJobStatus(jobCode, isNewSubmission = false) {
-      fetch(`/check-status/${jobCode}`)
+      fetch(`${ROOT_PATH}/check-status/${jobCode}`)
         .then(response => {
           if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
           return response.json();
@@ -346,7 +353,7 @@
         submitButton.textContent = "Submitting...";
 
         try {
-          const response = await fetch('/run-pipeline', {
+          const response = await fetch(`${ROOT_PATH}/run-pipeline`, {
             method: 'POST',
             body: formData
           });
@@ -401,7 +408,6 @@
         toggleButton.innerHTML = "Advanced Settings ▼";
       }
     }
-
 
     function toggleClearButton() {
       const filesInput = document.getElementById('files');

@@ -3,7 +3,6 @@ import uuid
 from datetime import datetime, timedelta
 from typing import List
 from pathlib import Path
-
 from fastapi import (
     APIRouter,
     BackgroundTasks,
@@ -11,9 +10,10 @@ from fastapi import (
     Form,
     HTTPException,
     UploadFile,
+    Request,
 )
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.templating import Jinja2Templates
 
 from .models import JobStatus, PipelineOutput, SettingsInput
 from .pipeline_runner import run_pipeline
@@ -22,24 +22,18 @@ router = APIRouter()
 
 logger = logging.getLogger(__name__)
 
-static_dir = Path(__file__).resolve().parent / "static"
-
-router.mount(
-    "/static",
-    StaticFiles(directory=str(static_dir), html=True),
-    name="static",
-)
+templates_dir = Path(__file__).resolve().parent / "templates"
+templates = Jinja2Templates(directory=str(templates_dir))
+logger.debug(f"Templates directory: {templates_dir}")
 
 # In-memory storage for job status (replace with database in production)
 job_storage = {}
 
-
-@router.get("/")
-async def read_index():
-    """Read the index page."""
-    index_path = Path(__file__).resolve().parent / "templates" / "index.html"
-    return FileResponse(str(index_path))
-
+@router.get("/", response_class=HTMLResponse)
+async def read_index(request: Request):
+    """Render the index page."""
+    logger.debug(f"Root Path: {request.scope.get('root_path')}")
+    return templates.TemplateResponse("index.html", {"request": request, "url_for": request.url_for})
 
 @router.post("/run-pipeline", response_model=PipelineOutput)
 async def execute_pipeline(
@@ -114,40 +108,49 @@ async def execute_pipeline(
 
 
 @router.get("/check-status/{job_code}", response_model=JobStatus)
-async def check_job_status(job_code: str):
+async def check_job_status(request: Request, job_code: str):
     """Check the status of a job."""
-    if job_code not in job_storage:
-        raise HTTPException(status_code=404, detail="Job not found")
+    try:
+        logger.debug(f"Checking status for job_code: {job_code}")
+        if job_code not in job_storage:
+            logger.warning(f"Job code {job_code} not found in storage.")
+            raise HTTPException(status_code=404, detail="Job not found")
 
-    job = job_storage[job_code]
-    if datetime.now() > job["expiry"]:
-        del job_storage[job_code]
-        raise HTTPException(status_code=404, detail="Job expired")
+        job = job_storage[job_code]
+        logger.debug(f"Job data: {job}")
 
-    return JobStatus(
-        status=job["status"],
-        download_url=(
-            f"/download-file/{job['output_file']}"
-            if job["status"] == "Finished" and job["output_file"]
-            else None
-        ),
-    )
+        if datetime.now() > job["expiry"]:
+            logger.info(f"Job {job_code} has expired.")
+            del job_storage[job_code]
+            raise HTTPException(status_code=404, detail="Job expired")
+
+        download_url = None
+        if job["status"] == "Finished" and job["output_file"]:
+            # Remove leading slash to prevent double slash in URL
+            clean_file_path = job['output_file'].lstrip('/')
+            # Construct relative download URL based on root_path
+            download_url = f"{request.scope.get('root_path')}/download-file/{clean_file_path}"
+            logger.debug(f"Download URL for job {job_code}: {download_url}")
+        
+        return JobStatus(
+            status=job["status"],
+            download_url=download_url,
+        )
+    except Exception as e:
+        logger.error(f"Error in check_job_status for job_code {job_code}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
-@router.get("/download-file/{file_path:path}")
-async def download_file(file_path: str):
+@router.get("/download-file/{file_path:path}", name='download_file')  # Added 'name' parameter
+async def download_file(request: Request, file_path: str):
     """Download a file from the server."""
     logger.info(f"User requested file: {file_path}")
     try:
         full_path = Path(file_path).resolve()
         # Security check to prevent path traversal
-        if not full_path.is_file() or not str(full_path).startswith(
-            str(Path.cwd())
-        ):
+        if not full_path.is_file() or not str(full_path).startswith(str(Path.cwd())):
             logger.error(f"Invalid file path: {full_path}")
-            raise HTTPException(
-                status_code=404, detail="File not found"
-            )
+            raise HTTPException(status_code=404, detail="File not found")
 
         logger.info(f"Serving file: {full_path}")
         return FileResponse(str(full_path), filename=full_path.name)

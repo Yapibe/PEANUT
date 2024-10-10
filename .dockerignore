@@ -1,0 +1,28 @@
+# .dockerignore file
+
+# Exclude Python cache and temporary files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.whl
+*.egg-info
+
+# Exclude version control directories
+.git/
+.gitignore
+
+# Exclude Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Exclude virtual environments and dependencies
+venv/
+.env/
+*.log
+
+# Exclude Docker-related files
+Dockerfile
+*.tar
+
+# Exclude large data files in H_sapiens directory
+pipeline/Data/H_sapiens/

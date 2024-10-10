@@ -23,5 +23,5 @@ class PipelineOutput(BaseModel):
 
 class JobStatus(BaseModel):
     status: str
-    download_url: Optional[str] = None
+    download_url: Optional[str] = None  # Make download_url optional
 

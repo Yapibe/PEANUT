@@ -7,8 +7,9 @@ pandas==2.2.3
 pydantic==2.9.2
 PyYAML==6.0.2
 scipy==1.14.1
-starlette>=0.37.2,<0.39.0
+starlette>=0.38.0
 statsmodels==0.14.2
 uvicorn==0.25.0
 python-multipart==0.0.6
 openpyxl==3.1.2
+jinja2==3.1.2

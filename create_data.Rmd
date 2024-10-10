@@ -1,0 +1,148 @@
+```{r}
+# Block 1: Load Necessary Packages
+library(KEGGdzPathwaysGEO)
+library(limma)
+library(clusterProfiler)
+library(hgu133a.db)
+library(org.Hs.eg.db)
+library(AnnotationDbi)
+```
+
+```{r}
+process_file <- function(dataset_name) {
+  # Load the dataset
+  data(list = dataset_name, package = "KEGGdzPathwaysGEO")
+  dataset <- get(dataset_name)
+  
+  # Extract expression and phenotype data
+  exprs_data <- exprs(dataset)
+  pheno_data <- pData(dataset)
+  
+  # Map 'c' to 'Control' and 'd' to 'Disease'
+  pheno_data$Group <- factor(pheno_data$Group, levels = c("c", "d"), labels = c("Control", "Disease"))
+  
+  # Create design matrix
+  group <- pheno_data$Group
+  design <- model.matrix(~ 0 + group)
+  colnames(design) <- levels(group)
+  
+  # Fit the linear model
+  fit <- lmFit(exprs_data, design)
+  fit <- contrasts.fit(fit, makeContrasts(Disease - Control, levels = design))
+  fit <- eBayes(fit)
+  
+  # Get top table with log2 fold changes
+  topTable <- topTable(fit, coef = 1, number = Inf)  # Use 'coef=1' if there's only one contrast
+  
+  # Extract gene symbols (assuming rownames are the gene symbols)
+  gene_symbols <- rownames(topTable)
+  
+  # Create a simplified dataframe with only GeneSymbol and logFC
+  simplified_df <- data.frame(Symbol = gene_symbols, Score = topTable$logFC)
+  
+  # Save the simplified dataframe to a .txt file with column names, tab-delimited
+  output_file <- paste0(dataset_name, ".txt")
+  write.table(simplified_df, file = output_file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
+  
+  return(output_file)
+}
+
+```
+
+
+```{r}
+# Define the list of dataset names
+datasets <- c("GSE5281_EC","GSE5281_HIP","GSE5281_VCX","GSE14762","GSE18842","GSE19188","GSE1297","GSE781","GSE3585", "GSE4107", "GSE8671", "GSE9348", "GSE19728", "GSE21354", "GSE8762", "GSE9476", "GSE15471", "GSE16515", "GSE20291", "GSE20153", "GSE6956AA", "GSE6956C", "GSE3467", "GSE3678")  # Add more dataset names as needed
+
+# Process each file
+output_files <- sapply(datasets, process_file)
+
+# Print the output files
+print(output_files)
+```
+
+
+```
+# Block 4: Map Groups and Create Design Matrix
+# Map 'c' to 'Control' and 'd' to 'Disease'
+pheno_data$Group <- factor(pheno_data$Group, levels = c("c", "d"), labels = c("Control", "Disease"))
+
+# Create design matrix
+group <- pheno_data$Group
+design <- model.matrix(~ 0 + group)
+colnames(design) <- levels(group)
+```
+
+
+```
+# Block 5: Fit Linear Model and Get Top Table
+# Fit the linear model
+fit <- lmFit(exprs_data, design)
+fit <- contrasts.fit(fit, makeContrasts(Disease - Control, levels = design))
+fit <- eBayes(fit)
+
+# Get top table with log2 fold changes
+topTable <- topTable(fit, coef = 1, number = Inf)  # Use 'coef=1' if there's only one contrast
+
+# Check the column names of topTable
+colnames(topTable)
+```
+
+```
+# Block 6: Create and Save Simplified DataFrame with Column Names
+# Extract gene symbols (assuming rownames are the gene symbols)
+gene_symbols <- rownames(topTable)
+
+# Create a simplified dataframe with only GeneSymbol and logFC
+simplified_df <- data.frame(Symbol = gene_symbols, Score = topTable$logFC)
+
+# Save the simplified dataframe to a .tsv file with column names, tab-delimited
+write.table(simplified_df, file = "simplified_top_table.txt", sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
+```
+
+
+```
+# Block 7: Map Probe IDs to Gene Symbols and Save without Column Names
+# Load the simplified dataframe
+top_table <- read.csv("simplified_top_table.rnk.txt", sep = "\t", header = FALSE)
+colnames(top_table) <- c("GeneSymbol", "logFC")
+
+# Use the hgu133a.db package to map probe IDs to gene symbols
+# Create a mapping from probe IDs to gene symbols
+probe_to_gene <- AnnotationDbi::select(hgu133a.db, keys = top_table$GeneSymbol, columns = c("PROBEID", "SYMBOL"), keytype = "PROBEID")
+
+# Merge the top_table with the mapping to get gene symbols
+mapped_table <- merge(top_table, probe_to_gene, by.x = "GeneSymbol", by.y = "PROBEID")
+
+# Keep only the necessary columns (GeneSymbol and logFC)
+simplified_mapped_table <- mapped_table[, c("SYMBOL", "logFC")]
+colnames(simplified_mapped_table) <- c("GeneSymbol", "logFC")
+
+# Save the simplified dataframe with gene symbols to a .rnk.txt file without column names, tab-delimited
+write.table(simplified_mapped_table, file = "simplified_mapped_top_table.rnk.txt", sep = "\t", row.names = FALSE, col.names = FALSE, quote = FALSE)
+
+```
+
+
+```
+
+# Block 8: Perform GSEA Using KEGG Pathways
+# Load the simplified mapped CSV file
+simplified_mapped_table <- read.csv("simplified_mapped_top_table.csv")
+
+# Create a named vector of logFC values
+gene_list <- simplified_mapped_table$logFC
+names(gene_list) <- simplified_mapped_table$GeneSymbol
+
+# Perform GSEA using KEGG pathways
+gsea_results <- gseKEGG(geneList = gene_list, organism = 'hsa')
+
+# View GSEA results
+head(gsea_results)
+
+```
+
+
+
+
+
