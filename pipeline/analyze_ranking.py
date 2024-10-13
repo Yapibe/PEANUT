@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import wilcoxon
+from collections import Counter
 
 # Define configurations
 data_dir = 'Outputs/NGSEA/Summary'
