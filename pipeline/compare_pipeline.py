@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
+import yaml
 
 from args import GeneralArgs
 from pathway_enrichment import perform_enrichment
@@ -12,11 +13,16 @@ from propagation_routines import perform_propagation
 from utils import (
     load_pathways_genes,
     read_network,
-    read_prior_set
+    read_prior_set,
+    load_disease_to_pathway
 )
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+# Load configuration from config.yaml
+with open('config.yaml', 'r') as config_file:
+    config = yaml.safe_load(config_file)
+
+# Configure logging using config.yaml
+logging.basicConfig(level=config['logging']['level'], format=config['logging']['format'])
 logger = logging.getLogger(__name__)
 
 # Project and Directory Configuration
@@ -26,19 +32,14 @@ def get_project_root():
 
 PROJECT_ROOT = get_project_root()
 
-DIRECTORIES = {
-    'input': os.path.join(PROJECT_ROOT, 'pipeline', 'Inputs', 'experiments_data', 'GSE', 'XLSX'),
-    'output_base': os.path.join(PROJECT_ROOT, 'pipeline', 'Outputs', 'NGSEA'),
-    'summary_base': os.path.join(PROJECT_ROOT, 'pipeline', 'Outputs', 'NGSEA', 'Summary'),
-    'pathways': os.path.join(PROJECT_ROOT, 'pipeline', 'Data', 'H_sapiens', 'pathways')
-}
+DIRECTORIES = config['directories']
 
 # Analysis Settings
-NETWORKS = ['H_sapiens']
-PATHWAY_FILES = ['kegg']
-PROP_METHODS = ['ABS_PROP']
-ALPHAS = [0.1]
-MAX_WORKERS = 24
+NETWORKS = config['analysis_settings']['networks']
+PATHWAY_FILES = config['analysis_settings']['pathway_files']
+PROP_METHODS = config['analysis_settings']['prop_methods']
+ALPHAS = config['analysis_settings']['alphas']
+MAX_WORKERS = config['analysis_settings']['max_workers']
 
 # Ensure necessary directories exist
 os.makedirs(DIRECTORIES['summary_base'], exist_ok=True)
@@ -71,20 +72,7 @@ NETWORKS_DATA, PATHWAYS_DATA = load_data(NETWORKS, PATHWAY_FILES, DIRECTORIES['p
 logger.info("Networks loaded and pathway densities calculated.")
 
 # Pre-Calculated Data
-PRE_CALCULATED_DATA = {
-    'KEGG_THYROID_CANCER': (1.954022989, 29, 4),
-    'KEGG_NON_SMALL_CELL_LUNG_CANCER': (2.062678063, 54, 4),
-    'KEGG_ACUTE_MYELOID_LEUKEMIA': (2.039721946, 57, 5),
-    'KEGG_COLORECTAL_CANCER': (2.107879429, 62, 4),
-    'KEGG_GLIOMA': (2.039072039, 65, 4),
-    'KEGG_RENAL_CELL_CARCINOMA': (2.11032967, 70, 5),
-    'KEGG_PANCREATIC_CANCER': (2.140724947, 70, 5),
-    'KEGG_PROSTATE_CANCER': (2.106543291, 89, 5),
-    'KEGG_DILATED_CARDIOMYOPATHY': (2.454394693, 90, 7),
-    'KEGG_PARKINSONS_DISEASE': (1.949191984, 130, 5),
-    'KEGG_ALZHEIMERS_DISEASE': (2.150090558, 166, 5),
-    'KEGG_HUNTINGTONS_DISEASE': (1.758788428, 182, 4)
-}
+PRE_CALCULATED_DATA = config['pre_calculated_data']
 
 def get_pre_calculated_data(pathway_name):
     """Retrieve pre-calculated data for a given pathway."""
@@ -159,7 +147,7 @@ def process_single_file(network, pathway_file, network_name, alpha, method, file
     Process a single file: perform analysis and collect results.
     """
     dataset_name, pathway_name = file_name.replace('.xlsx', '').split('_', 1)
-    # prior_data = read_prior_set(os.path.join(DIRECTORIES['input'], file_name))
+    prior_data = read_prior_set(os.path.join(DIRECTORIES['input'], file_name))
     output_dir = os.path.join(
         DIRECTORIES['output_base'], method, network_name, pathway_file, f"alpha_{alpha}"
     )
@@ -168,7 +156,7 @@ def process_single_file(network, pathway_file, network_name, alpha, method, file
 
     pathway_density, num_genes, avg_diameter = get_pre_calculated_data(pathway_name)
 
-    # run_analysis(file_name, prior_data, network, network_name, alpha, method, output_file_path, pathway_file)
+    run_analysis(file_name, prior_data, network, network_name, alpha, method, output_file_path, pathway_file)
     rank, fdr_q_val, higher_rank_df = get_pathway_rank(output_file_path, pathway_name)
 
     higher_ranked = []
@@ -304,6 +292,56 @@ def generate_summary_df(filtered_df, prop_methods):
     
     return summary_df
 
+# Add a new function to analyze disease-associated pathway rankings
+
+def analyze_disease_pathway_rankings(disease_to_pathways, pathways_df, summary_dir):
+    """
+    For each disease and its associated pathways, determine how many associated pathways
+    appear before each pathway in terms of rank.
+
+    Args:
+        disease_to_pathways (dict): Dictionary mapping diseases to their associated pathways.
+        pathways_df (pd.DataFrame): DataFrame containing pathway rankings with columns ['Pathway', 'Count', 'Average Rank'].
+        summary_dir (str): Directory to save the analysis results.
+
+    Returns:
+        None
+    """
+    analysis_results = []
+
+    # Create a mapping from pathway to its average rank for quick lookup
+    pathway_rank_mapping = pathways_df.set_index('Pathway')['Average Rank'].to_dict()
+
+    for disease, pathways in disease_to_pathways.items():
+        # Filter pathways that are present in the ranking data
+        valid_pathways = [p for p in pathways if p in pathway_rank_mapping]
+        if not valid_pathways:
+            logger.warning(f"No valid pathways found for disease '{disease}'.")
+            continue
+
+        # Sort the pathways based on their average rank (ascending: lower rank means better)
+        sorted_pathways = sorted(valid_pathways, key=lambda p: pathway_rank_mapping[p])
+
+        for idx, pathway in enumerate(sorted_pathways):
+            # Number of associated pathways that appear before the current pathway
+            pathways_before = sorted_pathways[:idx]
+            count_before = len(pathways_before)
+
+            analysis_results.append({
+                'Disease': disease,
+                'Pathway': pathway,
+                'Pathway Average Rank': pathway_rank_mapping[pathway],
+                'Number of Associated Pathways Ranked Above': count_before
+            })
+
+    # Convert the results to a DataFrame
+    analysis_df = pd.DataFrame(analysis_results)
+
+    # Save the analysis to a CSV file
+    analysis_output_path = os.path.join(summary_dir, 'disease_pathway_rank_analysis.csv')
+    analysis_df.to_csv(analysis_output_path, index=False)
+    logger.info(f"Disease pathway rank analysis saved to {analysis_output_path}")
+
 # Main Processing Function
 def main():
     start_time = time.time()
@@ -345,6 +383,26 @@ def main():
 
     results_df = pd.DataFrame(results)
     aggregate_higher_ranked(aggregated_pathways, aggregated_genes, aggregated_pathway_ranks, DIRECTORIES['summary_base'])
+
+    # Load Existing Aggregated Summaries
+    common_pathways_path = os.path.join(DIRECTORIES['summary_base'], 'common_pathways.csv')
+    common_genes_path = os.path.join(DIRECTORIES['summary_base'], 'common_genes.csv')
+
+    if os.path.exists(common_pathways_path) and os.path.exists(common_genes_path):
+        pathways_df = pd.read_csv(common_pathways_path)
+        genes_df = pd.read_csv(common_genes_path)
+        logger.info("Loaded existing aggregated common pathways and genes.")
+    else:
+        logger.error("Aggregated summary files not found. Please ensure 'common_pathways.csv' and 'common_genes.csv' exist.")
+        return
+
+    # Load Disease to Pathway Mappings
+    disease_pathway_file = os.path.join(DIRECTORIES['pathways'], 'disease_to_pathway.csv')
+    disease_to_pathways = load_disease_to_pathway(disease_pathway_file)
+    logger.info("Loaded disease to pathway mappings.")
+
+    # Perform Ranking Analysis
+    analyze_disease_pathway_rankings(disease_to_pathways, pathways_df, DIRECTORIES['summary_base'])
 
     # Save Summary DataFrames
     for network_name in NETWORKS:

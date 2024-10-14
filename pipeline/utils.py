@@ -5,6 +5,9 @@ import pandas as pd
 import networkx as nx
 from os import path, makedirs
 from args import GeneralArgs, PropagationTask
+import csv
+import os
+from collections import defaultdict
 
 
 def filter_network_by_prior_data(network_filename: str, prior_data: pd.DataFrame) -> nx.Graph:
@@ -396,3 +399,61 @@ def process_condition(condition_file, experiment_file, pathways_file, all_pathwa
         else:
             all_pathways[pathway][condition_name]['P-value'] = 1  # Default P-value if not in enriched dictionary
             all_pathways[pathway][condition_name]['Trend'] = "Up" if mean_score > 0 else "Down"
+
+def load_disease_to_pathway(file_path):
+    """
+    Load the disease to pathway mappings from a CSV file and return a dictionary.
+    
+    The CSV is expected to have two columns:
+        - disease: Name of the disease.
+        - pathway_name: Associated pathway name.
+    
+    This function normalizes pathway names to match the expected format in the pipeline:
+        - Converts to uppercase.
+        - Replaces spaces with underscores.
+        - Prefixes with 'KEGG_' if not already present.
+    
+    Args:
+        file_path (str): Path to the 'disease_to_pathway.csv' file.
+    
+    Returns:
+        dict: A dictionary mapping each disease to a list of its associated pathways.
+    """
+    disease_to_pathways = defaultdict(list)
+    
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"The file {file_path} does not exist.")
+    
+    with open(file_path, mode='r', newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            disease = row.get('disease', '').strip()
+            pathway = row.get('pathway_name', '').strip()
+            if disease and pathway:
+                normalized_pathway = normalize_pathway_name(pathway)
+                disease_to_pathways[disease].append(normalized_pathway)
+    
+    return disease_to_pathways
+
+def normalize_pathway_name(pathway):
+    """
+    Normalize pathway names to match the pipeline's expected format.
+    
+    Steps:
+        - Convert to uppercase.
+        - Replace spaces with underscores.
+        - Prefix with 'KEGG_' if not already present.
+    
+    Args:
+        pathway (str): Original pathway name.
+    
+    Returns:
+        str: Normalized pathway name.
+    """
+    pathway_upper = pathway.upper()
+    pathway_underscored = pathway_upper.replace(' ', '_')
+    if not pathway_underscored.startswith('KEGG_'):
+        pathway_normalized = f'KEGG_{pathway_underscored}'
+    else:
+        pathway_normalized = pathway_underscored
+    return pathway_normalized

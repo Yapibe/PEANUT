@@ -1,0 +1,37 @@
+# Configuration file for compare_pipeline.py
+
+directories:
+  input: "pipeline/Inputs/experiments_data/GSE/XLSX"  # Directory containing input Excel files
+  output_base: "pipeline/Outputs/NGSEA"               # Base directory for output results
+  summary_base: "pipeline/Outputs/NGSEA/Summary"      # Directory for summary results
+  pathways: "pipeline/Data/H_sapiens/pathways"        # Directory containing pathway data
+
+analysis_settings:
+  networks:
+    - "H_sapiens"                                      # List of networks to analyze
+  pathway_files:
+    - "kegg"                                          # List of pathway files to process
+  prop_methods:
+    - "ABS_PROP"                                      # Propagation methods to use
+  alphas:
+    - 0.1                                             # Alpha values for analysis
+  max_workers: 1                                      # Number of parallel workers
+
+logging:
+  level: "DEBUG"                                       # Logging level (e.g., DEBUG, INFO, WARNING)
+  format: "%(asctime)s - %(levelname)s - %(message)s" # Logging format
+
+pre_calculated_data:
+  KEGG_THYROID_CANCER: [1.954022989, 29, 4]
+  KEGG_NON_SMALL_CELL_LUNG_CANCER: [2.062678063, 54, 4]
+  KEGG_ACUTE_MYELOID_LEUKEMIA: [2.039721946, 57, 5]
+  KEGG_COLORECTAL_CANCER: [2.107879429, 62, 4]
+  KEGG_GLIOMA: [2.039072039, 65, 4]
+  KEGG_RENAL_CELL_CARCINOMA: [2.11032967, 70, 5]
+  KEGG_PANCREATIC_CANCER: [2.140724947, 70, 5]
+  KEGG_PROSTATE_CANCER: [2.106543291, 89, 5]
+  KEGG_DILATED_CARDIOMYOPATHY: [2.454394693, 90, 7]
+  KEGG_PARKINSONS_DISEASE: [1.949191984, 130, 5]
+  KEGG_ALZHEIMERS_DISEASE: [2.150090558, 166, 5]
+  KEGG_HUNTINGTONS_DISEASE: [1.758788428, 182, 4]
+
