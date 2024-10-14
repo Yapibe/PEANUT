@@ -163,9 +163,12 @@ def jaccard_index(set1: set, set2: set) -> float:
     Returns:
     - float: Jaccard index (intersection over union).
     """
-    intersection = len(set1.intersection(set2))
-    union = len(set1.union(set2))
-    return intersection / union
+    intersection = set1.intersection(set2)
+    union = set1.union(set2)
+    if not union:
+        return 0.0
+    return len(intersection) / len(union)
+
 
 def run_hyper(genes_by_pathway: dict, scores_keys: set, significant_p_vals: dict) -> list:
     """

@@ -17,14 +17,6 @@ from utils import (
     load_disease_to_pathway
 )
 
-# Load configuration from config.yaml
-with open('config.yaml', 'r') as config_file:
-    config = yaml.safe_load(config_file)
-
-# Configure logging using config.yaml
-logging.basicConfig(level=config['logging']['level'], format=config['logging']['format'])
-logger = logging.getLogger(__name__)
-
 # Project and Directory Configuration
 def get_project_root():
     """Get the project root directory dynamically."""
@@ -32,7 +24,17 @@ def get_project_root():
 
 PROJECT_ROOT = get_project_root()
 
-DIRECTORIES = config['directories']
+config_path = os.path.join(PROJECT_ROOT, 'pipeline', 'config.yaml')
+# Load configuration from config.yaml
+with open(config_path, 'r') as config_file:
+    config = yaml.safe_load(config_file)
+
+# Convert relative paths to absolute paths based on PROJECT_ROOT
+DIRECTORIES = {key: os.path.join(PROJECT_ROOT, value) for key, value in config['directories'].items()}
+
+# Configure logging using config.yaml
+logging.basicConfig(level=config['logging']['level'], format=config['logging']['format'])
+logger = logging.getLogger(__name__)
 
 # Analysis Settings
 NETWORKS = config['analysis_settings']['networks']
@@ -71,6 +73,7 @@ def load_data(networks, pathway_files, pathways_dir):
 NETWORKS_DATA, PATHWAYS_DATA = load_data(NETWORKS, PATHWAY_FILES, DIRECTORIES['pathways'])
 logger.info("Networks loaded and pathway densities calculated.")
 
+
 # Pre-Calculated Data
 PRE_CALCULATED_DATA = config['pre_calculated_data']
 
@@ -82,7 +85,7 @@ def get_pre_calculated_data(pathway_name):
 def run_analysis(test_name, prior_data, network, network_name, alpha, method, output_path, pathway_file):
     """
     Perform propagation and enrichment analysis.
-    
+
     Args:
         test_name (str): Name of the test.
         prior_data: Prior data for the analysis.
@@ -93,40 +96,41 @@ def run_analysis(test_name, prior_data, network, network_name, alpha, method, ou
         output_path (str): Path to save the output.
         pathway_file (str): Pathway file used.
     """
+    # Include method in test_name to prevent overwriting
+    test_name_with_method = f"{method}_{test_name}"
+
     general_args = GeneralArgs(
         network=network_name,
         pathway_file=pathway_file,
         method=method,
         alpha=alpha if method == 'ABS_PROP' else 1,
-        run_propagation=True
+        run_propagation=False
     )
 
     if method == 'ABS_PROP':
         general_args.input_type = 'abs_Score'
-    elif method == 'NGSEA':
-        general_args.run_NGSEA = True
 
     if general_args.run_propagation:
-        perform_propagation(test_name, general_args, network, prior_data)
+        perform_propagation(test_name_with_method, general_args, network, prior_data)
 
-    perform_enrichment(test_name, general_args, output_path)
+    perform_enrichment(test_name_with_method, general_args, output_path)
 
 def get_pathway_rank(output_path, pathway_name):
     """
     Determine the rank and FDR q-value of a specific pathway.
-    
+
     Args:
         output_path (str): Path to the results file.
         pathway_name (str): Name of the pathway.
-    
+
     Returns:
-        tuple: (rank, fdr_q_val) if found, else (None, None)
+        tuple: (rank, fdr_q_val, results_df) if found, else (None, None, None)
     """
     try:
         results_df = pd.read_excel(output_path)
         if 'FDR q-val' not in results_df.columns:
             logger.error(f"'FDR q-val' column not found in {output_path}.")
-            return None, None
+            return None, None, None
 
         results_df = results_df.sort_values(by='FDR q-val', ascending=True).reset_index(drop=True)
         results_df['Rank'] = results_df.index + 1
@@ -156,13 +160,15 @@ def process_single_file(network, pathway_file, network_name, alpha, method, file
 
     pathway_density, num_genes, avg_diameter = get_pre_calculated_data(pathway_name)
 
-    run_analysis(file_name, prior_data, network, network_name, alpha, method, output_file_path, pathway_file)
+    # Include method in test_name to prevent overwriting
+    test_name = f"{dataset_name}_{pathway_name}"
+    run_analysis(test_name, prior_data, network, network_name, alpha, method, output_file_path, pathway_file)
     rank, fdr_q_val, higher_rank_df = get_pathway_rank(output_file_path, pathway_name)
 
     higher_ranked = []
     higher_ranked_ranks = []
     genes = []
-    if rank is not None:
+    if rank is not None and higher_rank_df is not None:
         logger.debug(f"Available columns in {output_file_path}: {higher_rank_df.columns.tolist()}")
 
         higher_ranked_df = higher_rank_df[higher_rank_df['Rank'] < rank]
@@ -183,7 +189,7 @@ def process_single_file(network, pathway_file, network_name, alpha, method, file
             'Method': method,
             'Rank': rank,
             'FDR q-val': fdr_q_val,
-            'Significant': int(float(fdr_q_val) < 0.05) if fdr_q_val else 0,
+            'Significant': int(float(fdr_q_val) <= 0.05) if fdr_q_val is not None else 0,
             'Density': pathway_density,
             'Num Genes': num_genes,
             'Avg Diameter': avg_diameter
@@ -194,107 +200,56 @@ def process_single_file(network, pathway_file, network_name, alpha, method, file
     }
 
 # Aggregation Functions
-def aggregate_higher_ranked(pathways_dict, genes_dict, ranks_dict, summary_dir):
+def aggregate_higher_ranked(pathways_dict, genes_dict, ranks_dict, summary_dir, method):
     """
-    Aggregate and save the most common pathways and genes, along with average ranks.
+    Aggregate and save the most common pathways and genes per method, along with average ranks.
+    
+    Args:
+        pathways_dict (dict): Dictionary of pathways per dataset.
+        genes_dict (dict): Dictionary of genes per dataset.
+        ranks_dict (dict): Dictionary of pathway ranks per dataset.
+        summary_dir (str): Directory to save the aggregated results.
+        method (str): The propagation method.
     """
     pathway_counter = defaultdict(int)
     gene_counter = defaultdict(int)
     pathway_rank_accumulator = defaultdict(list)
-
+    
     for dataset, pathways in pathways_dict.items():
         for pathway in pathways:
             pathway_counter[pathway] += 1
-
+    
     for dataset, ranks in ranks_dict.items():
         for pathway, rank in zip(pathways_dict[dataset], ranks):
             pathway_rank_accumulator[pathway].append(rank)
-
+    
     for dataset, genes in genes_dict.items():
         for gene in genes:
             gene_counter[gene] += 1
-
+    
     most_common_pathways = sorted(pathway_counter.items(), key=lambda x: x[1], reverse=True)
     most_common_genes = sorted(gene_counter.items(), key=lambda x: x[1], reverse=True)
-
+    
     # Compute average ranks
     average_rankings = {pathway: np.mean(ranks) for pathway, ranks in pathway_rank_accumulator.items()}
-
+    
     # Create DataFrame for pathways with average ranks
     pathways_df = pd.DataFrame(most_common_pathways, columns=['Pathway', 'Count'])
-
-    # **Filter out pathways with count less than 6**
-    pathways_df = pathways_df[pathways_df['Count'] >= 6]
-
+    
+    # Filter out pathways with count less than a threshold if needed
+    # For example, pathways_df = pathways_df[pathways_df['Count'] >= 6]
+    
     pathways_df['Average Rank'] = pathways_df['Pathway'].map(average_rankings)
-    pathways_df.to_csv(os.path.join(summary_dir, 'common_pathways.csv'), index=False)
-
+    pathways_df.to_csv(os.path.join(summary_dir, f'common_pathways_{method}.csv'), index=False)
+    
     # Create DataFrame for genes
     genes_df = pd.DataFrame(most_common_genes, columns=['Gene', 'Count'])
-    genes_df.to_csv(os.path.join(summary_dir, 'common_genes.csv'), index=False)
-
-    logger.info("Aggregated common pathways and genes saved with average ranks.")
-
-# Summary Generation
-def generate_summary_df(filtered_df, prop_methods):
-    """
-    Generate a summary DataFrame with pivoted results.
+    genes_df.to_csv(os.path.join(summary_dir, f'common_genes_{method}.csv'), index=False)
     
-    Args:
-        filtered_df (pd.DataFrame): Filtered DataFrame of results.
-        prop_methods (list): List of propagation methods.
-    
-    Returns:
-        pd.DataFrame: Summary DataFrame.
-    """
-    # Create pivot table
-    pivot_df = filtered_df.pivot_table(
-        index=['Dataset', 'Pathway', 'Density', 'Num Genes', 'Avg Diameter'],
-        columns='Method',
-        values=['Rank', 'Significant'],
-        aggfunc='first'
-    ).reset_index()
+    logger.info(f"Aggregated common pathways and genes saved with average ranks for method {method}.")
 
-    # Define the new column names based on PROP_METHODS
-    new_columns = ['Dataset', 'Pathway', 'Density', 'Num Genes', 'Avg Diameter']
-    for method in prop_methods:
-        for metric in ['Rank', 'Significant']:
-            new_columns.append(f'{method} {metric}')
 
-    # Assign the new column names
-    pivot_df.columns = new_columns
-
-    # Define the ordered columns
-    ordered_columns = ['Dataset', 'Pathway', 'Density', 'Num Genes', 'Avg Diameter']
-    for method in prop_methods:
-        ordered_columns += [f'{method} Rank', f'{method} Significant']
-
-    # Reorder the columns
-    pivot_df = pivot_df[ordered_columns]
-
-    # Handle missing methods by filling with NaN
-    for method in prop_methods:
-        if f'{method} Rank' not in pivot_df.columns:
-            pivot_df[f'{method} Rank'] = np.nan
-        if f'{method} Significant' not in pivot_df.columns:
-            pivot_df[f'{method} Significant'] = np.nan
-
-    # Calculate average values for numerical columns
-    avg_values = pivot_df.select_dtypes(include=[np.number]).mean().to_dict()
-    avg_row = {**{col: '' for col in ['Dataset', 'Pathway', 'Density', 'Num Genes', 'Avg Diameter']},
-               **avg_values}
-    
-    # Append the average row to the DataFrame
-    summary_df = pd.concat([pivot_df, pd.DataFrame([avg_row])], ignore_index=True)
-
-    # Sort the DataFrame by 'Dataset'
-    summary_df.sort_values(by='Dataset', inplace=True)
-    
-    return summary_df
-
-# Add a new function to analyze disease-associated pathway rankings
-
-def analyze_disease_pathway_rankings(disease_to_pathways, pathways_df, summary_dir):
+def analyze_disease_pathway_rankings(disease_to_pathways, pathways_df, summary_dir, method):
     """
     For each disease and its associated pathways, determine how many associated pathways
     appear before each pathway in terms of rank.
@@ -303,6 +258,7 @@ def analyze_disease_pathway_rankings(disease_to_pathways, pathways_df, summary_d
         disease_to_pathways (dict): Dictionary mapping diseases to their associated pathways.
         pathways_df (pd.DataFrame): DataFrame containing pathway rankings with columns ['Pathway', 'Count', 'Average Rank'].
         summary_dir (str): Directory to save the analysis results.
+        method (str): The propagation method.
 
     Returns:
         None
@@ -331,26 +287,85 @@ def analyze_disease_pathway_rankings(disease_to_pathways, pathways_df, summary_d
                 'Disease': disease,
                 'Pathway': pathway,
                 'Pathway Average Rank': pathway_rank_mapping[pathway],
-                'Number of Associated Pathways Ranked Above': count_before
+                'Number of Associated Pathways Ranked Above': count_before,
+                'Method': method
             })
 
     # Convert the results to a DataFrame
     analysis_df = pd.DataFrame(analysis_results)
 
     # Save the analysis to a CSV file
-    analysis_output_path = os.path.join(summary_dir, 'disease_pathway_rank_analysis.csv')
+    analysis_output_path = os.path.join(summary_dir, f'disease_pathway_rank_analysis_{method}.csv')
     analysis_df.to_csv(analysis_output_path, index=False)
     logger.info(f"Disease pathway rank analysis saved to {analysis_output_path}")
+
+def generate_summary_df(filtered_df, prop_methods):
+    """
+    Generate a summary DataFrame with pivoted results across all methods and include an average row.
+
+    Args:
+        filtered_df (pd.DataFrame): Filtered DataFrame of results across methods.
+        prop_methods (list): List of propagation methods.
+
+    Returns:
+        pd.DataFrame: Summary DataFrame containing rank and significance per method, along with an average row.
+    """
+    # Create pivot table to separate Rank and Significant columns per method
+    pivot_df = filtered_df.pivot_table(
+        index=['Dataset', 'Pathway', 'Density', 'Num Genes', 'Avg Diameter'],
+        columns='Method',
+        values=['Rank', 'Significant'],
+        aggfunc='first'
+    ).reset_index()
+
+    # Flatten the MultiIndex columns in a way that includes both the method and metric names
+    pivot_df.columns = [f'{col[1]} {col[0]}' if col[1] else col[0] for col in pivot_df.columns]
+
+    # Reorder the columns to ensure they are correctly aligned
+    ordered_columns = ['Dataset', 'Pathway', 'Density', 'Num Genes', 'Avg Diameter']
+    for method in prop_methods:
+        ordered_columns.append(f'{method} Rank')
+        ordered_columns.append(f'{method} Significant')
+
+    # Ensure all required columns are present
+    pivot_df = pivot_df[ordered_columns]
+
+    # Calculate average rank and percentage of significant pathways for each method
+    avg_row = {}
+    for method in prop_methods:
+        rank_col = f'{method} Rank'
+        sig_col = f'{method} Significant'
+        
+        avg_row[rank_col] = pivot_df[rank_col].mean()  # Average rank
+        avg_row[sig_col] = pivot_df[sig_col].mean() * 100  # Percentage of significant pathways (in percentage)
+
+    # Add the dataset and pathway columns as empty for the average row
+    avg_row.update({
+        'Dataset': 'Average',
+        'Pathway': '',
+        'Density': '',
+        'Num Genes': '',
+        'Avg Diameter': ''
+    })
+
+    # Append the average row to the DataFrame
+    summary_df = pd.concat([pivot_df, pd.DataFrame([avg_row])], ignore_index=True)
+
+    # Sort the DataFrame by 'Dataset' or any relevant column
+    summary_df.sort_values(by='Dataset', inplace=True)
+
+    return summary_df
+
 
 # Main Processing Function
 def main():
     start_time = time.time()
     futures = []
     results = []
-    aggregated_pathways = defaultdict(list)
-    aggregated_pathway_ranks = defaultdict(list)
-    aggregated_genes = defaultdict(list)
-
+    aggregated_pathways = defaultdict(lambda: defaultdict(list))  # method -> dataset -> list of pathways
+    aggregated_genes = defaultdict(lambda: defaultdict(list))     # method -> dataset -> list of genes
+    aggregated_pathway_ranks = defaultdict(lambda: defaultdict(list))  # method -> dataset -> list of ranks
+    
     with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
         for network_name in NETWORKS:
             for pathway_file in PATHWAY_FILES:
@@ -371,66 +386,73 @@ def main():
                                         PATHWAYS_DATA
                                     )
                                 )
-
+    
         for future in as_completed(futures):
             result = future.result()
             results.append(result['result'])
-            # Aggregate pathways and genes
+            # Aggregate pathways and genes per method and dataset
+            method = result['result']['Method']
             dataset = result['result']['Dataset']
-            aggregated_pathways[dataset].extend(result['higher_ranked_pathways'])
-            aggregated_genes[dataset].extend(result['higher_ranked_genes'])
-            aggregated_pathway_ranks[dataset].extend(result['higher_ranked_ranks'])
-
+            aggregated_pathways[method][dataset].extend(result['higher_ranked_pathways'])
+            aggregated_genes[method][dataset].extend(result['higher_ranked_genes'])
+            aggregated_pathway_ranks[method][dataset].extend(result['higher_ranked_ranks'])
+    
+    # Convert the collected results into a DataFrame
     results_df = pd.DataFrame(results)
-    aggregate_higher_ranked(aggregated_pathways, aggregated_genes, aggregated_pathway_ranks, DIRECTORIES['summary_base'])
-
-    # Load Existing Aggregated Summaries
-    common_pathways_path = os.path.join(DIRECTORIES['summary_base'], 'common_pathways.csv')
-    common_genes_path = os.path.join(DIRECTORIES['summary_base'], 'common_genes.csv')
-
-    if os.path.exists(common_pathways_path) and os.path.exists(common_genes_path):
-        pathways_df = pd.read_csv(common_pathways_path)
-        genes_df = pd.read_csv(common_genes_path)
-        logger.info("Loaded existing aggregated common pathways and genes.")
-    else:
-        logger.error("Aggregated summary files not found. Please ensure 'common_pathways.csv' and 'common_genes.csv' exist.")
-        return
-
-    # Load Disease to Pathway Mappings
-    disease_pathway_file = os.path.join(DIRECTORIES['pathways'], 'disease_to_pathway.csv')
-    disease_to_pathways = load_disease_to_pathway(disease_pathway_file)
-    logger.info("Loaded disease to pathway mappings.")
-
-    # Perform Ranking Analysis
-    analyze_disease_pathway_rankings(disease_to_pathways, pathways_df, DIRECTORIES['summary_base'])
-
-    # Save Summary DataFrames
-    for network_name in NETWORKS:
-        for pathway_file in PATHWAY_FILES:
-            for alpha in ALPHAS:
-                filtered_df = results_df[
-                    (results_df['Network'] == network_name) &
-                    (results_df['Pathway file'] == pathway_file) &
-                    (results_df['Alpha'] == alpha)
-                ]
-                summary_df = generate_summary_df(filtered_df, PROP_METHODS)
-
-                summary_output_dir = os.path.join(
-                    DIRECTORIES['summary_base'],
-                    network_name,
-                    pathway_file,
-                    f"alpha_{alpha}"
-                )
-                os.makedirs(summary_output_dir, exist_ok=True)
-                rankings_output_path = os.path.join(
-                    summary_output_dir,
-                    f'rankings_summary_{network_name}_{pathway_file}_alpha_{alpha}.xlsx'
-                )
-                summary_df.to_excel(rankings_output_path, index=False)
-                logger.info(f"Rankings summary saved to {rankings_output_path}")
-
+    
+    # Now, aggregate and save the common pathways and genes per method
+    for method in PROP_METHODS:
+        aggregate_higher_ranked(
+            aggregated_pathways[method],
+            aggregated_genes[method],
+            aggregated_pathway_ranks[method],
+            DIRECTORIES['summary_base'],
+            method
+        )
+    
+    # Now, for each method, load the aggregated summaries and perform further analysis
+    for method in PROP_METHODS:
+        # Load Existing Aggregated Summaries
+        common_pathways_path = os.path.join(DIRECTORIES['summary_base'], f'common_pathways_{method}.csv')
+        common_genes_path = os.path.join(DIRECTORIES['summary_base'], f'common_genes_{method}.csv')
+    
+        if os.path.exists(common_pathways_path) and os.path.exists(common_genes_path):
+            pathways_df = pd.read_csv(common_pathways_path)
+            genes_df = pd.read_csv(common_genes_path)
+            logger.info(f"Loaded existing aggregated common pathways and genes for method {method}.")
+        else:
+            logger.error(f"Aggregated summary files not found for method {method}. Please ensure '{common_pathways_path}' and '{common_genes_path}' exist.")
+            continue  # Skip to next method if files not found
+    
+        # Load Disease to Pathway Mappings
+        disease_pathway_file = os.path.join(DIRECTORIES['pathways'], 'disease_to_pathway.csv')
+        disease_to_pathways = load_disease_to_pathway(disease_pathway_file)
+        logger.info("Loaded disease to pathway mappings.")
+    
+        # Perform Disease Pathway Ranking Analysis
+        analyze_disease_pathway_rankings(disease_to_pathways, pathways_df, DIRECTORIES['summary_base'], method)
+    
+    # Save a single combined summary DataFrame with all methods side by side
+    combined_summary_df = generate_summary_df(results_df, PROP_METHODS)
+    
+    summary_output_dir = os.path.join(DIRECTORIES['summary_base'])
+    os.makedirs(summary_output_dir, exist_ok=True)
+    combined_summary_output_path = os.path.join(summary_output_dir, 'combined_rankings_summary_all_methods.xlsx')
+    combined_summary_df.to_excel(combined_summary_output_path, index=False)
+    logger.info(f"Combined rankings summary for all methods saved to {combined_summary_output_path}")
+    
     elapsed_time = time.time() - start_time
     logger.info(f"Total time taken: {elapsed_time:.2f} seconds")
+    
+    # Remove GSEA output directory and its contents
+    gsea_output_dir = os.path.join(PROJECT_ROOT, 'pipeline', 'Outputs', 'GSEA')
+    if os.path.exists(gsea_output_dir):
+        import shutil
+        shutil.rmtree(gsea_output_dir)
+        logger.info(f"Removed GSEA output directory: {gsea_output_dir}")
+    else:
+        logger.info(f"GSEA output directory does not exist: {gsea_output_dir}")
+
 
 if __name__ == "__main__":
     main()

@@ -1,23 +1,24 @@
 import pandas as pd
-from os import path, listdir
-from args import EnrichTask, GeneralArgs
-from scipy.stats import rankdata
-import gseapy as gp
-from utils import load_pathways_and_propagation_scores
-from statsmodels.stats.multitest import multipletests
-from statistical_methods import kolmogorov_smirnov_test, compute_mw_python, \
-    global_gene_ranking, kolmogorov_smirnov_test_with_ranking
 import numpy as np
 import logging
-import decimal
-
+from os import path, listdir
+from scipy.stats import rankdata
+from statsmodels.stats.multitest import multipletests
+from utils import load_pathways_and_propagation_scores
+from args import EnrichTask, GeneralArgs
+from statistical_methods import (
+    kolmogorov_smirnov_test_with_ranking,
+    compute_mw_python,
+    global_gene_ranking,
+    jaccard_index
+)
+import gseapy as gp
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-# Create a logger
 logger = logging.getLogger(__name__)
-def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scores: dict):
+
+def perform_ks_test(task: EnrichTask, genes_by_pathway: dict, scores: dict):
     """
     Perform statistical enrichment analysis on pathways.
 
@@ -31,46 +32,83 @@ def perform_statist(task: EnrichTask, general_args, genes_by_pathway: dict, scor
     - None
     """
     # Populate a set with all genes from the filtered pathways
+    task.filtered_genes = set()
     for genes in genes_by_pathway.values():
         task.filtered_genes.update(genes)
 
     # Create a global ranking of genes
     global_ranking = global_gene_ranking(scores)
 
-    significant_pathways_hyper = list(genes_by_pathway.keys())
-
-    # # Perform the Kolmogorov-Smirnov test to compare distributions of scores between pathway genes and background
-    # ks_p_values = []
-    # for pathway in significant_pathways_hyper:
-    #     genes = genes_by_pathway[pathway]
-    #     pathway_scores = [scores[gene_id][0] for gene_id in genes if gene_id in scores]
-    #     background_genes = scores_keys - genes
-    #     background_scores = [scores[gene_id][0] for gene_id in background_genes]
-    #     ks_p_values.append(kolmogorov_smirnov_test(pathway_scores, background_scores))
-
-    # Perform the Kolmogorov-Smirnov test using global ranking
+    # Perform the Kolmogorov-Smirnov test for each pathway
     ks_p_values = []
-    for pathway in significant_pathways_hyper:
+    pathways = list(genes_by_pathway.keys())
+    for pathway in pathways:
         genes = genes_by_pathway[pathway]
-        ks_p_values.append(kolmogorov_smirnov_test_with_ranking(genes, global_ranking))
+        p_value = kolmogorov_smirnov_test_with_ranking(genes, global_ranking)
+        ks_p_values.append(p_value)
 
     if not ks_p_values:
-        logger.info("No significant pathways found after hypergeometric test. Skipping KS test.")
+        logger.info("No pathways to test. Skipping KS test.")
         return
+    
     # Apply Benjamini-Hochberg correction to the KS P-values
     adjusted_p_values = multipletests(ks_p_values, method='fdr_bh')[1]
 
+
     # Filter significant pathways based on adjusted KS P-values
-    task.ks_significant_pathways_with_genes = {
-        pathway: (genes_by_pathway[pathway], adjusted_p_values[i])
-        for i, pathway in enumerate(significant_pathways_hyper)
-        if adjusted_p_values[i] < 0.05
-    }
+    task.ks_significant_pathways_with_genes = {}
+    for i, pathway in enumerate(pathways):
+        if adjusted_p_values[i] < 0.05:
+            task.ks_significant_pathways_with_genes[pathway] = {
+                'genes': genes_by_pathway[pathway],
+                'ks_p_value': adjusted_p_values[i]
+            }
+
     if not task.ks_significant_pathways_with_genes:
         logger.info("No significant pathways found after KS test.")
 
 
-def perform_statist_mann_whitney(task: EnrichTask, args, scores: dict):
+def remove_similar_pathways(filtered_pathways: dict, jac_threshold: float) -> dict:
+    """
+    Remove pathways that are too similar based on Jaccard index.
+
+    Parameters:
+    - filtered_pathways (dict): Dictionary of pathways with their details.
+    - jac_threshold (float): Jaccard index threshold for removing similar pathways.
+
+    Returns:
+    - dict: Filtered pathways after removing similar ones.
+    """
+    # Sort pathways by FDR q-value (ascending)
+    sorted_pathways = sorted(filtered_pathways.items(), key=lambda x: x[1]['FDR q-val'])
+    pathways_genes = {pathway: set(data['Lead_genes'].split(',')) for pathway, data in sorted_pathways}
+    removed_pathways = set()
+
+    for i, (pathway_i, data_i) in enumerate(sorted_pathways):
+        if pathway_i in removed_pathways:
+            continue
+        genes_i = pathways_genes[pathway_i]
+        for j in range(i + 1, len(sorted_pathways)):
+            pathway_j, data_j = sorted_pathways[j]
+            if pathway_j in removed_pathways:
+                continue
+            genes_j = pathways_genes[pathway_j]
+            ji = jaccard_index(genes_i, genes_j)
+            if ji > jac_threshold:
+                # Remove pathway_j (less significant)
+                removed_pathways.add(pathway_j)
+
+    # Construct the filtered pathways after removing similar ones
+    filtered_pathways_after_jaccard = {
+        pathway: data
+        for pathway, data in filtered_pathways.items()
+        if pathway not in removed_pathways
+    }
+
+    return filtered_pathways_after_jaccard
+
+
+def perform_mann_whitney_test(task: EnrichTask, args: GeneralArgs, scores: dict):
     """
     Perform Mann-Whitney U test on pathways that passed the KS test and filter significant pathways.
 
@@ -82,18 +120,25 @@ def perform_statist_mann_whitney(task: EnrichTask, args, scores: dict):
     Returns:
     - None
     """
-    mw_p_values = []  # List to store Mann-Whitney p-values
+    if not task.ks_significant_pathways_with_genes:
+        logger.info("No significant pathways to test with Mann-Whitney U test.")
+        return
 
     # Use filtered_genes for ranking and background scores
     filtered_scores = [scores[gene_id][0] for gene_id in task.filtered_genes]
 
-    # Rank the scores only for the filtered genes and reverse the ranks
+    # Rank the scores for the filtered genes
     ranks = rankdata(filtered_scores)
     scores_rank = {gene_id: rank for gene_id, rank in zip(task.filtered_genes, ranks)}
 
+    mw_p_values = []  # List to store Mann-Whitney p-values
+
+    # Initialize filtered pathways
+    task.filtered_pathways = {}
+
     # Iterate over pathways that passed the KS test to perform the Mann-Whitney U test
-    for pathway, genes_info in task.ks_significant_pathways_with_genes.items():
-        pathway_genes = set(genes_info)
+    for pathway, data in task.ks_significant_pathways_with_genes.items():
+        pathway_genes = set(data['genes'])
         pathway_scores = [scores[gene_id][0] for gene_id in pathway_genes]
         background_genes = task.filtered_genes - pathway_genes
 
@@ -119,13 +164,24 @@ def perform_statist_mann_whitney(task: EnrichTask, args, scores: dict):
             'Lead_genes': ','.join(map(str, pathway_genes))
         }
 
+    if not mw_p_values:
+        logger.info("No pathways to test. Skipping FDR correction.")
+        return
+
     # Apply Benjamini-Hochberg correction to adjust the p-values
     adjusted_mw_p_values = multipletests(mw_p_values, method='fdr_bh')[1]
 
     # Update the FDR q-values in the filtered pathways dictionary
-    for i, (pathway, _) in enumerate(task.filtered_pathways.items()):
-        # Store the FDR q-val with full precision
-        task.filtered_pathways[pathway]['FDR q-val'] = decimal.Decimal(adjusted_mw_p_values[i])
+    for i, pathway in enumerate(task.filtered_pathways.keys()):
+        task.filtered_pathways[pathway]['FDR q-val'] = float(adjusted_mw_p_values[i])
+
+    # Remove similar pathways based on Jaccard index threshold
+    task.filtered_pathways = remove_similar_pathways(task.filtered_pathways, args.JAC_THRESHOLD)
+
+    # Clean up 'genes' key from pathways
+    for pathway in task.filtered_pathways.values():
+        del pathway['genes']
+
 
 def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: str = None):
     """
@@ -140,26 +196,30 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: s
     """
 
     test_name = test_name.split('.')[0]
-    # run enrichment
+
+    # Set up propagation file path
     propagation_folder = path.join(general_args.propagation_folder, test_name)
     if general_args.run_propagation:
-        propagation_file = path.join(f'{propagation_folder}', '{}_{}'.format(general_args.alpha, general_args.date))
-        enrich_task = EnrichTask(name=test_name, create_scores=True, target_field='gene_prop_scores',
-                                statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)
+        propagation_file = path.join(propagation_folder, f"{general_args.alpha}_{general_args.date}")
     else:
         files_in_dir = listdir(propagation_folder)
-
         if len(files_in_dir) == 1:
             propagation_file = path.join(propagation_folder, files_in_dir[0])
         else:
-            raise ValueError(
-                "Expected exactly one file in the propagation directory, but found {} files.".format(len(files_in_dir)))
+            raise ValueError(f"Expected exactly one file in the propagation directory, but found {len(files_in_dir)} files.")
 
-        enrich_task = EnrichTask(name=test_name, create_scores=True, target_field='gene_prop_scores',
-                                statistic_test=kolmogorov_smirnov_test, propagation_file=propagation_file)
+    # Create EnrichTask
+    enrich_task = EnrichTask(
+        name=test_name,
+        create_scores=True,
+        target_field='gene_prop_scores',
+        statistic_test=kolmogorov_smirnov_test_with_ranking,
+        propagation_file=propagation_file
+    )
 
     genes_by_pathway, scores = load_pathways_and_propagation_scores(general_args, enrich_task.propagation_file)
-    logger.info("Running enrichment analysis for test: {}".format(test_name))
+    logger.info(f"Running enrichment analysis for test: {test_name}")
+
     if general_args.run_gsea:
         # Prepare data for GSEA
         # Unpack the scores dictionary into separate lists for GeneID and Score
@@ -175,35 +235,26 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: s
                                   verbose=True, permutation_num=1000, no_plot=True)
         # save xlsx
         gsea_results.res2d.to_excel(output_path)
-
     else:
-        # # Stage 1 - calculate nominal p-values and directions
-        # perform_statist(enrich_task, general_args, genes_by_pathway, scores)
-        # Check if there are significant pathways after the KS test
-        enrich_task.ks_significant_pathways_with_genes = genes_by_pathway
-        # Populate a set with all genes from the filtered pathways
-        for genes in genes_by_pathway.values():
-            enrich_task.filtered_genes.update(genes)
+        # Perform Kolmogorov-Smirnov test
+        perform_ks_test(enrich_task, genes_by_pathway, scores)
         if enrich_task.ks_significant_pathways_with_genes:
-            # Further statistical test using Mann-Whitney U test
-            perform_statist_mann_whitney(enrich_task, general_args, scores)
+            # Perform Mann-Whitney U test
+            perform_mann_whitney_test(enrich_task, general_args, scores)
         else:
-            logger.info("Skipping Mann-Whitney test.")
+            logger.info("No significant pathways after KS test. Skipping Mann-Whitney U test.")
 
         # If there are filtered pathways, save them to Excel
         if enrich_task.filtered_pathways:
             # Convert the filtered pathways dictionary to a DataFrame
             pathways_df = pd.DataFrame.from_dict(enrich_task.filtered_pathways, orient='index')
-
-            # Ensure that FDR q-val is stored with high precision and is a float
-            def format_fdr_q_val(x):
-                try:
-                    return decimal.Decimal(x)
-                except (ValueError, TypeError):
-                    return x
-
-            pathways_df['FDR q-val'] = pathways_df['FDR q-val'].apply(format_fdr_q_val)
+            # Ensure that FDR q-val is stored as float
+            pathways_df['FDR q-val'] = pathways_df['FDR q-val'].astype(float)
+            # Sort by FDR q-val
             pathways_df.sort_values(by='FDR q-val', inplace=True)
+            # Save to Excel
             pathways_df.to_excel(output_path, index=False)
+        else:
+            logger.info("No significant pathways after Mann-Whitney U test.")
 
 
