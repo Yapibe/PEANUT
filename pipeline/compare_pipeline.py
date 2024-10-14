@@ -103,12 +103,20 @@ def run_analysis(test_name, prior_data, network, network_name, alpha, method, ou
         network=network_name,
         pathway_file=pathway_file,
         method=method,
-        alpha=alpha if method == 'ABS_PROP' else 1,
-        run_propagation=False
+        alpha=alpha if method in ['ABS_PROP', 'PROP', 'MW'] else 1,
+        run_propagation=True
     )
 
     if method == 'ABS_PROP':
         general_args.input_type = 'abs_Score'
+
+    if method == 'NGSEA':
+        general_args.run_NGSEA = True
+
+    if method == 'MW':
+        general_args.input_type = 'abs_Score'
+        general_args.run_gsea = False
+
 
     if general_args.run_propagation:
         perform_propagation(test_name_with_method, general_args, network, prior_data)

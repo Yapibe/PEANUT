@@ -12,10 +12,13 @@ analysis_settings:
   pathway_files:
     - "kegg"                                          # List of pathway files to process
   prop_methods:
-    - "ABS_PROP"                                      # Propagation methods to use
-    - "GSEA"                                          # Gene Set Enrichment Analysis
+    - "MW"                                      # Propagation methods to use
+    - "ABS_PROP"
+    - "PROP"
+    - "GSEA"
+    - "NGSEA"
   alphas:
-    - 0.1                                             # Alpha values for analysis
+    - 0.2                                             # Alpha values for analysis
   max_workers: 60                                    # Number of parallel workers
   JAC_THRESHOLD: 0.2                                 # Jaccard index threshold for pathway filtering
   FDR_threshold: 0.05     

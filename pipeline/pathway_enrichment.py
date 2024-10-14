@@ -79,6 +79,20 @@ def remove_similar_pathways(filtered_pathways: dict, jac_threshold: float) -> di
     Returns:
     - dict: Filtered pathways after removing similar ones.
     """
+    keep_list = [
+        'KEGG_THYROID_CANCER',
+        'KEGG_NON_SMALL_CELL_LUNG_CANCER',
+        'KEGG_ACUTE_MYELOID_LEUKEMIA',
+        'KEGG_COLORECTAL_CANCER',
+        'KEGG_GLIOMA',
+        'KEGG_RENAL_CELL_CARCINOMA',
+        'KEGG_PANCREATIC_CANCER',
+        'KEGG_PROSTATE_CANCER',
+        'KEGG_DILATED_CARDIOMYOPATHY',
+        'KEGG_PARKINSONS_DISEASE',
+        'KEGG_ALZHEIMERS_DISEASE',
+        'KEGG_HUNTINGTONS_DISEASE'
+    ]
     # Sort pathways by FDR q-value (ascending)
     sorted_pathways = sorted(filtered_pathways.items(), key=lambda x: x[1]['FDR q-val'])
     pathways_genes = {pathway: set(data['Lead_genes'].split(',')) for pathway, data in sorted_pathways}
@@ -88,21 +102,27 @@ def remove_similar_pathways(filtered_pathways: dict, jac_threshold: float) -> di
         if pathway_i in removed_pathways:
             continue
         genes_i = pathways_genes[pathway_i]
+
+        # Compare pathway_i with all subsequent pathways in the list
         for j in range(i + 1, len(sorted_pathways)):
             pathway_j, data_j = sorted_pathways[j]
-            if pathway_j in removed_pathways:
+            if pathway_j in removed_pathways or pathway_j in keep_list:
+                # Skip removing pathway_j if it's already removed or in the keep list
                 continue
+            
             genes_j = pathways_genes[pathway_j]
             ji = jaccard_index(genes_i, genes_j)
+            
             if ji > jac_threshold:
-                # Remove pathway_j (less significant)
-                removed_pathways.add(pathway_j)
+                # Remove pathway_j (less significant) only if it's not in the keep list
+                if pathway_j not in keep_list:
+                    removed_pathways.add(pathway_j)
 
-    # Construct the filtered pathways after removing similar ones
+    # Construct the filtered pathways after removing similar ones, always keeping pathways in the keep list
     filtered_pathways_after_jaccard = {
         pathway: data
         for pathway, data in filtered_pathways.items()
-        if pathway not in removed_pathways
+        if pathway not in removed_pathways or pathway in keep_list
     }
 
     return filtered_pathways_after_jaccard
@@ -177,10 +197,6 @@ def perform_mann_whitney_test(task: EnrichTask, args: GeneralArgs, scores: dict)
 
     # Remove similar pathways based on Jaccard index threshold
     task.filtered_pathways = remove_similar_pathways(task.filtered_pathways, args.JAC_THRESHOLD)
-
-    # Clean up 'genes' key from pathways
-    for pathway in task.filtered_pathways.values():
-        del pathway['genes']
 
 
 def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: str = None):
