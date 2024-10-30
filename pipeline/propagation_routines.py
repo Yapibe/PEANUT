@@ -2,7 +2,6 @@ import os
 import time
 import scipy.sparse as sp
 from scipy.sparse.linalg import inv
-import json
 import numpy as np
 import networkx as nx
 from args import GeneralArgs, PropagationTask
@@ -195,42 +194,8 @@ def matrix_prop(propagation_input: dict, gene_indexes: dict, debug: bool, invers
     else:
         F = inverse_matrix @ F_0
 
-    # # Compare F_full and F_upper_tri
-    # difference = np.abs(F_full - F_upper_tri)
-    # threshold = 1e-5  # Define a small threshold for floating-point comparison
-    # num_differences = np.sum(difference > threshold)
-    #
-    # print(f"Number of different elements: {num_differences}")
-    # print(f"Differences: {difference[difference > threshold]}")
-
     return F
 
-
-
-# def _handle_ngsea_case(prior_data, prop_task, general_args, network):
-#     """
-#     Handle the GSE case for alpha = 1.
-#
-#     Parameters:
-#     - prior_data (pd.DataFrame): The prior data.
-#     - prop_task (PropagationTask): The propagation task object.
-#     - general_args (GeneralArgs): General arguments and settings.
-#
-#     Returns:
-#     - None
-#     """
-#     gene_scores = calculate_gene_scores(network, prior_data)
-#     posterior_set = prior_data.copy()
-#     posterior_set['Score'] = posterior_set['GeneID'].map(gene_scores)
-#     save_propagation_score(
-#         prior_set=prior_data,
-#         propagation_input={gene_id: score for gene_id, score in zip(posterior_set['GeneID'], posterior_set['Score'])},
-#         propagation_scores=posterior_set,
-#         genes_id_to_idx={gene_id: idx for idx, gene_id in enumerate(posterior_set['GeneID'])},
-#         task=prop_task,
-#         save_dir=prop_task.output_folder,
-#         general_args=general_args
-#     )
 def _handle_ngsea_case(prior_data, prop_task, general_args, network):
     """
     Handle the GSE case for alpha = 1.
@@ -262,21 +227,6 @@ def _handle_ngsea_case(prior_data, prop_task, general_args, network):
     )
 
 
-
-# def _handle_no_propagation_case(prior_data, prop_task, general_args, network):
-#     sorted_prior_data = prior_data.sort_values(by='GeneID').reset_index(drop=True)
-#     gene_scores = sorted_prior_data['Score'].values.reshape((len(sorted_prior_data), 1))
-#     sorted_prior_data['Score'] = gene_scores.flatten()
-#     save_propagation_score(
-#         prior_set=sorted_prior_data,
-#         propagation_input={gene_id: score for gene_id, score in
-#                            zip(sorted_prior_data['GeneID'], sorted_prior_data['Score'])},
-#         propagation_scores=sorted_prior_data,
-#         genes_id_to_idx={gene_id: idx for idx, gene_id in enumerate(sorted_prior_data['GeneID'])},
-#         task=prop_task,
-#         save_dir=prop_task.output_folder,
-#         general_args=general_args
-#     )
 def _handle_no_propagation_case(prior_data, prop_task, general_args, network):
     """
     Handle the case where no propagation is performed (alpha = 1).
@@ -399,14 +349,12 @@ def get_similarity_matrix(network, general_args):
 
 def handle_no_propagation_cases(prior_data, prop_task, general_args, network):
     if general_args.run_NGSEA:
-        print("Running NGSEA")
         _handle_ngsea_case(prior_data, prop_task, general_args, network)
     else:
-        print("Running GSEA")
         _handle_no_propagation_case(prior_data, prop_task, general_args, network)
 
 
-def perform_propagation(test_name: str,general_args, network=None, prior_data=None):
+def perform_propagation(test_name: str, general_args, network=None, prior_data=None):
     """
     Performs the propagation of gene scores through the network.
 
@@ -420,18 +368,17 @@ def perform_propagation(test_name: str,general_args, network=None, prior_data=No
     - None
     """
     prop_task = PropagationTask(general_args=general_args, test_name=test_name)
+    # Modify prior_data based on the input type
+    if general_args.input_type == 'abs_Score':
+        propagation_input_df = set_input_type(prior_data, general_args.input_type)
+    else:
+        propagation_input_df = prior_data
 
     if general_args.alpha == 1:
-        handle_no_propagation_cases(prior_data, prop_task, general_args, network)
+        handle_no_propagation_cases(propagation_input_df, prop_task, general_args, network)
         return
 
-    print(f"Running propagation with '{general_args.input_type}'")
-
     matrix, network_gene_index = get_similarity_matrix(network, general_args)
-
-    # Modify prior_data based on the input type
-    propagation_input_df = set_input_type(prior_data, general_args.input_type)
-
     # Filter genes in the network
     network_genes_df, non_network_genes, filtered_propagation_input = filter_network_genes(propagation_input_df, network)
 
@@ -450,4 +397,3 @@ def perform_propagation(test_name: str,general_args, network=None, prior_data=No
 
     # Save the results
     _save_propagation_results(propagation_input_df, full_propagated_scores_df, prop_task, general_args)
-    print(f"Propagation for {test_name} completed successfully.")

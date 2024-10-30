@@ -8,6 +8,7 @@ from args import GeneralArgs, PropagationTask
 import csv
 import os
 from collections import defaultdict
+import json
 
 
 def filter_network_by_prior_data(network_filename: str, prior_data: pd.DataFrame) -> nx.Graph:
@@ -137,6 +138,8 @@ def load_pathways_and_propagation_scores(general_args, propagation_file_path):
                pathways to their genes.
     """
     pathways_with_many_genes = load_pathways_genes(general_args.pathway_file_dir, general_args.run_gsea)
+    # remove pathways with more than 400 genes
+    # pathways_with_many_genes = {pathway: genes for pathway, genes in pathways_with_many_genes.items() if len(genes) <= 400}
     scores = get_scores(propagation_file_path)
     if general_args.run_gsea:
         return pathways_with_many_genes, scores
@@ -404,14 +407,7 @@ def load_disease_to_pathway(file_path):
     """
     Load the disease to pathway mappings from a CSV file and return a dictionary.
     
-    The CSV is expected to have two columns:
-        - disease: Name of the disease.
-        - pathway_name: Associated pathway name.
-    
-    This function normalizes pathway names to match the expected format in the pipeline:
-        - Converts to uppercase.
-        - Replaces spaces with underscores.
-        - Prefixes with 'KEGG_' if not already present.
+    The CSV is expected to have two columns with disease and pathway names that are used as-is.
     
     Args:
         file_path (str): Path to the 'disease_to_pathway.csv' file.
@@ -425,35 +421,116 @@ def load_disease_to_pathway(file_path):
         raise FileNotFoundError(f"The file {file_path} does not exist.")
     
     with open(file_path, mode='r', newline='', encoding='utf-8') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            disease = row.get('disease', '').strip()
-            pathway = row.get('pathway_name', '').strip()
+        reader = csv.reader(csvfile)
+        for disease, pathway in reader:
+            disease = disease.strip()
+            pathway = pathway.strip()
             if disease and pathway:
-                normalized_pathway = normalize_pathway_name(pathway)
-                disease_to_pathways[disease].append(normalized_pathway)
+                disease_to_pathways[disease].append(pathway)
     
     return disease_to_pathways
 
-def normalize_pathway_name(pathway):
+def extract_subgraph(network, genes):
     """
-    Normalize pathway names to match the pipeline's expected format.
-    
-    Steps:
-        - Convert to uppercase.
-        - Replace spaces with underscores.
-        - Prefix with 'KEGG_' if not already present.
-    
+    Extracts a subgraph containing the specified genes from the main network.
+
     Args:
-        pathway (str): Original pathway name.
-    
+        network (networkx.Graph): The main network graph.
+        genes (list): List of genes (nodes) to include in the subgraph.
+
     Returns:
-        str: Normalized pathway name.
+        networkx.Graph: The subgraph containing the specified genes.
     """
-    pathway_upper = pathway.upper()
-    pathway_underscored = pathway_upper.replace(' ', '_')
-    if not pathway_underscored.startswith('KEGG_'):
-        pathway_normalized = f'KEGG_{pathway_underscored}'
+    # Ensure that only genes present in the network are included
+    genes_in_network = [gene for gene in genes if gene in network.nodes]
+    subgraph = network.subgraph(genes_in_network).copy()
+    return subgraph
+
+def compute_density(subgraph):
+    """
+    Computes the density of the subgraph.
+
+    Args:
+        subgraph (networkx.Graph): The subgraph for which to compute the density.
+
+    Returns:
+        float: The density of the subgraph.
+    """
+    return nx.density(subgraph)
+
+def compute_average_diameter(subgraph):
+    """
+    Computes the average shortest path length of the subgraph.
+
+    Args:
+        subgraph (networkx.Graph): The subgraph for which to compute the average diameter.
+
+    Returns:
+        float: The average shortest path length of the subgraph.
+    """
+    # Handle disconnected graphs
+    if nx.is_connected(subgraph):
+        return nx.diameter(subgraph)
     else:
-        pathway_normalized = pathway_underscored
-    return pathway_normalized
+        # For disconnected graphs, compute the average of the diameters of connected components
+        diameters = []
+        for component in nx.connected_components(subgraph):
+            component_subgraph = subgraph.subgraph(component)
+            diameters.append(nx.diameter(component_subgraph))
+        return sum(diameters) / len(diameters) if diameters else float('nan')
+    
+
+def compute_pathway_attributes(network, pathways_data):
+    """
+    Computes attributes for each pathway and updates pathways_data.
+
+    Args:
+        network (networkx.Graph): The main network graph.
+        pathways_data (dict): Dictionary of pathways with their genes.
+
+    Returns:
+        dict: Updated pathways_data with attributes for each pathway.
+    """
+    updated_pathways_data = {}
+    for pathway_name, genes in pathways_data.items():
+        subgraph = extract_subgraph(network, genes)
+        density = compute_density(subgraph)
+        avg_diameter = compute_average_diameter(subgraph)
+        num_genes = subgraph.number_of_nodes()
+        
+        updated_pathways_data[pathway_name] = {
+            'genes': genes,
+            'density': density,
+            'avg_diameter': avg_diameter,
+            'num_genes': num_genes
+            # Add more attributes if needed
+        }
+    return updated_pathways_data
+
+
+
+def save_pathway_attributes_to_file(updated_pathways_data, file_path):
+    """
+    Saves the updated pathways data with attributes to a JSON file.
+
+    Args:
+        updated_pathways_data (dict): Dictionary containing pathways and their attributes.
+        file_path (str): Path to save the JSON file.
+    """
+    with open(file_path, 'w') as f:
+        json.dump(updated_pathways_data, f)
+
+
+def load_pathway_attributes_from_file(file_path):
+    """
+    Loads pathways data with attributes from a JSON file.
+
+    Args:
+        file_path (str): Path to the JSON file.
+
+    Returns:
+        dict: Dictionary containing pathways and their attributes.
+    """
+    with open(file_path, 'r') as f:
+        data = json.load(f)
+    return data

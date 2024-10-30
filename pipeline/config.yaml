@@ -8,18 +8,14 @@ directories:
 
 analysis_settings:
   networks:
-    - "H_sapiens"                                      # List of networks to analyze
+    - "H_sapiens"                                    # List of networks to analyze
   pathway_files:
-    - "kegg"                                          # List of pathway files to process
-  prop_methods:
-    - "MW"                                      # Propagation methods to use
-    - "ABS_PROP"
-    - "PROP"
-    - "GSEA"
-    - "NGSEA"
+    - "kegg"                                 # List of pathway files to process
+  prop_methods:                                      # Propagation methods to use
+    - "GSEA"                                         # gsea
   alphas:
-    - 0.2                                             # Alpha values for analysis
-  max_workers: 60                                    # Number of parallel workers
+    - 0.2                                            # Alpha values for analysis
+  max_workers: 1                                    # Number of parallel workers
   JAC_THRESHOLD: 0.2                                 # Jaccard index threshold for pathway filtering
   FDR_threshold: 0.05     
 logging:

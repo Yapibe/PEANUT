@@ -26,7 +26,6 @@ class GeneralArgs:
     root_folder: str = field(init=False)
     data_dir: str = field(init=False)
     similarity_matrix_path: Optional[str] = field(init=False)
-    tri_similarity_matrix_path: Optional[str] = field(init=False)
     FDR_threshold: float = 0.05
     minimum_gene_per_pathway: int = 15
     maximum_gene_per_pathway: int = 500

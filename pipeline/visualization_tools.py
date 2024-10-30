@@ -35,7 +35,7 @@ def print_aggregated_pathway_information(args: GeneralArgs, all_pathways: dict) 
 
     # Sort pathways by the best (lowest) P-value
     pathways_sorted = sorted(pathways_p_values, key=lambda x: x[1])
-
+ 
     # Write to the output file
     with open(file_path, 'w') as file:
         for pathway, best_p_value in pathways_sorted:

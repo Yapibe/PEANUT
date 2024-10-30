@@ -9,13 +9,16 @@ from collections import Counter
 data_dir = 'pipeline/Outputs/NGSEA/Summary'
 network = 'H_sapiens'
 alphas = [0.2]
-methods = ['GSEA', 'NGSEA', 'ABS_PROP', 'PROP', 'MW']
+methods = ['PEANUT', 'ABS_SCORE', 'ABS_PROP', 'GSEA', 'NGSEA']
 
 # Define specific method pairs to compare and plot significance bars
 methods_to_compare = [
+    ('GSEA', 'NGSEA'),
+    ('GSEA', 'PEANUT'),
     ('GSEA', 'ABS_PROP'),
-    ('GSEA', 'MW'),
-    ('ABS_PROP', 'MW')
+    ('NGSEA', 'PEANUT'),
+    ('PEANUT', 'ABS_PROP'),
+    ('PEANUT', 'ABS_SCORE')
 ]
 
 # Output directory for saving plots
@@ -30,6 +33,9 @@ def load_data(alpha, data_dir, network):
         
         # Remove any rows with 'Average' or 'percent' in 'Dataset' column
         df = df[~df['Dataset'].str.contains('average|percent', case=False, na=False)]
+        
+        # Rename MW to PEANUT in the dataframe column names
+        df = df.rename(columns={'MW Rank': 'PEANUT Rank', 'MW Significant': 'PEANUT Significant'})
         
         # Ensure relevant columns are present
         expected_columns = ['Dataset'] + [f'{method} Rank' for method in methods]
@@ -51,6 +57,7 @@ def load_data(alpha, data_dir, network):
     else:
         print(f"File not found: {file_path}")
         return None
+
 
 
 # Annotate the significance level with asterisks
@@ -81,35 +88,41 @@ def add_significance_bars(ax, method_pairs, p_values, y_max):
 
 
 def analyze_data(df, alpha, output_plot_dir):
-    # Extract ranks for all methods
+    # Extract ranks for all methods (focusing on GSEA, NGSEA, and PEANUT)
     ranks = {method: df[f'{method} Rank'] for method in methods}
     
-    # Perform Wilcoxon signed-rank tests between all pairs of methods
-    from itertools import combinations
-    method_pairs = list(combinations(methods, 2))
+    # Perform Wilcoxon signed-rank tests between specified method pairs
     p_values = []
     test_results = []
+    mean_rank_diffs = []
     
-    for method1, method2 in method_pairs:
+    for method1, method2 in methods_to_compare:
         rank1 = ranks[method1]
         rank2 = ranks[method2]
-        # Check if there are at least one non-zero difference
-        if (rank1 != rank2).any():
-            w_result = wilcoxon(rank1, rank2)
-            p_values.append(w_result.pvalue)
-            test_results.append((method1, method2, w_result))
+        
+        # Compute the rank differences
+        rank_diff = rank1 - rank2
+        
+        # Compute mean rank difference to determine which method ranks better
+        mean_diff = rank_diff.mean()
+        mean_rank_diffs.append(mean_diff)  # Store the mean difference
+        
+        # Perform the Wilcoxon signed-rank test
+        w_result = wilcoxon(rank1, rank2)
+        
+        # Determine which method ranks better based on sign of the differences
+        if mean_diff < 0:  # Method1 ranks better (lower)
+            better_method = method1
         else:
-            # If all ranks are equal, p-value is 1
-            p_values.append(1)
-            test_results.append((method1, method2, 'Ranks are identical'))
+            better_method = method2
+        
+        p_values.append(w_result.pvalue)
+        test_results.append((method1, method2, w_result.statistic, w_result.pvalue, better_method))
     
-    # Print test results
+    # Print test results with the signed-rank statistic, better method, and mean rank difference
     print(f"\nAlpha {alpha} - Wilcoxon signed-rank test results:")
-    for i, (method1, method2, result) in enumerate(test_results):
-        if isinstance(result, str):
-            print(f"{method1} vs {method2}: {result}")
-        else:
-            print(f"{method1} vs {method2}: Statistic={result.statistic}, p-value={result.pvalue}")
+    for i, (method1, method2, stat, p_value, better_method) in enumerate(test_results):
+        print(f"{method1} vs {method2}: Statistic={stat}, p-value={p_value}, Better Method={better_method}, Mean Rank Difference={mean_rank_diffs[i]}")
     
     # Prepare data for plotting
     plot_df = df.melt(id_vars=['Dataset'], value_vars=[f'{method} Rank' for method in methods],
@@ -134,7 +147,7 @@ def analyze_data(df, alpha, output_plot_dir):
     method_pairs_indices = [(method_indices[method1], method_indices[method2]) for method1, method2 in methods_to_compare]
 
     # Adjust p_values to match the selected method pairs
-    p_values_to_plot = [p_values[method_pairs.index(pair)] for pair in methods_to_compare]
+    p_values_to_plot = [p_values[methods_to_compare.index(pair)] for pair in methods_to_compare]
 
     # Add significance bars and asterisks
     add_significance_bars(ax, method_pairs_indices, p_values_to_plot, y_max)
