@@ -130,19 +130,40 @@ def build_search_terms(pathway_name, disease_to_pathways=None):
         search_terms.update(disease_to_pathways[pathway_name])
     return search_terms
 
-def process_single_file(network, pathway_file, network_name, alpha, method, file_name, loaded_pathways, search_terms):
+def get_pathway_rank(output_path, pathway_name):
     """
-    Process a single file: perform analysis and collect results.
+    Determine the rank and FDR q-value of a specific pathway.
 
     Args:
-        network: Network data.
-        pathway_file (str): Pathway file name.
-        network_name (str): Name of the network.
-        alpha (float): Alpha value for analysis.
-        method (str): Analysis method.
-        file_name (str): Input file name.
-        loaded_pathways (dict): Dictionary of loaded pathway data.
-        search_terms (set): Pre-built set of search terms for the pathway.
+        output_path (str): Path to the results file.
+        pathway_name (str): Name of the pathway.
+
+    Returns:
+        tuple: (rank, fdr_q_val, results_df) if found, else (None, None, None)
+    """
+    try:
+        results_df = pd.read_excel(output_path)
+        if 'FDR q-val' not in results_df.columns:
+            logger.error(f"'FDR q-val' column not found in {output_path}.")
+            return None, None, None
+
+        results_df = results_df.sort_values(by='FDR q-val', ascending=True).reset_index(drop=True)
+        results_df['Rank'] = results_df.index + 1
+
+        pathway_row = results_df[results_df['Term'] == pathway_name]
+        if not pathway_row.empty:
+            rank = pathway_row['Rank'].values[0]
+            fdr_q_val = pathway_row['FDR q-val'].values[0]
+            return rank, fdr_q_val, results_df
+        else:
+            logger.error(f"Pathway '{pathway_name}' not found in {output_path}.")
+    except Exception as e:
+        logger.error(f"Error reading {output_path}: {e}")
+    return None, None, None
+
+def process_single_file(network, pathway_file, network_name, alpha, method, file_name, loaded_pathways):
+    """
+    Process a single file: perform analysis and collect results.
     """
     dataset_name, pathway_name = file_name.replace('.xlsx', '').split('_', 1)
     prior_data = read_prior_set(os.path.join(DIRECTORIES['input'], file_name))
@@ -154,69 +175,44 @@ def process_single_file(network, pathway_file, network_name, alpha, method, file
 
     pathway_density, num_genes, avg_diameter = get_pre_calculated_data(pathway_name)
 
+    # Include method in test_name to prevent overwriting
     test_name = f"{dataset_name}_{pathway_name}"
     run_analysis(test_name, prior_data, network, network_name, alpha, method, output_file_path, pathway_file)
-    
-    try:
-        results_df = pd.read_excel(output_file_path)
-        if 'FDR q-val' not in results_df.columns:
-            logger.error(f"'FDR q-val' column not found in {output_file_path}.")
-            return None, None, None
+    rank, fdr_q_val, higher_rank_df = get_pathway_rank(output_file_path, pathway_name)
 
-        results_df = results_df.sort_values(by='FDR q-val', ascending=True).reset_index(drop=True)
-        results_df['Rank'] = results_df.index + 1
+    higher_ranked = []
+    higher_ranked_ranks = []
+    genes = []
+    if rank is not None and higher_rank_df is not None:
+        logger.debug(f"Available columns in {output_file_path}: {higher_rank_df.columns.tolist()}")
 
-        # Find the best rank among pathways containing any of the search terms
-        best_rank = float('inf')
-        best_fdr = None
-        for term in search_terms:
-            # Find any pathways containing the term
-            matching_rows = results_df[results_df['Term'].str.contains(term, case=False, na=False)]
-            if not matching_rows.empty:
-                min_rank = matching_rows['Rank'].min()
-                if min_rank < best_rank:
-                    best_rank = min_rank
-                    best_fdr = matching_rows.loc[matching_rows['Rank'] == min_rank, 'FDR q-val'].iloc[0]
+        higher_ranked_df = higher_rank_df[higher_rank_df['Rank'] < rank]
+        higher_ranked = higher_ranked_df['Term'].tolist()
+        higher_ranked_ranks = higher_ranked_df['Rank'].tolist()
 
-        if best_rank == float('inf'):
-            logger.error(f"No pathways found containing terms related to '{pathway_name}' in {output_file_path}.")
-            return None, None, None
+        for pathway, pathway_rank in zip(higher_ranked, higher_ranked_ranks):
+            gene_list = loaded_pathways[pathway_file].get(pathway, [])
+            genes.extend(gene_list)
 
-        higher_ranked = []
-        higher_ranked_ranks = []
-        genes = []
-        if best_rank is not None:
-            higher_ranked_df = results_df[results_df['Rank'] < best_rank]
-            higher_ranked = higher_ranked_df['Term'].tolist()
-            higher_ranked_ranks = higher_ranked_df['Rank'].tolist()
-
-            for pathway, pathway_rank in zip(higher_ranked, higher_ranked_ranks):
-                gene_list = loaded_pathways[pathway_file].get(pathway, [])
-                genes.extend(gene_list)
-
-        return {
-            'result': {
-                'Dataset': dataset_name,
-                'Pathway': pathway_name,
-                'Network': network_name,
-                'Pathway file': pathway_file,
-                'Alpha': alpha,
-                'Method': method,
-                'Rank': best_rank,
-                'FDR q-val': best_fdr,
-                'Significant': int(float(best_fdr) <= 0.05) if best_fdr is not None else 0,
-                'Density': pathway_density,
-                'Num Genes': num_genes,
-                'Avg Diameter': avg_diameter
-            },
-            'higher_ranked_pathways': higher_ranked,
-            'higher_ranked_ranks': higher_ranked_ranks,
-            'higher_ranked_genes': genes
-        }
-            
-    except Exception as e:
-        logger.error(f"Error processing {output_file_path}: {e}")
-        return None
+    return {
+        'result': {
+            'Dataset': dataset_name,
+            'Pathway': pathway_name,
+            'Network': network_name,
+            'Pathway file': pathway_file,
+            'Alpha': alpha,
+            'Method': method,
+            'Rank': rank,
+            'FDR q-val': fdr_q_val,
+            'Significant': int(float(fdr_q_val) <= 0.05) if fdr_q_val is not None else 0,
+            'Density': pathway_density,
+            'Num Genes': num_genes,
+            'Avg Diameter': avg_diameter
+        },
+        'higher_ranked_pathways': higher_ranked,
+        'higher_ranked_ranks': higher_ranked_ranks,
+        'higher_ranked_genes': genes
+    }
 
 def aggregate_higher_ranked_non_disease(
     pathways_dict, genes_dict, ranks_dict, summary_dir, method, network,
@@ -373,7 +369,6 @@ def analyze_disease_pathway_rankings(search_terms_dict, pathways_df, summary_dir
     analysis_df.to_csv(analysis_output_path, index=False)
     logger.info(f"Disease pathway attribute analysis saved to {analysis_output_path}")
 
-
 def generate_summary_df(filtered_df, prop_methods):
     """
     Generate a summary DataFrame with pivoted results across all methods and include an average row.
@@ -452,12 +447,12 @@ def main():
     network_name = NETWORKS[0]
     network = NETWORKS_DATA[network_name]
 
-    # Load Disease to Pathway Mappings once at the start
+    # Load Disease to Pathway Mappings
     disease_pathway_file = os.path.join(DIRECTORIES['pathways'], 'disease_to_pathway.csv')
     disease_to_pathways = load_disease_to_pathway(disease_pathway_file)
     logger.info("Loaded disease to pathway mappings.")
 
-    # Build search terms for each pathway once
+     # Build search terms for each pathway once
     search_terms_dict = {}
     for file_name in FILE_LIST:
         _, pathway_name = file_name.replace('.xlsx', '').split('_', 1)
@@ -481,8 +476,7 @@ def main():
                                     alpha,
                                     prop_method,
                                     file_name,
-                                    PATHWAYS_DATA,
-                                    search_terms_dict[pathway_name]  # Pass pre-built search terms
+                                    PATHWAYS_DATA
                                 )
                             )
 
@@ -519,11 +513,11 @@ def main():
         else:
             pathway_attributes = None  # Will be computed in the function
 
-        # Pass aggregated_pathways[method] with combined keys
+        # Aggregate pathways, genes, and ranks while excluding disease-associated pathways
         aggregate_higher_ranked_non_disease(
-            aggregated_pathways[method],          # Now uses combined_key
-            aggregated_genes[method],             # Uses combined_key
-            aggregated_pathway_ranks[method],     # Uses combined_key
+            aggregated_pathways[method],
+            aggregated_genes[method],
+            aggregated_pathway_ranks[method],
             DIRECTORIES['summary_base'],
             method,
             network,
@@ -573,5 +567,6 @@ def main():
         logger.info(f"Removed GSEA output directory: {gsea_output_dir}")
     else:
         logger.info(f"GSEA output directory does not exist: {gsea_output_dir}")
+
 if __name__ == "__main__":
     main()
