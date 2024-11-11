@@ -18,6 +18,57 @@ import gseapy as gp
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+import random
+
+
+def perform_permutation_test(filtered_pathways: dict, scores: dict, n_iterations: int = 1000) -> dict:
+    """
+    Perform a permutation test to assess the significance of the observed pathway scores.
+    Updates pathways with permutation p-values without removing any entries.
+
+    Parameters:
+    - filtered_pathways (dict): Dictionary of pathways with their details.
+    - scores (dict): Mapping of gene IDs to their scores.
+    - n_iterations (int): Number of permutations to perform.
+
+    Returns:
+    - dict: Updated filtered_pathways with permutation p-values set for each pathway.
+    """
+    if not filtered_pathways:
+        logger.info("No pathways to test with the permutation test.")
+        return {}
+
+    score_values = np.array([score[0] for score in scores.values()])
+
+    for pathway, data in filtered_pathways.items():
+        try:
+            pathway_genes = set(map(int, data['Lead_genes'].split(',')))
+        except ValueError:
+            logger.warning(f"Invalid gene IDs in pathway '{pathway}'. Skipping permutation test.")
+            data['Permutation p-val'] = np.nan
+            continue
+
+        # Find the intersection of pathway genes with available scores
+        valid_genes = pathway_genes.intersection(scores.keys())
+
+        if not valid_genes:
+            logger.warning(f"No valid genes found for pathway '{pathway}'. Skipping permutation test.")
+            data['Permutation p-val'] = np.nan
+            continue
+
+        # Calculate the observed mean score for the pathway
+        observed_mean = np.mean([scores[gene_id][0] for gene_id in valid_genes])
+
+        # Perform random sampling and calculate permuted means
+        permuted_means = np.random.choice(score_values, size=(n_iterations, len(valid_genes)), replace=True).mean(axis=1)
+        empirical_p_val = np.mean(permuted_means >= observed_mean)
+
+        # Set the permutation p-value directly in the data dictionary
+        data['Permutation p-val'] = empirical_p_val
+
+    logger.info("Permutation test completed. Pathways updated with permutation p-values.")
+    return filtered_pathways
+
 def perform_ks_test(task: EnrichTask, genes_by_pathway: dict, scores: dict):
     """
     Perform statistical enrichment analysis on pathways.
@@ -198,6 +249,11 @@ def perform_mann_whitney_test(task: EnrichTask, args: GeneralArgs, scores: dict)
     # Remove similar pathways based on Jaccard index threshold
     task.filtered_pathways = remove_similar_pathways(task.filtered_pathways, args.JAC_THRESHOLD)
 
+    # Perform Permutation Test
+    task.filtered_pathways = perform_permutation_test(task.filtered_pathways, scores)
+
+
+
 
 def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: str = None):
     """
@@ -238,18 +294,13 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: s
 
     if general_args.run_gsea:
         # Prepare data for GSEA
-        # Unpack the scores dictionary into separate lists for GeneID and Score
         gene_ids = list(scores.keys())
         logfc_scores = [score[0] for score in scores.values()]
-        # Create DataFrame for GSEA with string gene identifiers
         gene_expression_data = pd.DataFrame({'gene': gene_ids, 'logFC': logfc_scores})
         gene_expression_data['gene'] = gene_expression_data['gene'].astype(str)
-        # Rank the data by logFC in descending order
         gene_expression_data = gene_expression_data.sort_values(by='logFC', ascending=False)
-        # Run GSEA
         gsea_results = gp.prerank(rnk=gene_expression_data, gene_sets=genes_by_pathway, outdir=general_args.gsea_out,
                                   verbose=True, permutation_num=1000, no_plot=True)
-        # save xlsx
         gsea_results.res2d.to_excel(output_path)
     else:
         # Perform Kolmogorov-Smirnov test

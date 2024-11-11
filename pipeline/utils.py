@@ -422,6 +422,8 @@ def load_disease_to_pathway(file_path):
     
     with open(file_path, mode='r', newline='', encoding='utf-8') as csvfile:
         reader = csv.reader(csvfile)
+        # skip the header
+        next(reader)
         for disease, pathway in reader:
             disease = disease.strip()
             pathway = pathway.strip()

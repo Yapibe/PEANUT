@@ -164,6 +164,16 @@ def get_pathway_rank(output_path, pathway_name):
 def process_single_file(network, pathway_file, network_name, alpha, method, file_name, loaded_pathways):
     """
     Process a single file: perform analysis and collect results.
+
+    Args:
+        network: Network data.
+        pathway_file (str): Pathway file name.
+        network_name (str): Name of the network.
+        alpha (float): Alpha value for analysis.
+        method (str): Analysis method.
+        file_name (str): Input file name.
+        loaded_pathways (dict): Dictionary of loaded pathway data.
+        search_terms (set): Pre-built set of search terms for the pathway.
     """
     dataset_name, pathway_name = file_name.replace('.xlsx', '').split('_', 1)
     prior_data = read_prior_set(os.path.join(DIRECTORIES['input'], file_name))
@@ -515,9 +525,10 @@ def main():
 
         # Aggregate pathways, genes, and ranks while excluding disease-associated pathways
         aggregate_higher_ranked_non_disease(
-            aggregated_pathways[method],
-            aggregated_genes[method],
-            aggregated_pathway_ranks[method],
+            aggregated_pathways[method],          # Now uses combined_key
+            aggregated_genes[method],             # Uses combined_key
+            aggregated_pathway_ranks[method],     # Uses combined_key
+
             DIRECTORIES['summary_base'],
             method,
             network,

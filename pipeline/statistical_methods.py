@@ -170,6 +170,79 @@ def jaccard_index(set1: set, set2: set) -> float:
     return len(intersection) / len(union)
 
 
+def compute_pairwise_jaccard_indices(genes_by_pathway):
+    """
+    Compute the pairwise Jaccard indices between all pathways.
+
+    Args:
+        genes_by_pathway (dict): Mapping of pathways to their constituent genes.
+
+    Returns:
+        dict: Nested dictionary where jaccard_indices[p1][p2] = Jaccard index between p1 and p2.
+    """
+    pathways = list(genes_by_pathway.keys())
+    jaccard_indices = {p1: {} for p1 in pathways}
+
+    for i, p1 in enumerate(pathways):
+        genes1 = set(genes_by_pathway[p1])
+        for j in range(i + 1, len(pathways)):
+            p2 = pathways[j]
+            genes2 = set(genes_by_pathway[p2])
+            ji = jaccard_index(genes1, genes2)
+            jaccard_indices[p1][p2] = ji
+            jaccard_indices[p2][p1] = ji  # Symmetric
+
+    return jaccard_indices
+
+
+def find_best_jaccard_threshold(genes_by_pathway, known_related_pathways):
+    """
+    Find the best Jaccard threshold by evaluating against known related pathways.
+
+    Args:
+        genes_by_pathway (dict): Mapping of pathways to their genes.
+        known_related_pathways (dict): Mapping of pathways to their known related pathways.
+
+    Returns:
+        float: The best Jaccard threshold.
+    """
+    # Compute pairwise Jaccard indices
+    jaccard_indices = compute_pairwise_jaccard_indices(genes_by_pathway)
+
+    # Define thresholds to test
+    thresholds = [i / 100 for i in range(1, 100)]  # 0.01 to 0.99
+
+    best_threshold = None
+    best_f1 = -1  # Initialize with a value lower than possible F1 score
+    performance_metrics = []
+
+    for t in thresholds:
+        tp = fp = fn = 0
+        for pathway in known_related_pathways:
+            predicted_related = set()
+            for other_pathway in genes_by_pathway:
+                if other_pathway != pathway and jaccard_indices[pathway].get(other_pathway, 0) >= t:
+                    predicted_related.add(other_pathway)
+
+            actual_related = set(known_related_pathways[pathway])
+            tp += len(predicted_related & actual_related)
+            fp += len(predicted_related - actual_related)
+            fn += len(actual_related - predicted_related)
+
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+        f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+
+        performance_metrics.append({'threshold': t, 'precision': precision, 'recall': recall, 'f1': f1})
+
+        if f1 > best_f1:
+            best_f1 = f1
+            best_threshold = t
+
+    return best_threshold, performance_metrics
+
+
+
 def run_hyper(genes_by_pathway: dict, scores_keys: set, significant_p_vals: dict) -> list:
     """
     Run the hypergeometric test to identify pathways with significant enrichment.
