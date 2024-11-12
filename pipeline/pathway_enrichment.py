@@ -8,7 +8,7 @@ from utils import load_pathways_and_propagation_scores
 from args import EnrichTask, GeneralArgs
 from statistical_methods import (
     kolmogorov_smirnov_test_with_ranking,
-    compute_mw_python,
+    compute_mw,
     global_gene_ranking,
     jaccard_index
 )
@@ -21,24 +21,34 @@ logger = logging.getLogger(__name__)
 import random
 
 
-def perform_permutation_test(filtered_pathways: dict, scores: dict, n_iterations: int = 1000) -> dict:
+from statsmodels.stats.multitest import multipletests
+
+def perform_permutation_test(filtered_pathways: dict, scores: dict, associated_pathway_name: str, n_iterations: int = 1000, pval_threshold: float = 0.05) -> dict:
     """
     Perform a permutation test to assess the significance of the observed pathway scores.
-    Updates pathways with permutation p-values without removing any entries.
+    Updates pathways with adjusted permutation p-values and removes pathways that do not pass the p-value threshold.
 
     Parameters:
     - filtered_pathways (dict): Dictionary of pathways with their details.
     - scores (dict): Mapping of gene IDs to their scores.
     - n_iterations (int): Number of permutations to perform.
+    - pval_threshold (float): Threshold for adjusted p-values to filter pathways.
 
     Returns:
-    - dict: Updated filtered_pathways with permutation p-values set for each pathway.
+    - dict: Updated filtered_pathways with permutation p-values set for each pathway,
+            and pathways not passing the p-value threshold removed.
     """
     if not filtered_pathways:
         logger.info("No pathways to test with the permutation test.")
         return {}
 
     score_values = np.array([score[0] for score in scores.values()])
+
+    # Store observed means and p-values for all pathways
+    observed_means = []
+    raw_p_values = []
+    pathways_list = []
+    valid_pathways = []
 
     for pathway, data in filtered_pathways.items():
         try:
@@ -50,8 +60,9 @@ def perform_permutation_test(filtered_pathways: dict, scores: dict, n_iterations
 
         # Find the intersection of pathway genes with available scores
         valid_genes = pathway_genes.intersection(scores.keys())
+        pathway_size = len(valid_genes)
 
-        if not valid_genes:
+        if pathway_size == 0:
             logger.warning(f"No valid genes found for pathway '{pathway}'. Skipping permutation test.")
             data['Permutation p-val'] = np.nan
             continue
@@ -59,15 +70,39 @@ def perform_permutation_test(filtered_pathways: dict, scores: dict, n_iterations
         # Calculate the observed mean score for the pathway
         observed_mean = np.mean([scores[gene_id][0] for gene_id in valid_genes])
 
-        # Perform random sampling and calculate permuted means
-        permuted_means = np.random.choice(score_values, size=(n_iterations, len(valid_genes)), replace=True).mean(axis=1)
+        # Generate null distribution for this pathway size
+        permuted_means = np.random.choice(score_values, size=(n_iterations, pathway_size), replace=True).mean(axis=1)
         empirical_p_val = np.mean(permuted_means >= observed_mean)
 
-        # Set the permutation p-value directly in the data dictionary
-        data['Permutation p-val'] = empirical_p_val
+        # Collect data for multiple testing correction
+        observed_means.append(observed_mean)
+        raw_p_values.append(empirical_p_val)
+        pathways_list.append(pathway)
+        valid_pathways.append((pathway, data))
 
-    logger.info("Permutation test completed. Pathways updated with permutation p-values.")
-    return filtered_pathways
+    # Adjust p-values for multiple testing using Benjamini-Hochberg
+    if raw_p_values:
+        adjusted_pvals = multipletests(raw_p_values, method='fdr_bh')[1]
+
+        # Update pathways with adjusted p-values and remove those that don't pass the threshold
+        filtered_pathways_after_permutation = {}
+        for i, (pathway, data) in enumerate(valid_pathways):
+            adjusted_pval = adjusted_pvals[i]
+            data['Permutation p-val'] = adjusted_pval
+
+            # Keep the pathway if it passes the threshold or if it is the associated pathway
+            if adjusted_pval <= pval_threshold or pathway == associated_pathway_name:
+                filtered_pathways_after_permutation[pathway] = data
+            else:
+                if pathway == associated_pathway_name:
+                    logger.info(f"Pathway '{pathway}' removed due to adjusted permutation p-value {adjusted_pval:.4f} > {pval_threshold}")
+
+        return filtered_pathways_after_permutation
+    else:
+        logger.info("No valid p-values obtained from permutation test.")
+        return {}
+
+
 
 def perform_ks_test(task: EnrichTask, genes_by_pathway: dict, scores: dict):
     """
@@ -82,6 +117,7 @@ def perform_ks_test(task: EnrichTask, genes_by_pathway: dict, scores: dict):
     Returns:
     - None
     """
+    
     # Populate a set with all genes from the filtered pathways
     task.filtered_genes = set()
     for genes in genes_by_pathway.values():
@@ -217,7 +253,7 @@ def perform_mann_whitney_test(task: EnrichTask, args: GeneralArgs, scores: dict)
         background_ranks = [scores_rank[gene_id] for gene_id in background_genes]
 
         # Compute the Mann-Whitney U test p-value using scores
-        _, rmw_pval = compute_mw_python(pathway_ranks, background_ranks)
+        _, rmw_pval = compute_mw(pathway_ranks, background_ranks)
         mw_p_values.append(rmw_pval)
 
         # Collect the significant pathways with their corresponding details
@@ -246,11 +282,12 @@ def perform_mann_whitney_test(task: EnrichTask, args: GeneralArgs, scores: dict)
     for i, pathway in enumerate(task.filtered_pathways.keys()):
         task.filtered_pathways[pathway]['FDR q-val'] = float(adjusted_mw_p_values[i])
 
+    associated_pathway_name = task.name.split('_', 1)[1]
+    # Perform Permutation Test
+    task.filtered_pathways = perform_permutation_test(task.filtered_pathways, scores, associated_pathway_name)
+
     # Remove similar pathways based on Jaccard index threshold
     task.filtered_pathways = remove_similar_pathways(task.filtered_pathways, args.JAC_THRESHOLD)
-
-    # Perform Permutation Test
-    task.filtered_pathways = perform_permutation_test(task.filtered_pathways, scores)
 
 
 

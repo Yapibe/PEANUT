@@ -112,7 +112,7 @@ def ks(alam):
     return 1.0
 
 
-def compute_mw_python(experiment_ranks, control_ranks):
+def compute_mw(experiment_ranks, control_ranks):
     """
     Compute the Mann-Whitney U test manually using rank sums to determine the statistical difference
     between two independent samples.

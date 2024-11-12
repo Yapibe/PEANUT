@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import wilcoxon
-from collections import Counter
+import numpy as np
 
 # Define configurations
 data_dir = 'pipeline/Outputs/NGSEA/Summary'
@@ -26,26 +26,23 @@ output_plot_dir = "pipeline/Outputs/Plots"
 os.makedirs(output_plot_dir, exist_ok=True)  # Create the directory if it doesn't exist
 
 def load_data(alpha, data_dir, network):
-    file_name = f'combined_rankings_summary_all_methods.xlsx'
+    file_name = f'rankings_summary_H_sapiens_kegg_alpha_{alpha}.xlsx'
     file_path = os.path.join(data_dir, file_name)
     if os.path.exists(file_path):
         df = pd.read_excel(file_path)
         
-        # Remove any rows with 'Average' or 'percent' in 'Dataset' column
+        # Remove any rows with 'average' or 'percent' in the 'Dataset' column
         df = df[~df['Dataset'].str.contains('average|percent', case=False, na=False)]
         
-        # Rename MW to PEANUT in the dataframe column names
-        df = df.rename(columns={'MW Rank': 'PEANUT Rank', 'MW Significant': 'PEANUT Significant'})
-        
-        # Ensure relevant columns are present
-        expected_columns = ['Dataset'] + [f'{method} Rank' for method in methods]
+        # Ensure the new expected columns based on updated file structure
+        expected_columns = ['Dataset'] + [f'Rank {method}' for method in methods] + [f'Significant {method}' for method in methods]
         missing_columns = [col for col in expected_columns if col not in df.columns]
         if missing_columns:
             print(f"Missing expected columns: {missing_columns}")
             return None
         
         # Convert rank columns to numeric
-        rank_columns = [f'{method} Rank' for method in methods]
+        rank_columns = [f'Rank {method}' for method in methods]
         for col in rank_columns:
             df[col] = pd.to_numeric(df[col], errors='coerce')
         
@@ -58,9 +55,6 @@ def load_data(alpha, data_dir, network):
         print(f"File not found: {file_path}")
         return None
 
-
-
-# Annotate the significance level with asterisks
 def significance_marker(p_value):
     if p_value < 0.001:
         return '***'
@@ -86,10 +80,9 @@ def add_significance_bars(ax, method_pairs, p_values, y_max):
             ax.text((x1_pos + x2_pos) * 0.5, y + 1.5 * bar_height, significance_marker(p_value),
                     ha='center', va='bottom', fontsize=14, color='red')
 
-
 def analyze_data(df, alpha, output_plot_dir):
     # Extract ranks for all methods (focusing on GSEA, NGSEA, and PEANUT)
-    ranks = {method: df[f'{method} Rank'] for method in methods}
+    ranks = {method: df[f'Rank {method}'] for method in methods}
     
     # Perform Wilcoxon signed-rank tests between specified method pairs
     p_values = []
@@ -111,10 +104,7 @@ def analyze_data(df, alpha, output_plot_dir):
         w_result = wilcoxon(rank1, rank2)
         
         # Determine which method ranks better based on sign of the differences
-        if mean_diff < 0:  # Method1 ranks better (lower)
-            better_method = method1
-        else:
-            better_method = method2
+        better_method = method1 if mean_diff < 0 else method2
         
         p_values.append(w_result.pvalue)
         test_results.append((method1, method2, w_result.statistic, w_result.pvalue, better_method))
@@ -125,9 +115,9 @@ def analyze_data(df, alpha, output_plot_dir):
         print(f"{method1} vs {method2}: Statistic={stat}, p-value={p_value}, Better Method={better_method}, Mean Rank Difference={mean_rank_diffs[i]}")
     
     # Prepare data for plotting
-    plot_df = df.melt(id_vars=['Dataset'], value_vars=[f'{method} Rank' for method in methods],
+    plot_df = df.melt(id_vars=['Dataset'], value_vars=[f'Rank {method}' for method in methods],
                       var_name='Method', value_name='Rank')
-    plot_df['Method'] = plot_df['Method'].str.replace(' Rank', '')
+    plot_df['Method'] = plot_df['Method'].str.replace('Rank ', '')
     
     # Plot boxplots
     plt.figure(figsize=(14, 8))
@@ -160,7 +150,6 @@ def analyze_data(df, alpha, output_plot_dir):
 
     plt.tight_layout()
     plt.show()
-
 
 def main():
     for alpha in alphas:
