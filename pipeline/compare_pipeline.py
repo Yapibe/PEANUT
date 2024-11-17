@@ -73,9 +73,13 @@ MAX_WORKERS = config['analysis_settings']['max_workers']
 # Pre-Calculated Data
 PRE_CALCULATED_DATA = config['pre_calculated_data']
 
+def get_pre_calculated_data(disease_name):
+    """Retrieve pre-calculated related pathways for a given disease."""
+    return PRE_CALCULATED_DATA.get(disease_name, [])
+
 
 # Analysis Functions
-def run_analysis(test_name, prior_data, network, network_name, alpha, method, output_path, pathway_file):
+def run_analysis(test_name, prior_data, network, network_name, alpha, method, output_path, pathway_file, related_pathways):
     """
     Perform propagation and enrichment analysis.
     
@@ -88,6 +92,7 @@ def run_analysis(test_name, prior_data, network, network_name, alpha, method, ou
         method (str): Propagation method.
         output_path (str): Path to save the output.
         pathway_file (str): Pathway file used.
+        related_pathways (list): Related pathways for the disease.
     """
     general_args = GeneralArgs(
         network=network_name,
@@ -107,7 +112,7 @@ def run_analysis(test_name, prior_data, network, network_name, alpha, method, ou
     if general_args.run_propagation:
         perform_propagation(test_name, general_args, network, prior_data)
 
-    perform_enrichment(test_name, general_args, output_path)
+    perform_enrichment(test_name, general_args, output_path, related_pathways)
 
 def get_pathway_rank(output_path, pathway_name):
     """
@@ -140,7 +145,7 @@ def get_pathway_rank(output_path, pathway_name):
         logger.error(f"Error reading {output_path}: {e}")
     return None, None, None
 
-def process_single_file(network, pathway_file, network_name, alpha, method, file_name, loaded_pathways):
+def process_single_file(network, pathway_file, network_name, alpha, method, file_name, loaded_pathways, related_pathways):
     """
     Process a single file: perform analysis and collect results.
     """
@@ -152,7 +157,7 @@ def process_single_file(network, pathway_file, network_name, alpha, method, file
     os.makedirs(output_dir, exist_ok=True)
     output_file_path = os.path.join(output_dir, file_name)
 
-    run_analysis(file_name, prior_data, network, network_name, alpha, method, output_file_path, pathway_file)
+    run_analysis(file_name, prior_data, network, network_name, alpha, method, output_file_path, pathway_file, related_pathways)
     rank, fdr_q_val, higher_rank_df = get_pathway_rank(output_file_path, pathway_name)
 
     higher_ranked = []
@@ -263,6 +268,7 @@ def main():
                     for file_name in FILE_LIST:
                         dataset_name, pathway_name = file_name.replace('.xlsx', '').split('_', 1)
                         if pathway_name in PATHWAYS_DATA[pathway_file]:
+                            related_pathways = get_pre_calculated_data(pathway_name)
                             for prop_method in PROP_METHODS:
                                 futures.append(
                                     executor.submit(
@@ -273,7 +279,8 @@ def main():
                                         alpha,
                                         prop_method,
                                         file_name,
-                                        PATHWAYS_DATA
+                                        PATHWAYS_DATA,
+                                        related_pathways
                                     )
                                 )
 

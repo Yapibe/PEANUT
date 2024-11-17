@@ -155,67 +155,64 @@ def perform_ks_test(task: EnrichTask, genes_by_pathway: dict, scores: dict):
         logger.info("No significant pathways found after KS test.")
 
 
-def remove_similar_pathways(filtered_pathways: dict, jac_threshold: float) -> dict:
+def remove_similar_pathways(filtered_pathways: dict, jac_threshold: float, associated_pathway_name: str, related_pathways: list) -> dict:
     """
-    Remove pathways that are too similar based on Jaccard index.
+    Remove pathways that are too similar based on the Jaccard index, retaining only the associated pathway.
 
     Parameters:
     - filtered_pathways (dict): Dictionary of pathways with their details.
     - jac_threshold (float): Jaccard index threshold for removing similar pathways.
+    - associated_pathway_name (str): The specific pathway to retain regardless of similarity.
 
     Returns:
-    - dict: Filtered pathways after removing similar ones.
+    - dict: Filtered pathways after removing similar ones, keeping the associated pathway.
     """
-    keep_list = [
-        'KEGG_THYROID_CANCER',
-        'KEGG_NON_SMALL_CELL_LUNG_CANCER',
-        'KEGG_ACUTE_MYELOID_LEUKEMIA',
-        'KEGG_COLORECTAL_CANCER',
-        'KEGG_GLIOMA',
-        'KEGG_RENAL_CELL_CARCINOMA',
-        'KEGG_PANCREATIC_CANCER',
-        'KEGG_PROSTATE_CANCER',
-        'KEGG_DILATED_CARDIOMYOPATHY',
-        'KEGG_PARKINSONS_DISEASE',
-        'KEGG_ALZHEIMERS_DISEASE',
-        'KEGG_HUNTINGTONS_DISEASE'
-    ]
-    # Sort pathways by FDR q-value (ascending)
-    sorted_pathways = sorted(filtered_pathways.items(), key=lambda x: x[1]['FDR q-val'])
-    pathways_genes = {pathway: set(data['Lead_genes'].split(',')) for pathway, data in sorted_pathways}
+    # Sort pathways by FDR q-value in ascending order to prioritize significance
+    sorted_pathways = sorted(
+        filtered_pathways.items(),
+        key=lambda x: x[1]['FDR q-val']
+    )
+
+    # Map each pathway to its set of associated genes for efficient Jaccard computation
+    pathways_genes = {
+        pathway: set(data['Lead_genes'].split(','))
+        for pathway, data in sorted_pathways
+    }
+
     removed_pathways = set()
 
+    # Iterate through each pathway to compare with others
     for i, (pathway_i, data_i) in enumerate(sorted_pathways):
         if pathway_i in removed_pathways:
             continue
         genes_i = pathways_genes[pathway_i]
 
-        # Compare pathway_i with all subsequent pathways in the list
+        # Compare the current pathway with all subsequent pathways
         for j in range(i + 1, len(sorted_pathways)):
             pathway_j, data_j = sorted_pathways[j]
-            if pathway_j in removed_pathways or pathway_j in keep_list:
-                # Skip removing pathway_j if it's already removed or in the keep list
+
+            # Skip if pathway_j is already removed or is the associated pathway to retain
+            if pathway_j in removed_pathways or pathway_j == associated_pathway_name:
                 continue
-            
+
             genes_j = pathways_genes[pathway_j]
             ji = jaccard_index(genes_i, genes_j)
-            
-            if ji > jac_threshold:
-                # Remove pathway_j (less significant) only if it's not in the keep list
-                if pathway_j not in keep_list:
-                    removed_pathways.add(pathway_j)
 
-    # Construct the filtered pathways after removing similar ones, always keeping pathways in the keep list
+            if ji > jac_threshold:
+                # Remove pathway_j if it's not the associated pathway
+                removed_pathways.add(pathway_j)
+
+    # Always retain the associated pathway
     filtered_pathways_after_jaccard = {
         pathway: data
         for pathway, data in filtered_pathways.items()
-        if pathway not in removed_pathways or pathway in keep_list
+        if pathway not in removed_pathways or pathway == associated_pathway_name
     }
 
     return filtered_pathways_after_jaccard
 
 
-def perform_mann_whitney_test(task: EnrichTask, args: GeneralArgs, scores: dict):
+def perform_mann_whitney_test(task: EnrichTask, args: GeneralArgs, scores: dict, related_pathways: list):
     """
     Perform Mann-Whitney U test on pathways that passed the KS test and filter significant pathways.
 
@@ -287,12 +284,12 @@ def perform_mann_whitney_test(task: EnrichTask, args: GeneralArgs, scores: dict)
     task.filtered_pathways = perform_permutation_test(task.filtered_pathways, scores, associated_pathway_name)
 
     # Remove similar pathways based on Jaccard index threshold
-    task.filtered_pathways = remove_similar_pathways(task.filtered_pathways, args.JAC_THRESHOLD)
+    task.filtered_pathways = remove_similar_pathways(task.filtered_pathways, args.JAC_THRESHOLD, associated_pathway_name, related_pathways)
 
 
 
 
-def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: str = None):
+def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: str = None, related_pathways: list = None):
     """
     Perform pathway enrichment analysis for a given test.
 
@@ -344,7 +341,7 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: s
         perform_ks_test(enrich_task, genes_by_pathway, scores)
         if enrich_task.ks_significant_pathways_with_genes:
             # Perform Mann-Whitney U test
-            perform_mann_whitney_test(enrich_task, general_args, scores)
+            perform_mann_whitney_test(enrich_task, general_args, scores, related_pathways)
         else:
             logger.info("No significant pathways after KS test. Skipping Mann-Whitney U test.")
 
