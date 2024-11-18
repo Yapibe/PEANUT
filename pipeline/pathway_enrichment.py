@@ -110,9 +110,8 @@ def perform_ks_test(task: EnrichTask, genes_by_pathway: dict, scores: dict):
 
     Parameters:
     - task (EnrichTask): Enrichment task containing task-specific settings.
-    - general_args (GeneralArgs): General arguments and settings.
     - genes_by_pathway (dict): Mapping of pathways to their constituent genes.
-    - scores (dict): Mapping of gene IDs to their scores and p-values.
+    - scores (dict): Mapping of gene IDs to their scores.
 
     Returns:
     - None
@@ -153,6 +152,9 @@ def perform_ks_test(task: EnrichTask, genes_by_pathway: dict, scores: dict):
 
     if not task.ks_significant_pathways_with_genes:
         logger.info("No significant pathways found after KS test.")
+    else:
+        print(f"Number of significant pathways after KS test: {len(task.ks_significant_pathways_with_genes)}")
+
 
 
 def remove_similar_pathways(filtered_pathways: dict, jac_threshold: float, associated_pathway_name: str, related_pathways: list) -> dict:
@@ -280,11 +282,12 @@ def perform_mann_whitney_test(task: EnrichTask, args: GeneralArgs, scores: dict,
         task.filtered_pathways[pathway]['FDR q-val'] = float(adjusted_mw_p_values[i])
 
     associated_pathway_name = task.name.split('_', 1)[1]
-    # Perform Permutation Test
-    task.filtered_pathways = perform_permutation_test(task.filtered_pathways, scores, associated_pathway_name)
 
     # Remove similar pathways based on Jaccard index threshold
     task.filtered_pathways = remove_similar_pathways(task.filtered_pathways, args.JAC_THRESHOLD, associated_pathway_name, related_pathways)
+
+    # Perform Permutation Test
+    task.filtered_pathways = perform_permutation_test(task.filtered_pathways, scores, associated_pathway_name)
 
 
 

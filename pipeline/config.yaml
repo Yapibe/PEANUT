@@ -11,6 +11,7 @@ analysis_settings:
     - "kegg"                                 # List of pathway files to process
   prop_methods:                                      # Propagation methods to use
     - "PEANUT"
+ 
   alphas:
     - 0.2                                            # Alpha values for analysis
   max_workers: 1                                    # Number of parallel workers

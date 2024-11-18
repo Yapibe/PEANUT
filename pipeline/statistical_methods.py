@@ -1,48 +1,6 @@
 import numpy as np
 import pandas as pd
-from scipy.stats import rankdata, norm, hypergeom
-
-
-def wilcoxon_rank_sums_test(experiment_scores: list, control_scores: list, alternative: str = 'two-sided') -> float:
-    """
-    Perform the Wilcoxon rank-sum test to compare two independent samples.
-
-    Parameters:
-    - experiment_scores (list): Scores from the experimental group.
-    - control_scores (list): Scores from the control group.
-    - alternative (str): Defines the alternative hypothesis ('two-sided', 'less', 'greater').
-
-    Returns:
-    - float: The P-value from the Wilcoxon rank-sum test.
-    """
-    from scipy.stats import ranksums
-    p_vals = ranksums(experiment_scores, control_scores, alternative=alternative).pvalue
-    return p_vals
-
-
-def bh_correction(p_values: np.ndarray) -> np.ndarray:
-    """
-    Apply the Benjamini-Hochberg procedure for controlling the false discovery rate in multiple hypothesis testing.
-
-    Parameters:
-    - p_values (array_like): Array of p-values obtained from multiple statistical tests.
-
-    Returns:
-    - numpy.ndarray: Array of adjusted p-values.
-    """
-    p_vals_rank = rankdata(p_values, 'max') - 1
-    p_vals_rank_ord = rankdata(p_values, 'ordinal') - 1
-
-    p_values_sorted = np.zeros_like(p_vals_rank)
-    p_values_sorted[p_vals_rank_ord] = np.arange(len(p_vals_rank_ord))
-
-    p_vals = p_values * (len(p_values) / (p_vals_rank + 1))
-    adj_p_vals_by_rank = p_vals[p_values_sorted]
-
-    p_vals_ordered = np.minimum(adj_p_vals_by_rank, np.minimum.accumulate(adj_p_vals_by_rank[::-1])[::-1])
-    adj_p_vals = p_vals_ordered[p_values_sorted]
-
-    return adj_p_vals
+from scipy.stats import rankdata, norm, hypergeom, ks_2samp
 
 
 def kolmogorov_smirnov_test(experiment_scores, control_scores):
@@ -304,18 +262,23 @@ def global_gene_ranking(scores: dict):
     Rank all genes globally based on their scores.
 
     Parameters:
-    - scores (dict): Mapping of gene IDs to their scores and p-values.
+    - scores (dict): Mapping of gene IDs to their scores.
 
     Returns:
     - pd.Series: A series with gene IDs as index and their global ranks as values.
     """
-    # Extract scores and rank them
+    # Extract scores
     gene_ids = list(scores.keys())
     gene_scores = [score[0] for score in scores.values()]
 
+    # Create a DataFrame for easier handling
+    df = pd.DataFrame({'GeneID': gene_ids, 'Score': gene_scores})
+
     # Rank the scores (higher scores get lower rank numbers)
-    ranks = rankdata(gene_scores, method='average')
-    global_ranking = pd.Series(ranks, index=gene_ids)
+    df['Rank'] = df['Score'].rank(ascending=False, method='average')
+
+    # Create a Series with GeneID as index and Rank as values
+    global_ranking = df.set_index('GeneID')['Rank']
 
     return global_ranking
 
@@ -325,27 +288,35 @@ def kolmogorov_smirnov_test_with_ranking(pathway_genes, global_ranking):
     Perform the Kolmogorov-Smirnov test using global ranking.
 
     Parameters:
-    - pathway_genes (list): List of gene IDs in the pathway.
+    - pathway_genes (iterable): Iterable of gene IDs in the pathway.
     - global_ranking (pd.Series): Global ranking of all genes.
 
     Returns:
     - float: The P-value from the KS test indicating statistical difference.
     """
-    # Convert pathway genes to a list if it's a set
+    # Convert pathway_genes to a list if it's not already
     pathway_genes = list(pathway_genes)
 
+    # Ensure all genes are in the global ranking
+    pathway_genes_in_ranking = [gene for gene in pathway_genes if gene in global_ranking.index]
+
+    if not pathway_genes_in_ranking:
+        # If no genes are found, return a p-value of 1.0
+        return 1.0
+
     # Get the ranks for pathway genes
-    pathway_ranks = global_ranking[pathway_genes].sort_values().values
-    background_ranks = global_ranking.drop(pathway_genes).values
+    pathway_ranks = global_ranking[pathway_genes_in_ranking].values
 
-    # Calculate the KS statistic
-    en1 = len(pathway_ranks)
-    en2 = len(background_ranks)
-    cdf_pathway = np.searchsorted(pathway_ranks, global_ranking, side='right') / en1
-    cdf_background = np.searchsorted(background_ranks, global_ranking, side='right') / en2
-    D = np.max(np.abs(cdf_pathway - cdf_background))
+    # Get the ranks for background genes
+    background_genes = global_ranking.index.difference(pathway_genes_in_ranking)
+    background_ranks = global_ranking[background_genes].values
 
-    en = np.sqrt(en1 * en2 / (en1 + en2))
-    p_value = ks((en + 0.12 + 0.11 / en) * D)
+    # Perform the KS test
+    D, p_value = ks_2samp(
+        pathway_ranks,
+        background_ranks,
+        alternative='two-sided',
+        mode='auto'
+    )
 
     return p_value

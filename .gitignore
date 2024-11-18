@@ -88,3 +88,10 @@ peanut.tar
 
 # Ignore all app directory
 app/
+
+# Ignore the entire pipeline/Data directory
+pipeline/Data/
+
+# Except for specific files and directories
+!pipeline/Data/H_sapiens/pathways/disease_to_pathway.csv
+!pipeline/Data/H_sapiens/pathways/kegg/
