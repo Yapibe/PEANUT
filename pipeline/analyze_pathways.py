@@ -134,6 +134,14 @@ def plot_analysis_results(analysis_df, classification_df, output_dir):
         value_name='Count'
     )
 
+    # Define a custom, color-blind friendly palette
+    custom_palette = {
+        'Associated': '#377eb8',   # Blue
+        'Related': '#ff7f00',       # Orange
+        'Overlapping': '#4daf4a',   # Green
+        'Unrelated': '#e41a1c'      # Red
+    }
+
     # Plot using the specified dataset order
     sns.barplot(
         data=classification_melted,
@@ -141,7 +149,7 @@ def plot_analysis_results(analysis_df, classification_df, output_dir):
         y='Count',
         hue='Classification',
         ax=axes[3],
-        palette='viridis',
+        palette=custom_palette,
         order=dataset_order
     )
     axes[3].set_title('Pathway Classifications per Dataset')
@@ -190,7 +198,7 @@ def calculate_fp_above_related_per_file(file_results, disease_to_pathways, assoc
     return false_positives_above_related, highest_related_rank
 
 
-def process_single_file(pathway_file, network_name, alpha, method, file_name, disease_to_pathways, jac_threshold=0.3):
+def process_single_file(pathway_file, network_name, alpha, method, file_name, disease_to_pathways, jac_threshold=0.2):
     """
     Process a single pathway file and classify pathways, including the new 'Overlapping' category
     based on Jaccard similarity.
@@ -370,28 +378,6 @@ logger.info(f"Found {len(FILE_LIST)} .xlsx files in {DIRECTORIES['input']}")
 NETWORKS_DATA, PATHWAYS_DATA = load_data(NETWORKS, PATHWAY_FILES, DIRECTORIES['pathways'])
 logger.info("Networks loaded and pathway densities calculated.")
 
-# Additional Diagnostic Function
-def inspect_pathways_data():
-    """
-    Inspect the structure of PATHWAYS_DATA for each pathway_file.
-
-    Helps in debugging the structure and contents of PATHWAYS_DATA.
-    """
-    for pathway_file, pathways in PATHWAYS_DATA.items():
-        logger.info(f"Inspecting PATHWAYS_DATA for '{pathway_file}'")
-        logger.info(f"Type: {type(pathways)}")
-        if isinstance(pathways, list):
-            if pathways:
-                first_item = pathways[0]
-                logger.info(f"First item type: {type(first_item)}")
-                if isinstance(first_item, dict):
-                    logger.info(f"First item keys: {first_item.keys()}")
-                else:
-                    logger.info(f"First item: {first_item}")
-            else:
-                logger.info("No pathways found in the list.")
-        else:
-            logger.error(f"Unexpected type for PATHWAYS_DATA[{pathway_file}]: {type(pathways)}")
 
 def main():
     """
@@ -401,9 +387,6 @@ def main():
     disease_to_pathways = PRE_CALCULATED_DATA
     logger.info("Loaded disease to pathway mappings.")
     
-    # Inspect PATHWAYS_DATA structure
-    inspect_pathways_data()
-    
     futures = []
     higher_ranked_records = []  # List to collect all higher-ranked pathways across files
     classification_records = []  # List to collect classification counts for plotting
@@ -411,7 +394,7 @@ def main():
     network_name = NETWORKS[0]
     
     # Retrieve Jaccard threshold from config or set a default
-    jac_threshold = config['analysis_settings'].get('jaccard_threshold', 0.2)
+    jac_threshold = config['analysis_settings'].get('JAC_THRESHOLD', 0.2)
 
     with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
         for file_name in FILE_LIST:
