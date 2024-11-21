@@ -9,16 +9,14 @@ import numpy as np
 data_dir = 'pipeline/Outputs/NGSEA/Summary'
 network = 'H_sapiens'
 alphas = [0.2]
-methods = ['PEANUT', 'ABS_SCORE', 'ABS_PROP', 'GSEA', 'NGSEA']
+methods = ['PEANUT', 'ABS SCORE', 'GSEA', 'NGSEA']
 
 # Define specific method pairs to compare and plot significance bars
 methods_to_compare = [
     ('GSEA', 'NGSEA'),
     ('GSEA', 'PEANUT'),
-    ('GSEA', 'ABS_PROP'),
     ('NGSEA', 'PEANUT'),
-    ('PEANUT', 'ABS_PROP'),
-    ('PEANUT', 'ABS_SCORE')
+    ('PEANUT', 'ABS SCORE')
 ]
 
 # Output directory for saving plots
@@ -26,7 +24,7 @@ output_plot_dir = "pipeline/Outputs/Plots"
 os.makedirs(output_plot_dir, exist_ok=True)  # Create the directory if it doesn't exist
 
 def load_data(alpha, data_dir, network):
-    file_name = f'rankings_summary_H_sapiens_kegg_alpha_{alpha}.xlsx'
+    file_name = f'rankings_summary.xlsx'
     file_path = os.path.join(data_dir, file_name)
     if os.path.exists(file_path):
         df = pd.read_excel(file_path)

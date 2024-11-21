@@ -10,18 +10,252 @@ from statistical_methods import (
     kolmogorov_smirnov_test_with_ranking,
     compute_mw,
     global_gene_ranking,
-    jaccard_index
+    jaccard_index,
+    kolmogorov_smirnov_test_with_scores
 )
 import gseapy as gp
-
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-import random
 
 
 from statsmodels.stats.multitest import multipletests
+
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+import numpy as np
+
+def plot_score_distributions_comparison(
+    pathway_prior_scores,
+    background_prior_scores,
+    pathway_scores,
+    background_scores,
+    pathway_name,
+    output_dir
+):
+    # Validate input scores
+    if not pathway_prior_scores or not background_prior_scores:
+        print(f"Skipping plot for {pathway_name}: Missing prior scores.")
+        return
+    if not pathway_scores or not background_scores:
+        print(f"Skipping plot for {pathway_name}: Missing propagated scores.")
+        return
+
+    # Plot histograms
+    plt.figure(figsize=(12, 6))
+
+    # Before propagation
+    plt.subplot(1, 2, 1)
+    plt.hist(background_prior_scores, bins=50, alpha=0.5, label='Background Genes', density=True)
+    plt.hist(pathway_prior_scores, bins=50, alpha=0.7, label=f'{pathway_name} Genes', density=True)
+    plt.xlabel('Gene Scores (Before Propagation)')
+    plt.ylabel('Density')
+    plt.title(f'Score Distribution Before Propagation: {pathway_name}')
+    plt.legend()
+
+    # After propagation
+    plt.subplot(1, 2, 2)
+    plt.hist(background_scores, bins=50, alpha=0.5, label='Background Genes', density=True)
+    plt.hist(pathway_scores, bins=50, alpha=0.7, label=f'{pathway_name} Genes', density=True)
+    plt.xlabel('Gene Scores (After Propagation)')
+    plt.ylabel('Density')
+    plt.title(f'Score Distribution After Propagation: {pathway_name}')
+    plt.legend()
+
+    # Save the plot
+    os.makedirs(output_dir, exist_ok=True)
+    output_file = os.path.join(output_dir, f'score_distribution_comparison_{pathway_name}.png')
+    plt.tight_layout()
+    plt.savefig(output_file)
+    plt.close()
+
+
+def plot_ecdfs_with_scores_comparison(
+    pathway_prior_scores,
+    background_prior_scores,
+    pathway_scores,
+    background_scores,
+    pathway_name,
+    output_dir
+):
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    # Sort scores
+    pathway_prior_scores_sorted = np.sort(pathway_prior_scores)
+    background_prior_scores_sorted = np.sort(background_prior_scores)
+    pathway_scores_sorted = np.sort(pathway_scores)
+    background_scores_sorted = np.sort(background_scores)
+
+    # Calculate ECDFs
+    pathway_prior_ecdf = np.arange(1, len(pathway_prior_scores_sorted)+1) / len(pathway_prior_scores_sorted)
+    background_prior_ecdf = np.arange(1, len(background_prior_scores_sorted)+1) / len(background_prior_scores_sorted)
+    pathway_ecdf = np.arange(1, len(pathway_scores_sorted)+1) / len(pathway_scores_sorted)
+    background_ecdf = np.arange(1, len(background_scores_sorted)+1) / len(background_scores_sorted)
+
+    # Plot ECDFs
+    plt.figure(figsize=(12, 6))
+
+    # Before propagation
+    plt.subplot(1, 2, 1)
+    plt.step(background_prior_scores_sorted, background_prior_ecdf, where='post', label='Background Genes')
+    plt.step(pathway_prior_scores_sorted, pathway_prior_ecdf, where='post', label=f'{pathway_name} Genes')
+    plt.xlabel('Gene Scores (Before Propagation)')
+    plt.ylabel('ECDF')
+    plt.title(f'ECDF Before Propagation: {pathway_name}')
+    plt.legend()
+    plt.grid(True)
+
+    # After propagation
+    plt.subplot(1, 2, 2)
+    plt.step(background_scores_sorted, background_ecdf, where='post', label='Background Genes')
+    plt.step(pathway_scores_sorted, pathway_ecdf, where='post', label=f'{pathway_name} Genes')
+    plt.xlabel('Gene Scores (After Propagation)')
+    plt.ylabel('ECDF')
+    plt.title(f'ECDF After Propagation: {pathway_name}')
+    plt.legend()
+    plt.grid(True)
+
+    # Save the plot
+    output_file = os.path.join(output_dir, f'ecdf_comparison_{pathway_name}.png')
+    plt.tight_layout()
+    plt.savefig(output_file)
+    plt.close()
+
+
+def plot_score_distributions(pathway_scores, background_scores, pathway_name, output_dir):
+    # Ensure output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Plot histograms
+    plt.figure(figsize=(10, 6))
+    plt.hist(background_scores, bins=50, alpha=0.5, label='Background Genes', density=True)
+    plt.hist(pathway_scores, bins=50, alpha=0.7, label=f'{pathway_name} Genes', density=True)
+    plt.xlabel('Gene Scores')
+    plt.ylabel('Density')
+    plt.title(f'Score Distribution: {pathway_name} vs. Background')
+    plt.legend()
+
+    # Save the plot
+    output_file = os.path.join(output_dir, f'score_distribution_{pathway_name}.png')
+    plt.savefig(output_file)
+    plt.close()
+
+
+def plot_ecdfs_with_scores(pathway_scores, background_scores, pathway_name, output_dir):
+    # Ensure output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Convert sets to lists
+    pathway_scores = list(pathway_scores)
+    background_scores = list(background_scores)
+    
+    # Sort scores
+    pathway_scores_sorted = np.sort(pathway_scores)
+    background_scores_sorted = np.sort(background_scores)
+    
+    # Calculate ECDFs
+    pathway_ecdf = np.arange(1, len(pathway_scores_sorted)+1) / len(pathway_scores_sorted)
+    background_ecdf = np.arange(1, len(background_scores_sorted)+1) / len(background_scores_sorted)
+
+    # Plot ECDFs
+    plt.figure(figsize=(10, 6))
+    plt.step(pathway_scores_sorted, pathway_ecdf, where='post', label=f'{pathway_name} Genes')
+    plt.step(background_scores_sorted, background_ecdf, where='post', label='Background Genes')
+    plt.xlabel('Gene Scores')
+    plt.ylabel('ECDF')
+    plt.title(f'ECDF Comparison: {pathway_name} vs. Background')
+    plt.legend()
+    plt.grid(True)
+
+    # Save the plot
+    output_file = os.path.join(output_dir, f'ecdf_{pathway_name}.png')
+    plt.savefig(output_file)
+    plt.close()
+
+def plot_ecdfs(pathway_genes, global_ranking, pathway_name, output_dir):
+    # Ensure output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Filter pathway genes present in global ranking
+    pathway_genes_in_ranking = [gene for gene in pathway_genes if gene in global_ranking.index]
+    if not pathway_genes_in_ranking:
+        print(f"No genes from {pathway_name} are in the global ranking.")
+        return
+
+    # Get ranks
+    pathway_ranks = global_ranking[pathway_genes_in_ranking].values
+    background_genes = global_ranking.index.difference(pathway_genes_in_ranking)
+    background_ranks = global_ranking[background_genes].values
+
+    # Sort ranks
+    pathway_ranks_sorted = np.sort(pathway_ranks)
+    background_ranks_sorted = np.sort(background_ranks)
+
+    # Calculate ECDFs
+    pathway_ecdf = np.arange(1, len(pathway_ranks_sorted)+1) / len(pathway_ranks_sorted)
+    background_ecdf = np.arange(1, len(background_ranks_sorted)+1) / len(background_ranks_sorted)
+
+    # Create DataFrames for the ECDF data
+    pathway_ecdf_df = pd.DataFrame({
+        'Rank': pathway_ranks_sorted,
+        'ECDF': pathway_ecdf
+    })
+    background_ecdf_df = pd.DataFrame({
+        'Rank': background_ranks_sorted,
+        'ECDF': background_ecdf
+    })
+
+    # Save ECDF data to CSV files
+    pathway_ecdf_file = os.path.join(output_dir, f'ecdf_data_{pathway_name}_genes.csv')
+    background_ecdf_file = os.path.join(output_dir, f'ecdf_data_{pathway_name}_background.csv')
+    pathway_ecdf_df.to_csv(pathway_ecdf_file, index=False)
+    background_ecdf_df.to_csv(background_ecdf_file, index=False)
+    # # Optionally, print the first few rows of the ECDF data
+    # print(f"ECDF data for {pathway_name} genes:")
+    # print(pathway_ecdf_df.head())
+    # print(f"\nECDF data for {pathway_name} background genes:")
+    # print(background_ecdf_df.head())
+
+    # Plot ECDFs
+    plt.figure(figsize=(10, 6))
+    plt.step(pathway_ranks_sorted, pathway_ecdf, where='post', label=f'{pathway_name} Genes')
+    plt.step(background_ranks_sorted, background_ecdf, where='post', label='Background Genes')
+    plt.xlabel('Gene Rank')
+    plt.ylabel('ECDF')
+    plt.title(f'ECDF Comparison: {pathway_name} vs. Background')
+    plt.legend()
+    plt.grid(True)
+
+    # Save the plot
+    output_file = os.path.join(output_dir, f'ecdf_{pathway_name}.png')
+    plt.savefig(output_file)
+    plt.close()
+
+def plot_boxplots(pathway_genes, scores, pathway_name, output_dir):
+    # Ensure output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Get pathway and background scores
+    pathway_scores = [scores[gene_id][0] for gene_id in pathway_genes if gene_id in scores]
+    background_genes = set(scores.keys()) - set(pathway_genes)
+    background_scores = [scores[gene_id][0] for gene_id in background_genes]
+
+    # Plot boxplots
+    data = [pathway_scores, background_scores]
+    labels = [f'{pathway_name} Genes', 'Background Genes']
+    plt.figure(figsize=(8, 6))
+    plt.boxplot(data, labels=labels)
+    plt.ylabel('Gene Scores')
+    plt.title(f'Boxplot of Scores: {pathway_name} vs. Background')
+
+    # Save the plot
+    output_file = os.path.join(output_dir, f'boxplot_{pathway_name}.png')
+    plt.savefig(output_file)
+    plt.close()
+
 
 def perform_permutation_test(filtered_pathways: dict, scores: dict, associated_pathway_name: str, n_iterations: int = 1000, pval_threshold: float = 0.05) -> dict:
     """
@@ -104,7 +338,7 @@ def perform_permutation_test(filtered_pathways: dict, scores: dict, associated_p
 
 
 
-def perform_ks_test(task: EnrichTask, genes_by_pathway: dict, scores: dict):
+def perform_ks_test(task: EnrichTask, genes_by_pathway: dict, scores: dict, output_path: str, test_name: str, prior_set: pd.DataFrame):
     """
     Perform statistical enrichment analysis on pathways.
 
@@ -116,7 +350,12 @@ def perform_ks_test(task: EnrichTask, genes_by_pathway: dict, scores: dict):
     Returns:
     - None
     """
-    
+    output_dir = path.join(output_path, 'Plots', test_name)
+    # Convert prior_set DataFrame to dict format matching scores
+    prior_set_dict = {row['GeneID']: (row['Score'], 0) for _, row in prior_set.iterrows()}
+    filtered_prior_set_dict = {gene_id: score for gene_id, score in prior_set_dict.items() if gene_id in scores}
+    # Extract pathway name from test name by removing the first part (e.g., GSE21354_)
+    test_name = '_'.join(test_name.split('_')[1:])
     # Populate a set with all genes from the filtered pathways
     task.filtered_genes = set()
     for genes in genes_by_pathway.values():
@@ -130,16 +369,45 @@ def perform_ks_test(task: EnrichTask, genes_by_pathway: dict, scores: dict):
     pathways = list(genes_by_pathway.keys())
     for pathway in pathways:
         genes = genes_by_pathway[pathway]
-        p_value = kolmogorov_smirnov_test_with_ranking(genes, global_ranking)
-        ks_p_values.append(p_value)
+        # Get pathway and background scores
+        pathway_scores = [scores[gene_id][0] for gene_id in genes if gene_id in scores]
+        background_genes = set(scores.keys()) - set(genes)
+        background_scores = [scores[gene_id][0] for gene_id in background_genes]
 
+        pathway_prior_scores = [filtered_prior_set_dict[gene_id][0] for gene_id in genes if gene_id in filtered_prior_set_dict]
+        background_prior_genes = set(filtered_prior_set_dict.keys()) - set(genes)
+        background_prior_scores = [filtered_prior_set_dict[gene_id][0] for gene_id in background_prior_genes]
+
+
+        if pathway == test_name:
+            # Plot and save distributions
+            plot_score_distributions_comparison(
+                pathway_prior_scores,
+                background_prior_scores,
+                pathway_scores,
+                background_scores,
+                pathway,
+                output_dir
+            )
+
+            # Plot ECDFs before and after propagation
+            plot_ecdfs_with_scores_comparison(
+                pathway_prior_scores,
+                background_prior_scores,
+                pathway_scores,
+                background_scores,
+                pathway,
+                output_dir
+            )
+        # p_value = kolmogorov_smirnov_test_with_ranking(genes, global_ranking, alternative='greater')
+        p_value = kolmogorov_smirnov_test_with_scores(genes, prior_set_dict)
+        ks_p_values.append(p_value)
     if not ks_p_values:
         logger.info("No pathways to test. Skipping KS test.")
         return
     
     # Apply Benjamini-Hochberg correction to the KS P-values
     adjusted_p_values = multipletests(ks_p_values, method='fdr_bh')[1]
-
 
     # Filter significant pathways based on adjusted KS P-values
     task.ks_significant_pathways_with_genes = {}
@@ -152,8 +420,7 @@ def perform_ks_test(task: EnrichTask, genes_by_pathway: dict, scores: dict):
 
     if not task.ks_significant_pathways_with_genes:
         logger.info("No significant pathways found after KS test.")
-    else:
-        print(f"Number of significant pathways after KS test: {len(task.ks_significant_pathways_with_genes)}")
+
 
 
 
@@ -326,7 +593,8 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: s
         propagation_file=propagation_file
     )
 
-    genes_by_pathway, scores = load_pathways_and_propagation_scores(general_args, enrich_task.propagation_file)
+    genes_by_pathway, scores, prior_set = load_pathways_and_propagation_scores(general_args, enrich_task.propagation_file)
+
     logger.info(f"Running enrichment analysis for test: {test_name}")
 
     if general_args.run_gsea:
@@ -337,11 +605,11 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: s
         gene_expression_data['gene'] = gene_expression_data['gene'].astype(str)
         gene_expression_data = gene_expression_data.sort_values(by='logFC', ascending=False)
         gsea_results = gp.prerank(rnk=gene_expression_data, gene_sets=genes_by_pathway, outdir=general_args.gsea_out,
-                                  verbose=True, permutation_num=1000, no_plot=True)
+                                  verbose=False, permutation_num=1000, no_plot=True)
         gsea_results.res2d.to_excel(output_path)
     else:
         # Perform Kolmogorov-Smirnov test
-        perform_ks_test(enrich_task, genes_by_pathway, scores)
+        perform_ks_test(enrich_task, genes_by_pathway, scores, general_args.output_dir, test_name, prior_set)
         if enrich_task.ks_significant_pathways_with_genes:
             # Perform Mann-Whitney U test
             perform_mann_whitney_test(enrich_task, general_args, scores, related_pathways)

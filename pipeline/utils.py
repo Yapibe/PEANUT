@@ -140,9 +140,9 @@ def load_pathways_and_propagation_scores(general_args, propagation_file_path):
     pathways_with_many_genes = load_pathways_genes(general_args.pathway_file_dir, general_args.run_gsea)
     # remove pathways with more than 400 genes
     # pathways_with_many_genes = {pathway: genes for pathway, genes in pathways_with_many_genes.items() if len(genes) <= 400}
-    scores = get_scores(propagation_file_path)
+    scores, prior_set = get_scores(propagation_file_path)
     if general_args.run_gsea:
-        return pathways_with_many_genes, scores
+        return pathways_with_many_genes, scores, prior_set
     else:
         scores_keys = set(scores.keys())
         # Filter pathways by those having gene counts within the specified range and that intersect with scored genes
@@ -151,7 +151,7 @@ def load_pathways_and_propagation_scores(general_args, propagation_file_path):
                                 if general_args.minimum_gene_per_pathway <=
                                 len(set(genes).intersection(scores_keys)) <= general_args.maximum_gene_per_pathway}
 
-    return genes_by_pathway, scores
+    return genes_by_pathway, scores, prior_set
 
 ####################################################################GET FUNCTIONS############################################################################
 
@@ -200,8 +200,9 @@ def get_scores(score_path):
         # Create a dictionary mapping gene IDs to tuples of (Score, P-value)
         gene_scores = {gene_id: (score, pvalue) for gene_id, score, pvalue
                        in zip(sorted_scores['GeneID'], sorted_scores['Score'], sorted_scores['P-value'])}
+        prior_set = propagation_results['prior_set']
 
-        return gene_scores
+        return gene_scores, prior_set
 
     except FileNotFoundError:
         print(f"File not found: {score_path}")

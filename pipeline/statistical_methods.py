@@ -1,73 +1,6 @@
 import numpy as np
 import pandas as pd
-from scipy.stats import rankdata, norm, hypergeom, ks_2samp
-
-
-def kolmogorov_smirnov_test(experiment_scores, control_scores):
-    """
-    Perform the Kolmogorov-Smirnov test to compare two samples.
-
-    Parameters:
-    - experiment_scores (list): Scores from the experimental group.
-    - control_scores (list): Scores from the control group.
-
-    Returns:
-    float: The P-value from the KS test indicating statistical difference.
-    """
-    # Convert lists to numpy arrays for efficient operations
-    experiment_scores = np.sort(experiment_scores).ravel()
-    control_scores = np.sort(control_scores).ravel()
-
-    # Calculate the length of each sample
-    en1 = len(experiment_scores)
-    en2 = len(control_scores)
-
-    # Combine the scores and compute cumulative distribution functions
-    data_all = np.concatenate([experiment_scores, control_scores])
-    cdf_experiment = np.searchsorted(experiment_scores, data_all, side='right') / en1
-    cdf_control = np.searchsorted(control_scores, data_all, side='right') / en2
-
-    # Compute the maximum distance between the two CDFs
-    D = np.max(np.abs(cdf_experiment - cdf_control))
-
-    # Calculate the KS statistic
-    en = np.sqrt(en1 * en2 / (en1 + en2))
-    p_value = ks((en + 0.12 + 0.11 / en) * D)
-
-    return p_value
-
-
-def ks(alam):
-    """
-    Compute the Kolmogorov-Smirnov probability given a lambda value.
-
-    Parameters:
-    - alam (float): Lambda value for the KS statistic.
-
-    Returns:
-    float: The probability associated with the KS statistic.
-    """
-    EPS1 = 1e-6  # Precision for the convergence of term's absolute value
-    EPS2 = 1e-10  # Precision for the convergence of the series_sum's relative value
-    a2 = -2.0 * alam ** 2  # Adjust lambda for exponential calculation
-    fac = 2.0
-    series_sum = 0.0
-    previous_term = 0.0
-
-    # Sum the series until convergence criteria are met
-    for j in range(1, 101):
-        term = fac * np.exp(a2 * j ** 2)  # Calculate term of the series
-        series_sum += term  # Add to series_sum
-
-        # Check for convergence
-        if np.abs(term) <= EPS1 * previous_term or np.abs(term) <= EPS2 * series_sum:
-            return series_sum
-
-        fac = -fac  # Alternate the sign
-        previous_term = np.abs(term)  # Update the term before flag
-
-    # Return 1.0 if the series does not converge within 100 terms
-    return 1.0
+from scipy.stats import norm, hypergeom, ks_2samp, rankdata
 
 
 def compute_mw(experiment_ranks, control_ranks):
@@ -283,25 +216,16 @@ def global_gene_ranking(scores: dict):
     return global_ranking
 
 
-def kolmogorov_smirnov_test_with_ranking(pathway_genes, global_ranking):
-    """
-    Perform the Kolmogorov-Smirnov test using global ranking.
 
-    Parameters:
-    - pathway_genes (iterable): Iterable of gene IDs in the pathway.
-    - global_ranking (pd.Series): Global ranking of all genes.
 
-    Returns:
-    - float: The P-value from the KS test indicating statistical difference.
-    """
-    # Convert pathway_genes to a list if it's not already
+def kolmogorov_smirnov_test_with_ranking(pathway_genes, global_ranking, alternative='greater'):
+    # Ensure pathway_genes is a list
     pathway_genes = list(pathway_genes)
 
     # Ensure all genes are in the global ranking
     pathway_genes_in_ranking = [gene for gene in pathway_genes if gene in global_ranking.index]
 
     if not pathway_genes_in_ranking:
-        # If no genes are found, return a p-value of 1.0
         return 1.0
 
     # Get the ranks for pathway genes
@@ -311,12 +235,46 @@ def kolmogorov_smirnov_test_with_ranking(pathway_genes, global_ranking):
     background_genes = global_ranking.index.difference(pathway_genes_in_ranking)
     background_ranks = global_ranking[background_genes].values
 
-    # Perform the KS test
+    # Perform the one-sided KS test
     D, p_value = ks_2samp(
         pathway_ranks,
         background_ranks,
-        alternative='two-sided',
-        mode='auto'
+        alternative=alternative
     )
 
     return p_value
+
+
+
+def kolmogorov_smirnov_test_with_scores(pathway_genes, scores, alternative='less'):
+    """
+    Perform the one-sided Kolmogorov-Smirnov test using gene scores.
+
+    Parameters:
+    - pathway_genes (iterable): Iterable of gene IDs in the pathway.
+    - scores (dict): Mapping of gene IDs to their scores.
+    - alternative (str): Defines the alternative hypothesis ('less', 'greater', 'two-sided').
+
+    Returns:
+    - float: The p-value from the KS test indicating statistical difference.
+    """
+    # Get scores for pathway genes
+    pathway_scores = [scores[gene_id][0] for gene_id in pathway_genes if gene_id in scores]
+
+    # Get scores for background genes
+    background_genes = set(scores.keys()) - set(pathway_genes)
+    background_scores = [scores[gene_id][0] for gene_id in background_genes]
+
+    # Check for empty lists
+    if not pathway_scores or not background_scores:
+        return 1.0  # Return a neutral p-value if no data
+
+    # Perform the one-sided KS test
+    D, p_value = ks_2samp(
+        pathway_scores,
+        background_scores,
+        alternative=alternative
+    )
+
+    return p_value
+
