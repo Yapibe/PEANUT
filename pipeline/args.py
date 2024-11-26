@@ -80,9 +80,9 @@ class GeneralArgs:
         - str: Full path to the created subdirectory.
         """
         full_path = path.join(self.output_dir, subdir)
-        if not path.exists(full_path):
-            makedirs(full_path)
+        makedirs(full_path, exist_ok=True)  # Allow existing directories without error
         return full_path
+
 
 
 @dataclass
@@ -134,3 +134,4 @@ class EnrichTask:
     filtered_genes: set = field(default_factory=set)
     filtered_pathways: dict = field(default_factory=dict)
     ks_significant_pathways_with_genes: dict = field(default_factory=dict)
+    ks_non_significant_pathways_with_genes: dict = field(default_factory=dict)

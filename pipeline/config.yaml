@@ -10,7 +10,7 @@ analysis_settings:
   pathway_files:
     - "kegg"                                 # List of pathway files to process
   prop_methods:                                      # Propagation methods to use
-    - "PEANUT"
+    - "NGSEA"
  
   alphas:
     - 0.2                                            # Alpha values for analysis

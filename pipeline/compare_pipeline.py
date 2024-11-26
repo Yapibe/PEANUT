@@ -8,11 +8,12 @@ import yaml
 
 from args import GeneralArgs
 from pathway_enrichment import perform_enrichment
-from propagation_routines import perform_propagation
+from propagation_routines import perform_propagation, filter_network_genes
 from utils import (
     load_pathways_genes,
     read_network,
     read_prior_set,
+    set_input_type
 )
 
 # Project and Directory Configuration
@@ -29,14 +30,6 @@ with open(config_path, 'r') as config_file:
 # Configure logging using config.yaml
 logging.basicConfig(level=config['logging']['level'], format=config['logging']['format'])
 logger = logging.getLogger(__name__)
-
-# Retrieve List of Excel Files
-def get_file_list(input_dir, limit=None):
-    """List all .xlsx files in the input directory."""
-    files = [f for f in os.listdir(input_dir) if f.endswith('.xlsx')]
-    if limit:
-        files = files[:limit]
-    return files
 
 # Retrieve List of Excel Files
 def get_file_list(input_dir, limit=None):
@@ -79,7 +72,7 @@ def get_pre_calculated_data(disease_name):
 
 
 # Analysis Functions
-def run_analysis(test_name, prior_data, network, network_name, alpha, method, output_path, pathway_file, related_pathways):
+def run_analysis(test_name, prior_data, network, network_name, alpha, method, output_path, pathway_file):
     """
     Perform propagation and enrichment analysis.
     
@@ -98,9 +91,9 @@ def run_analysis(test_name, prior_data, network, network_name, alpha, method, ou
         network=network_name,
         pathway_file=pathway_file,
         method=method,
-        alpha=alpha if method in ['PEANUT', 'ABS_PROP'] else 1,
-        run_propagation= False,
-        input_type='abs_Score' if method in ['PEANUT', 'ABS_PROP', 'ABS_SCORE'] else 'Score'
+        alpha=alpha if method == 'PEANUT' else 1,
+        run_propagation= True,
+        input_type='abs_Score' if method in ['PEANUT', 'ABS SCORE'] else 'Score'
     )
     if method == 'NGSEA':
         general_args.run_NGSEA = True
@@ -112,32 +105,29 @@ def run_analysis(test_name, prior_data, network, network_name, alpha, method, ou
     if general_args.run_propagation:
         perform_propagation(test_name, general_args, network, prior_data)
 
-    perform_enrichment(test_name, general_args, output_path, related_pathways)
+    perform_enrichment(test_name, general_args, output_path)
 
-def get_pathway_rank(output_path, pathway_name):
+
+def get_pathway_rank(output_path: str, pathway_name: str) -> tuple:
     """
-    Determine the rank and FDR q-value of a specific pathway.
-
+    Determine the rank, FDR q-value, and group of a specific pathway.
+    
     Args:
         output_path (str): Path to the results file.
         pathway_name (str): Name of the pathway.
-
+    
     Returns:
-        tuple: (rank, fdr_q_val, results_df) if found, else (None, None, None)
+        tuple: (rank, fdr_q_val, group, results_df) if found, else (None, None, None, None)
     """
     try:
         results_df = pd.read_excel(output_path)
-        if 'FDR q-val' not in results_df.columns:
-            logger.error(f"'FDR q-val' column not found in {output_path}.")
-            return None, None, None
 
-        results_df = results_df.sort_values(by='FDR q-val', ascending=True).reset_index(drop=True)
-        results_df['Rank'] = results_df.index + 1
-
-        pathway_row = results_df[results_df['Term'] == pathway_name]
+        # Pathways are already grouped and sorted
+        pathway_row = results_df[results_df['Name'] == pathway_name]
         if not pathway_row.empty:
             rank = pathway_row['Rank'].values[0]
             fdr_q_val = pathway_row['FDR q-val'].values[0]
+            # group = pathway_row['Group'].values[0] if 'Group' in pathway_row else None
             return rank, fdr_q_val, results_df
         else:
             logger.error(f"Pathway '{pathway_name}' not found in {output_path}.")
@@ -145,51 +135,113 @@ def get_pathway_rank(output_path, pathway_name):
         logger.error(f"Error reading {output_path}: {e}")
     return None, None, None
 
-def process_single_file(network, pathway_file, network_name, alpha, method, file_name, loaded_pathways, related_pathways):
+
+
+
+def process_single_file(
+    network: dict,
+    pathway_file: str,
+    network_name: str,
+    alpha: float,
+    method: str,
+    file_name: str,
+    loaded_pathways: dict,
+    related_pathways: list
+) -> dict:
     """
     Process a single file: perform analysis and collect results.
+
+    Args:
+        network (dict): Network data.
+        pathway_file (str): Pathway file name.
+        network_name (str): Name of the network.
+        alpha (float): Alpha value for analysis.
+        method (str): Propagation method.
+        file_name (str): Name of the input file.
+        loaded_pathways (dict): Loaded pathways data.
+        related_pathways (list): Related pathways for the disease.
+
+    Returns:
+        dict: Results and higher-ranked pathways information.
     """
     dataset_name, pathway_name = file_name.replace('.xlsx', '').split('_', 1)
     prior_data = read_prior_set(os.path.join(DIRECTORIES['input'], file_name))
     output_dir = os.path.join(
-        DIRECTORIES['output_base'], method, network_name, pathway_file, f"alpha_{alpha}"
+        DIRECTORIES['output_base'], method, network_name, pathway_file, f"alpha_{alpha}", "filtered"
     )
     os.makedirs(output_dir, exist_ok=True)
     output_file_path = os.path.join(output_dir, file_name)
 
-    run_analysis(file_name, prior_data, network, network_name, alpha, method, output_file_path, pathway_file, related_pathways)
-    rank, fdr_q_val, higher_rank_df = get_pathway_rank(output_file_path, pathway_name)
+    run_analysis(
+        test_name=file_name,
+        prior_data=prior_data,
+        network=network,
+        network_name=network_name,
+        alpha=alpha,
+        method=method,
+        output_path=output_file_path,
+        pathway_file=pathway_file
+    )
+
+    # Get rank and FDR q-val of the associated pathway
+    rank, fdr_q_val, results_df = get_pathway_rank(output_file_path, pathway_name)
 
     higher_ranked = []
     higher_ranked_ranks = []
     genes = []
-    if rank is not None:
-        logger.debug(f"Available columns in {output_file_path}: {higher_rank_df.columns.tolist()}")
+    ks_significant = False  # Default value
 
-        higher_ranked_df = higher_rank_df[higher_rank_df['Rank'] < rank]
-        higher_ranked = higher_ranked_df['Term'].tolist()
+    if rank is not None and results_df is not None:
+        # Get pathways ranked higher than the associated pathway
+        higher_ranked_df = results_df[results_df['Rank'] < rank]
+        higher_ranked = higher_ranked_df['Name'].tolist()
         higher_ranked_ranks = higher_ranked_df['Rank'].tolist()
 
         for pathway, pathway_rank in zip(higher_ranked, higher_ranked_ranks):
             gene_list = loaded_pathways[pathway_file].get(pathway, [])
             genes.extend(gene_list)
 
+        # Retrieve KS significance for PEANUT method only
+        if method == 'PEANUT':
+            pathway_row = results_df[results_df['Name'] == pathway_name]
+            if not pathway_row.empty:
+                ks_significant = bool(pathway_row['ks_significant'].values[0])
+                significant = int(ks_significant and (fdr_q_val < 0.05)) if fdr_q_val is not None else 0
+        else:
+            # For other methods, only use FDR q-val
+            significant = int(fdr_q_val < 0.05) if fdr_q_val is not None else 0
+    else:
+        significant = 0
+    prior_data_scores = set_input_type(prior_data)
+    filtered_prior_data = filter_network_genes(prior_data_scores, network)
+    # Get genes for the associated pathway
+    pathway_genes = loaded_pathways[pathway_file].get(pathway_name, [])
+    
+    # Get scores for pathway genes that are in the network
+    pathway_gene_scores = filtered_prior_data[0][filtered_prior_data[0]['GeneID'].isin(pathway_genes)]['Score']
+    
+    # Calculate mean score to determine regulation direction
+    mean_score = pathway_gene_scores.mean() if not pathway_gene_scores.empty else 0
+    is_upregulated = mean_score > 0
     return {
         'result': {
             'Dataset': dataset_name,
             'Pathway': pathway_name,
+            # 'Group': group,
             'Network': network_name,
             'Pathway file': pathway_file,
             'Alpha': alpha,
             'Method': method,
             'Rank': rank,
             'FDR q-val': fdr_q_val,
-            'Significant': int(float(fdr_q_val) < 0.05) if fdr_q_val else 0,
+            'Significant': significant,
+            'Up-regulated': is_upregulated
         },
         'higher_ranked_pathways': higher_ranked,
         'higher_ranked_ranks': higher_ranked_ranks,
         'higher_ranked_genes': genes
     }
+
 
 
 # Summary Generation
@@ -208,7 +260,7 @@ def generate_summary_df(filtered_df, prop_methods):
     pivot_df = filtered_df.pivot_table(
         index=['Dataset', 'Pathway'],
         columns='Method',
-        values=['Rank', 'Significant'],
+        values=['Rank', 'Significant', 'Up-regulated'],
         aggfunc='first'
     ).reset_index()
 
@@ -221,7 +273,7 @@ def generate_summary_df(filtered_df, prop_methods):
     # Define the ordered columns
     ordered_columns = ['Dataset', 'Pathway']
     for method in prop_methods:
-        for metric in ['Rank', 'Significant']:
+        for metric in ['Rank', 'Significant', 'Up-regulated']:
             column_name = f'{metric} {method}'
             ordered_columns.append(column_name)
 
@@ -230,7 +282,7 @@ def generate_summary_df(filtered_df, prop_methods):
 
     # Handle missing methods by filling with NaN
     for method in prop_methods:
-        for metric in ['Rank', 'Significant']:
+        for metric in ['Rank', 'Significant', 'Up-regulated']:
             column_name = f'{metric} {method}'
             if column_name not in pivot_df.columns:
                 pivot_df[column_name] = np.nan
