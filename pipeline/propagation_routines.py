@@ -14,11 +14,9 @@ import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-
 def calculate_gene_scores(network: nx.Graph, prior_data: pd.DataFrame) -> dict:
     """
-    Calculates the score for each gene based on its own absolute value 
-    and the absolute mean score of its neighbors' original scores.
+    Calculates the score for each gene based on the provided equation.
 
     Parameters:
     - network (networkx.Graph): The network graph.
@@ -33,56 +31,22 @@ def calculate_gene_scores(network: nx.Graph, prior_data: pd.DataFrame) -> dict:
     # Create a dictionary from prior_data
     prior_data_dict = prior_data.set_index('GeneID')['Score'].to_dict()
 
-    # Assign scores to all genes in the network
-    for gene_id in network.nodes():
-        # Own absolute score (default to 0 if not in prior_data)
-        own_score = abs(prior_data_dict.get(gene_id, 0))
+    # Assign scores to all genes in prior_data
+    for gene_id, score in prior_data_dict.items():
+        gene_scores[gene_id] = abs(score)
 
-        # Neighbors' absolute mean score (use prior_data values, default to 0 for missing genes)
-        neighbors = list(network.neighbors(gene_id))
-        if neighbors:
-            neighbor_scores = [abs(prior_data_dict.get(neighbor, 0)) for neighbor in neighbors]
-            mean_neighbor_score = sum(neighbor_scores) / len(neighbor_scores)
-        else:
-            mean_neighbor_score = 0
+    # Calculate the scores for genes in the prior data and in the network based on their neighbors
+    for gene_id in prior_data_dict.keys():
+        if gene_id in network.nodes():
+            neighbors = list(network.neighbors(gene_id))
 
-        # Final score: own score + mean neighbor score
-        gene_scores[gene_id] = own_score + mean_neighbor_score
+            if neighbors:
+                neighbor_scores = [abs(prior_data_dict.get(neighbor, 0)) for neighbor in neighbors]
+                ni = len(neighbor_scores)
+                sum_neighbor_scores = sum(neighbor_scores)
+                gene_scores[gene_id] += (1 / ni) * sum_neighbor_scores
 
     return gene_scores
-
-
-
-def _handle_ngsea_case(prior_data, prop_task, general_args, network):
-    """
-    Handle the GSE case for alpha = 1.
-
-    Parameters:
-    - prior_data (pd.DataFrame): The prior data.
-    - prop_task (PropagationTask): The propagation task object.
-    - general_args (GeneralArgs): General arguments and settings.
-    - network (networkx.Graph): The network graph.
-
-    Returns:
-    - None
-    """
-    # Calculate gene scores for genes in both prior_data and network
-    gene_scores = calculate_gene_scores(network, prior_data)
-
-    # Filter the posterior set to include only genes in both prior_data and network
-    posterior_set = prior_data[prior_data['GeneID'].isin(network.nodes())].copy()
-    posterior_set['Score'] = posterior_set['GeneID'].map(gene_scores)
-
-    save_propagation_score(
-        prior_set=prior_data,
-        propagation_input={gene_id: score for gene_id, score in zip(posterior_set['GeneID'], posterior_set['Score'])},
-        propagation_scores=posterior_set,
-        genes_id_to_idx={gene_id: idx for idx, gene_id in enumerate(posterior_set['GeneID'])},
-        task=prop_task,
-        save_dir=prop_task.output_folder,
-        general_args=general_args
-    )
-
 
 
 def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
@@ -126,6 +90,13 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
         inv_sqrt_degrees = 1.0 / np.sqrt(degrees)
         norm_matrix = sp.diags(inv_sqrt_degrees)
         matrix = norm_matrix @ matrix @ norm_matrix
+    elif args.normalization_type == 'row':
+        # Left normalization: A' = A * D^(-1)
+        inv_degrees = 1.0 / degrees
+        norm_matrix = sp.diags(inv_degrees)
+        matrix = matrix @ norm_matrix
+    else:
+        raise ValueError(f"Unknown normalization type: {args.normalization_type}")
 
 
     n = matrix.shape[0]
@@ -138,6 +109,9 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     print("Matrix inverted")
     inverse_matrix = args.alpha * inverse_matrix
 
+    # Extract the upper triangular part of the inverse matrix
+    upper_tri_indices = np.triu_indices(n)
+    upper_tri_inverse_matrix = inverse_matrix[upper_tri_indices]
 
     # Print densities for debugging
     original_density = matrix.nnz / (matrix.shape[0] * matrix.shape[1])
@@ -149,6 +123,8 @@ def generate_similarity_matrix(network: nx.Graph, args: GeneralArgs) -> tuple:
     if not os.path.exists(os.path.dirname(args.similarity_matrix_path)):
         os.makedirs(os.path.dirname(args.similarity_matrix_path))
     sp.save_npz(args.similarity_matrix_path, inverse_matrix)
+    save_upper_path = args.tri_similarity_matrix_path
+    np.save(save_upper_path, upper_tri_inverse_matrix)
 
     end = time.time()
     print(f"Time elapsed: {end - start} seconds")
@@ -198,39 +174,35 @@ def symmetric_matrix_vector_multiply(upper_tri_matrix: np.ndarray, F_0: np.ndarr
 
     return result
 
-def matrix_prop(propagation_input: dict, gene_indexes: dict, inverse_matrix: sp.spmatrix) -> np.ndarray:
+def matrix_prop(propagation_input: dict, gene_indexes: dict, debug: bool, inverse_matrix=None) -> np.ndarray:
     """
-    Propagate scores across the network using a similarity matrix.
-    
+    Propagates seed gene values through a precomputed inverse matrix for faster calculation.
+
     Parameters:
-    - propagation_input (dict): Mapping of gene IDs to their initial scores.
-    - gene_indexes (dict): Mapping of gene IDs to their matrix indices.
-    - inverse_matrix (sp.spmatrix): Precomputed inverse similarity matrix.
+    - propagation_input (dict): Mapping of gene IDs to their initial values for propagation.
+    - inverse_matrix (sp.spmatrix): Precomputed inverse matrix for propagation.
+    - upper_tri_inverse_matrix (np.ndarray): Upper triangular part of the inverse matrix.
+    - gene_indexes (dict): Mapping of gene IDs to their indices in the matrix.
+    - debug (bool): Flag to indicate whether to use the full matrix or the upper triangular part.
 
     Returns:
-    - np.ndarray: Propagated scores for all nodes in the network.
+    - np.ndarray: Array containing the final propagated values for each gene.
     """
     num_genes = len(gene_indexes)
-    
-    # Initialize scores for all genes to 0
-    F_0 = np.zeros(num_genes)
-    
-    # Assign initial scores to genes with known values
+    F_0 = np.zeros(num_genes)  # Changed to a 1D array
     for gene_id, value in propagation_input.items():
-        if gene_id in gene_indexes:
-            F_0[gene_indexes[gene_id]] = value
-    
-    
-    # Perform propagation using the similarity matrix
-    F = inverse_matrix @ F_0
+        F_0[gene_indexes[gene_id]] = value
+
+    if debug:
+        F = symmetric_matrix_vector_multiply(inverse_matrix, F_0)
+    else:
+        F = inverse_matrix @ F_0
 
     return F
 
-
-
 def _handle_ngsea_case(prior_data, prop_task, general_args, network):
     """
-    Handle the NGSEA case for alpha = 1, incorporating all network genes.
+    Handle the GSE case for alpha = 1.
 
     Parameters:
     - prior_data (pd.DataFrame): The prior data.
@@ -241,47 +213,22 @@ def _handle_ngsea_case(prior_data, prop_task, general_args, network):
     Returns:
     - None
     """
-    logger.info("Starting NGSEA propagation for alpha=1.")
-
-    # Calculate gene scores for all genes in the network
+    # Calculate gene scores for genes in both prior_data and network
     gene_scores = calculate_gene_scores(network, prior_data)
 
-    # Create a DataFrame with all network genes and their scores
-    all_network_genes = pd.DataFrame({
-        'GeneID': list(network.nodes()),
-        'Score': [gene_scores[gene] for gene in network.nodes()]
-    })
+    # Filter the posterior set to include only genes in both prior_data and network
+    posterior_set = prior_data[prior_data['GeneID'].isin(network.nodes())].copy()
+    posterior_set['Score'] = posterior_set['GeneID'].map(gene_scores)
 
-    logger.info("Merging prior data with all network genes.")
-    # Merge prior_data with all network genes
-    full_propagated_scores_df = all_network_genes.merge(
-        prior_data[['GeneID', 'Symbol', 'P-value']],
-        on='GeneID',
-        how='left'
-    )
-
-    # Fill in default values for genes not in the dataset
-    logger.info("Assigning default values for genes not in the experiment dataset.")
-    full_propagated_scores_df['Symbol'] = full_propagated_scores_df['Symbol'].fillna(full_propagated_scores_df['GeneID'].astype(str))
-    full_propagated_scores_df['P-value'] = full_propagated_scores_df['P-value'].fillna(0)
-
-
-    # Reorder columns for consistency
-    full_propagated_scores_df = full_propagated_scores_df[['GeneID', 'Score', 'Symbol', 'P-value']]
-    logger.info(f"Final NGSEA propagated DataFrame contains {len(full_propagated_scores_df)} genes.")
-
-    # Save the results
-    logger.info("Saving NGSEA propagation results.")
     save_propagation_score(
         prior_set=prior_data,
-        propagation_input={gene_id: score for gene_id, score in zip(full_propagated_scores_df['GeneID'], full_propagated_scores_df['Score'])},
-        propagation_scores=full_propagated_scores_df,
-        genes_id_to_idx={gene_id: idx for idx, gene_id in enumerate(full_propagated_scores_df['GeneID'])},
+        propagation_input={gene_id: score for gene_id, score in zip(posterior_set['GeneID'], posterior_set['Score'])},
+        propagation_scores=posterior_set,
+        genes_id_to_idx={gene_id: idx for idx, gene_id in enumerate(posterior_set['GeneID'])},
         task=prop_task,
         save_dir=prop_task.output_folder,
         general_args=general_args
     )
-
 
 
 def _handle_no_propagation_case(prior_data, prop_task, general_args, network):
@@ -297,15 +244,20 @@ def _handle_no_propagation_case(prior_data, prop_task, general_args, network):
     Returns:
     - None
     """
-    # Filter prior_data to include only genes present in the network
+    # Filter prior_data to include only genes in both prior_data and network
     filtered_prior_data = prior_data[prior_data['GeneID'].isin(network.nodes())].copy()
 
     # Sort the filtered_prior_data by GeneID
     sorted_prior_data = filtered_prior_data.sort_values(by='GeneID').reset_index(drop=True)
 
+    # Flatten the scores for saving
+    gene_scores = sorted_prior_data['Score'].values.reshape((len(sorted_prior_data), 1))
+    sorted_prior_data['Score'] = gene_scores.flatten()
+
     save_propagation_score(
         prior_set=sorted_prior_data,
-        propagation_input={gene_id: score for gene_id, score in zip(sorted_prior_data['GeneID'], sorted_prior_data['Score'])},
+        propagation_input={gene_id: score for gene_id, score in
+                           zip(sorted_prior_data['GeneID'], sorted_prior_data['Score'])},
         propagation_scores=sorted_prior_data,
         genes_id_to_idx={gene_id: idx for idx, gene_id in enumerate(sorted_prior_data['GeneID'])},
         task=prop_task,
@@ -315,54 +267,48 @@ def _handle_no_propagation_case(prior_data, prop_task, general_args, network):
 
 
 
-def _normalize_prop_scores(matrix, network_gene_index, propagation_score, prior_data) -> pd.DataFrame:
+def _normalize_prop_scores(matrix, network_gene_index, propagation_score, filtered_prior_data, debug: bool) -> pd.DataFrame:
     """
-    Normalize the propagation scores and include all network nodes in the output.
+    Normalize the propagation scores.
 
     Parameters:
     - matrix (sp.sparse.spmatrix or np.ndarray): The similarity matrix or upper triangular matrix.
     - network_gene_index (dict): Mapping of gene IDs to their indices in the matrix.
     - propagation_score (np.ndarray): Array of propagation scores.
-    - prior_data (pd.DataFrame): DataFrame containing prior gene scores.
+    - filtered_prior_data (pd.DataFrame): DataFrame containing prior gene scores.
+    - debug (bool): Flag to indicate whether to use the full matrix or the upper triangular part.
 
     Returns:
-    - pd.DataFrame: DataFrame containing GeneID and normalized Scores for all genes in the network.
-    """    
-    # Step 1: Create a "ones input" for all genes in the network
-    ones_input_df = pd.DataFrame({
-        'GeneID': list(network_gene_index.keys()),
-        'Score': 1  # Assign a score of 1 for all genes
-    })
-
-    # Perform propagation with ones input to calculate normalization vector
+    - pd.DataFrame: DataFrame containing GeneID and normalized Scores.
+    """
+    # Set input type to 'ones' and convert to dictionary
+    ones_input_df = set_input_type(filtered_prior_data, 'ones')
     ones_input = ones_input_df.set_index('GeneID')['Score'].to_dict()
-    ones_gene_scores_inverse = matrix_prop(ones_input, network_gene_index, inverse_matrix=matrix)
 
-    # Step 2: Handle zero normalization scores to avoid division by zero
-    zero_norm_count = np.sum(ones_gene_scores_inverse == 0)
-    ones_gene_scores_inverse[ones_gene_scores_inverse == 0] = 1
+    # Perform propagation with ones input
+    ones_gene_scores_inverse = matrix_prop(ones_input, network_gene_index, debug, inverse_matrix=matrix)
+    logger.info(f"negatives ones_gene_scores_inverse: {np.sum(ones_gene_scores_inverse < 0)}")
+    # Identify genes with zero normalization scores
+    zero_normalization_genes = np.nonzero(ones_gene_scores_inverse == 0)[0]
+    zero_propagation_genes = np.nonzero(propagation_score == 0)[0]
+    genes_to_delete = list(set(zero_normalization_genes).difference(zero_propagation_genes))
+    ones_gene_scores_inverse[genes_to_delete] = 1
 
-    # Step 3: Normalize the propagation scores
+    # Adjust the normalization scores
     non_zero_indices = np.nonzero(propagation_score != 0)[0]
     propagation_score[non_zero_indices] /= np.abs(ones_gene_scores_inverse[non_zero_indices])
 
-    # Step 4: Include all network genes in the normalized scores DataFrame
+    # Create a DataFrame for all network genes
     all_network_genes = list(network_gene_index.keys())
     all_normalized_scores = propagation_score[np.array([network_gene_index[gene_id] for gene_id in all_network_genes])]
 
-    # Step 5: Merge with prior_data to retain Symbol and P-value, set defaults for missing genes
+    # Create DataFrame for normalized scores
     normalized_df = pd.DataFrame({
         'GeneID': all_network_genes,
         'Score': all_normalized_scores
     })
-    normalized_df = normalized_df.merge(
-        prior_data[['GeneID', 'Symbol', 'P-value']], on='GeneID', how='left'
-    )
-    normalized_df['Symbol'].fillna(normalized_df['GeneID'], inplace=True)  # Default Symbol to GeneID
-    normalized_df['P-value'].fillna(0, inplace=True)  # Default P-value to 0 for genes not in the dataset
 
     return normalized_df
-
 
 
 
@@ -420,13 +366,12 @@ def perform_propagation(test_name: str, general_args, network=None, prior_data=N
     - test_name (str): Name of the test for which propagation is performed.
     - general_args: General arguments and settings.
     - network (networkx.Graph): The network graph.
-    - prior_data (pd.DataFrame): DataFrame containing prior gene scores.
+    - prior_data (pandas.DataFrame): DataFrame containing prior gene scores.
 
     Returns:
     - None
     """
     prop_task = PropagationTask(general_args=general_args, test_name=test_name)
-
     # Modify prior_data based on the input type
     if general_args.input_type == 'abs_Score':
         propagation_input_df = set_input_type(prior_data, general_args.input_type)
@@ -437,42 +382,22 @@ def perform_propagation(test_name: str, general_args, network=None, prior_data=N
         handle_no_propagation_cases(propagation_input_df, prop_task, general_args, network)
         return
 
-    # Step 1: Load or generate similarity matrix
     matrix, network_gene_index = get_similarity_matrix(network, general_args)
-
-    # Step 2: Filter genes in the network
+    # Filter genes in the network
     network_genes_df, non_network_genes, filtered_propagation_input = filter_network_genes(propagation_input_df, network)
 
-    # Step 3: Perform network propagation
-    propagation_score = matrix_prop(filtered_propagation_input, network_gene_index, inverse_matrix=matrix)
+    # Perform network propagation
+    propagation_score = matrix_prop(filtered_propagation_input, network_gene_index, general_args.debug,
+                                    inverse_matrix=matrix)
 
-    # Step 4: Normalize the propagation scores and create DataFrame
-    normalized_df = _normalize_prop_scores(matrix, network_gene_index, propagation_score, prior_data)
+    # Normalize the propagation scores and create DataFrame within the function
+    normalized_df = _normalize_prop_scores(matrix, network_gene_index, propagation_score, network_genes_df,
+                                           general_args.debug)
 
-    # Step 5: Merge the normalized scores with prior_data and handle missing genes
+    # Merge the normalized scores directly with prior_data
     full_propagated_scores_df = normalized_df.merge(
-        prior_data[['GeneID', 'Symbol', 'P-value']], 
-        on='GeneID', 
-        how='left'
-    )
+        prior_data[['GeneID', 'Symbol', 'P-value']], on='GeneID', how='inner'
+    )[['GeneID', 'Score', 'Symbol', 'P-value']]
 
-    # Resolve 'Symbol' column
-    full_propagated_scores_df['Symbol'] = full_propagated_scores_df['Symbol_y'].fillna(
-        full_propagated_scores_df['Symbol_x'].fillna(
-            full_propagated_scores_df['GeneID'].astype(str)  # Default to GeneID
-        )
-    )
-
-    # Resolve 'P-value' column
-    full_propagated_scores_df['P-value'] = full_propagated_scores_df['P-value_y'].fillna(
-        full_propagated_scores_df['P-value_x'].fillna(0)  # Default to 0
-    )
-
-    # Drop intermediate columns with suffixes
-    full_propagated_scores_df.drop(columns=['Symbol_x', 'Symbol_y', 'P-value_x', 'P-value_y'], inplace=True)
-
-    # Reorder columns for consistency
-    full_propagated_scores_df = full_propagated_scores_df[['GeneID', 'Score', 'Symbol', 'P-value']]
-    # Step 6: Save the results
+    # Save the results
     _save_propagation_results(propagation_input_df, full_propagated_scores_df, prop_task, general_args)
-

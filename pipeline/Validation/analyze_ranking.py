@@ -10,16 +10,16 @@ from matplotlib.ticker import MultipleLocator  # Import MultipleLocator
 data_dir = 'pipeline/Outputs/NGSEA/Summary'
 network = 'H_sapiens'
 alphas = [0.2]
-methods = ['PEANUT', 'ABS SCORE', 'GSEA', 'NGSEA']
+methods = ['PEANUT', 'ABS GSEA', 'GSEA', 'NGSEA']
 
 # Define specific method pairs to compare and plot significance bars
 methods_to_compare = [
     ('GSEA', 'NGSEA'),
     ('GSEA', 'PEANUT'),
     ('NGSEA', 'PEANUT'),
-    ('PEANUT', 'ABS SCORE')
+    ('PEANUT', 'ABS GSEA')
 ]
-run_type = "filtered"
+run_type = "4_no_abs"
 # Output directory for saving plots
 output_plot_dir = "pipeline/Outputs/Plots"
 os.makedirs(output_plot_dir, exist_ok=True)  # Create the directory if it doesn't exist
@@ -88,7 +88,7 @@ def plot_comparative_ranks(df, alpha, output_plot_dir):
     plt.tight_layout()
 
     # Save the plot
-    plot_filename = f'Comparative_Ranks_Alpha_{alpha}_{run_type}.png'
+    plot_filename = f'Comparative_Ranks_{run_type}.png'
     plot_filepath = os.path.join(output_plot_dir, plot_filename)
     plt.savefig(plot_filepath, format='png', dpi=300)
     print(f"Plot saved to: {plot_filepath}")
@@ -179,7 +179,7 @@ def analyze_data(df, alpha, output_plot_dir):
         test_results.append((method1, method2, w_result.statistic, w_result.pvalue, better_method))
     
     # Print test results with the signed-rank statistic, better method, and mean rank difference
-    print(f"\nAlpha {alpha} - Wilcoxon signed-rank test results:")
+    print(f"\nAlpha {alpha} - Wilcoxon signed-rank test results {run_type}:")
     for i, (method1, method2, stat, p_value, better_method) in enumerate(test_results):
         print(f"{method1} vs {method2}: Statistic={stat}, p-value={p_value}, Better Method={better_method}, Mean Rank Difference={mean_rank_diffs[i]}")
     
@@ -218,7 +218,7 @@ def analyze_data(df, alpha, output_plot_dir):
     add_significance_bars(ax, method_pairs_indices, p_values_to_plot, y_max)
     
     # Save the plot as a PNG file
-    plot_filename = f'Rank_Comparison_Alpha_{alpha}_{run_type}.png'
+    plot_filename = f'Rank_Comparison_{run_type}.png'
     plot_filepath = os.path.join(output_plot_dir, plot_filename)
     plt.savefig(plot_filepath, format='png', dpi=300, bbox_inches='tight')
     plt.close()
@@ -232,7 +232,7 @@ def main():
         if df is not None and not df.empty:
             # Analyze and plot existing data
             analyze_data(df, alpha, output_plot_dir)
-            plot_comparative_ranks(df, alpha, output_plot_dir)
+            # plot_comparative_ranks(df, alpha, output_plot_dir)
         else:
             print(f"No data available for alpha {alpha}")
 

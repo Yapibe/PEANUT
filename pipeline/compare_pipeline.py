@@ -93,7 +93,7 @@ def run_analysis(test_name, prior_data, network, network_name, alpha, method, ou
         method=method,
         alpha=alpha if method == 'PEANUT' else 1,
         run_propagation= True,
-        input_type='abs_Score' if method in ['PEANUT', 'ABS SCORE'] else 'Score'
+        input_type='abs_Score' if method in ['PEANUT', 'ABS GSEA'] else 'Score'
     )
     if method == 'NGSEA':
         general_args.run_NGSEA = True
@@ -167,7 +167,7 @@ def process_single_file(
     dataset_name, pathway_name = file_name.replace('.xlsx', '').split('_', 1)
     prior_data = read_prior_set(os.path.join(DIRECTORIES['input'], file_name))
     output_dir = os.path.join(
-        DIRECTORIES['output_base'], method, network_name, pathway_file, f"alpha_{alpha}", "filtered"
+        DIRECTORIES['output_base'], method, network_name, pathway_file, f"alpha_{alpha}", "no_filter"
     )
     os.makedirs(output_dir, exist_ok=True)
     output_file_path = os.path.join(output_dir, file_name)
@@ -362,7 +362,7 @@ def main():
                 os.makedirs(summary_output_dir, exist_ok=True)
                 rankings_output_path = os.path.join(
                     summary_output_dir,
-                    f'rankings_summary_{network_name}_{pathway_file}_alpha_{alpha}.xlsx'
+                    f'rankings_summary_no_no.xlsx'
                 )
                 summary_df.to_excel(rankings_output_path, index=False)
                 logger.info(f"Rankings summary saved to {rankings_output_path}")
