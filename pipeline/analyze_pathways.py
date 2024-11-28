@@ -6,6 +6,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 import yaml
 import matplotlib.pyplot as plt
 import seaborn as sns
+from scipy.stats import wilcoxon
 
 # Project and Directory Configuration
 def get_project_root():
@@ -30,17 +31,9 @@ PRE_CALCULATED_DATA = config['pre_calculated_data']
 def get_file_list(input_dir):
     return [f for f in os.listdir(input_dir) if f.endswith('.xlsx')]
 
-from scipy.stats import wilcoxon
-
 def perform_wilcoxon_test(analysis_dfs):
     """
     Perform a Wilcoxon signed-rank test to compare PEANUT and GSEA ranks.
-
-    Args:
-        analysis_dfs (dict): A dictionary with method names as keys and DataFrames with 'Highest Related Rank' as values.
-
-    Returns:
-        None: Prints the test results to the log.
     """
     if "PEANUT" not in analysis_dfs or "GSEA" not in analysis_dfs:
         logger.error("Both PEANUT and GSEA results are required for the Wilcoxon test.")
@@ -72,14 +65,6 @@ def perform_wilcoxon_test(analysis_dfs):
 def calculate_highest_related_rank(file_results, disease_to_pathways, associated_pathway):
     """
     Calculate the rank of the highest related pathway, including the associated pathway.
-
-    Parameters:
-    - file_results (pd.DataFrame): DataFrame containing pathway ranking results with columns 'Name' and 'Rank'.
-    - disease_to_pathways (dict): Mapping of associated pathways to their related pathways.
-    - associated_pathway (str): The pathway associated with the current dataset.
-
-    Returns:
-    - int: The rank of the highest related pathway, guaranteed to include the associated pathway.
     """
     # Ensure related_pathways is a set and includes the associated pathway
     related_pathways = set(disease_to_pathways.get(associated_pathway, []))
@@ -92,20 +77,9 @@ def calculate_highest_related_rank(file_results, disease_to_pathways, associated
     highest_related_rank = min(related_pathways_ranks)
     return highest_related_rank
 
-
 def process_single_file(pathway_file, network_name, method, file_name, disease_to_pathways):
     """
     Process a single pathway file to calculate the rank of the highest related pathway.
-
-    Parameters:
-    - pathway_file (str): Pathway file name.
-    - network_name (str): Name of the network.
-    - method (str): Method used.
-    - file_name (str): Name of the file.
-    - disease_to_pathways (dict): Mapping of associated pathways to related pathways.
-
-    Returns:
-    - dict: Dictionary containing dataset, original pathway, and the highest related rank.
     """
     dataset_name, pathway_name = file_name.replace('.xlsx', '').split('_', 1)
     output_dir = os.path.join(DIRECTORIES['output_base'], method, network_name, pathway_file, "alpha_0.2", "filtered")
@@ -128,28 +102,21 @@ def process_single_file(pathway_file, network_name, method, file_name, disease_t
         'Highest Related Rank': highest_related_rank
     }
 
-
 def plot_comparative_false_positives(analysis_dfs, output_dir, methods, all_datasets):
     """
     Generate and save a comparative plot for 'Highest Related Rank' across methods.
-
-    Args:
-        analysis_dfs (dict): A dictionary where keys are methods and values are DataFrames containing analysis results.
-        output_dir (str): Directory to save the plot.
-        methods (list): List of methods to include in the plot.
-        all_datasets (set): Set of all dataset names expected.
     """
     combined_data = []
     for method, analysis_df in analysis_dfs.items():
-
         # Prepare data for plotting
         filtered_df = analysis_df[analysis_df['Highest Related Rank'] != 'N/A'].copy()
         filtered_df['Method'] = method
         combined_data.append(filtered_df)
 
     combined_df = pd.concat(combined_data, ignore_index=True)
-    # Create the plot
-    plt.figure(figsize=(12, 8))
+
+    # Create the plot with smaller figure size
+    plt.figure(figsize=(10, 6))  # Reduced figure size for a smaller plot
     sns.scatterplot(
         data=combined_df,
         x='Dataset',
@@ -159,20 +126,23 @@ def plot_comparative_false_positives(analysis_dfs, output_dir, methods, all_data
         markers=True,
         s=100  # Adjust marker size as needed
     )
-    plt.title('Highest Related Rank Across Methods')
-    plt.ylabel('Highest Related Pathway Rank')
-    plt.xlabel('Dataset')
-    plt.xticks(rotation=90)
-    plt.legend(title='Method', bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    # Increase font sizes for labels and ticks
+    plt.title('Highest Related Rank Across Methods', fontsize=14)
+    plt.ylabel('Highest Related Pathway Rank', fontsize=12)
+    plt.xlabel('Dataset', fontsize=12)
+    plt.xticks(rotation=90, fontsize=10)
+    plt.yticks(fontsize=10)
+    plt.legend(title='Method', bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=10, title_fontsize=12)
+
+    # Adjust layout to accommodate larger text in a smaller figure
+    plt.tight_layout()
 
     # Save the plot
     plot_path = os.path.join(output_dir, 'highest_related_rank_comparison.png')
-    plt.tight_layout()
-    plt.savefig(plot_path)
+    plt.savefig(plot_path, bbox_inches='tight')
     plt.close()
     logger.info(f"Comparative Highest Related Rank plot saved to {plot_path}")
-
-
 
 def main():
     start_time = time.time()
