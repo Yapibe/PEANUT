@@ -17,7 +17,7 @@ import gseapy as gp
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def perform_permutation_test(filtered_pathways: dict, genes_by_pathway: dict, scores: dict, n_iterations: int = 1000, pval_threshold: float = 0.05) -> dict:
+def perform_permutation_test(filtered_pathways: dict, genes_by_pathway: dict, scores: dict, n_iterations: int = 10000, pval_threshold: float = 0.05) -> dict:
     """
     Perform a permutation test to assess the significance of the observed pathway scores.
     Updates pathways with adjusted permutation p-values and adds a boolean flag for significance.
@@ -103,6 +103,7 @@ def remove_similar_pathways(filtered_pathways: dict, jac_threshold: float, genes
     Returns:
     - dict: Updated filtered_pathways with Jaccard similarity flags.
     """
+    logger.info(f"Removing similar pathways with Jaccard index threshold of {jac_threshold}")
     # Initialize the Jaccard flag for all pathways
     for pathway in filtered_pathways:
         filtered_pathways[pathway]['jaccard_removed'] = False
@@ -270,13 +271,13 @@ def perform_mann_whitney_test(task: EnrichTask, args: GeneralArgs, scores: dict,
         scores
     )
     
-    # Apply Jaccard similarity flagging
-    task.filtered_pathways = remove_similar_pathways(
-        task.filtered_pathways,
-        args.JAC_THRESHOLD,
-        genes_by_pathway,
-        associated_pathway_name = task.name.split('_', 1)[1]
-    )
+    # # Apply Jaccard similarity flagging
+    # task.filtered_pathways = remove_similar_pathways(
+    #     task.filtered_pathways,
+    #     args.JAC_THRESHOLD,
+    #     genes_by_pathway,
+    #     associated_pathway_name = task.name.split('_', 1)[1]
+    # )
 
 
 
@@ -357,21 +358,19 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: s
             pathways_df['ks_significant'] = pathways_df['ks_significant'].astype(bool)
             pathways_df['mw_significant'] = pathways_df['mw_significant'].astype(bool)
             pathways_df['permutation_significant'] = pathways_df['permutation_significant'].astype(bool)
-            pathways_df['jaccard_removed'] = pathways_df['jaccard_removed'].astype(bool)
+            # pathways_df['jaccard_removed'] = pathways_df['jaccard_removed'].astype(bool)
             pathways_df['Permutation p-val'] = pathways_df.get('Permutation p-val', np.nan).astype(float)
     
             # Define grouping criteria
             def pathway_group(row):
-                if row['ks_significant'] and row['mw_significant'] and row['permutation_significant'] and not row['jaccard_removed']:
+                if row['ks_significant'] and row['mw_significant'] and row['permutation_significant']:
                     return 1  # Passed all tests
-                elif row['ks_significant'] and row['mw_significant'] and row['permutation_significant'] and row['jaccard_removed']:
-                    return 2  # Removed by Jaccard
                 elif row['ks_significant'] and row['mw_significant'] and not row['permutation_significant']:
-                    return 3  # Failed permutation test
+                    return 2  # Removed by Jaccard
                 elif row['ks_significant'] and not row['mw_significant']:
-                    return 4  # Failed MW test
+                    return 3  # Failed permutation test
                 else:
-                    return 5  # Did not pass KS test
+                    return 4  # Did not pass KS test
     
             pathways_df['Group'] = pathways_df.apply(pathway_group, axis=1)
     
@@ -381,7 +380,7 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: s
             pathways_df['Rank'] = pathways_df.index + 1
     
             # Reorder columns to put Name and FDR q-val first
-            cols = ['Rank', 'Name', 'Group', 'FDR q-val', 'ks_significant', 'mw_significant', 'permutation_significant', 'jaccard_removed', 'Permutation p-val' ] + [col for col in pathways_df.columns if col not in ['Rank', 'Name', 'FDR q-val', 'Group', 'ks_significant', 'mw_significant', 'permutation_significant', 'jaccard_removed', 'Permutation p-val']]
+            cols = ['Rank', 'Name', 'Group', 'FDR q-val', 'ks_significant', 'mw_significant', 'permutation_significant', 'Permutation p-val' ] + [col for col in pathways_df.columns if col not in ['Rank', 'Name', 'FDR q-val', 'Group', 'ks_significant', 'mw_significant', 'permutation_significant', 'Permutation p-val']]
             pathways_df = pathways_df[cols]
     
             # Save to Excel

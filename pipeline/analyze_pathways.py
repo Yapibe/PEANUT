@@ -82,7 +82,7 @@ def process_single_file(pathway_file, network_name, method, file_name, disease_t
     Process a single pathway file to calculate the rank of the highest related pathway.
     """
     dataset_name, pathway_name = file_name.replace('.xlsx', '').split('_', 1)
-    output_dir = os.path.join(DIRECTORIES['output_base'], method, network_name, pathway_file, "alpha_0.2", "filtered")
+    output_dir = os.path.join(DIRECTORIES['output_base'], method, network_name, pathway_file, "alpha_0.2")
     os.makedirs(output_dir, exist_ok=True)
     output_file_path = os.path.join(output_dir, file_name)
 
@@ -128,7 +128,7 @@ def plot_comparative_false_positives(analysis_dfs, output_dir, methods, all_data
     )
 
     # Increase font sizes for labels and ticks
-    plt.title('Highest Related Rank Across Methods', fontsize=14)
+    plt.title('', fontsize=14)
     plt.ylabel('Highest Related Pathway Rank', fontsize=12)
     plt.xlabel('Dataset', fontsize=12)
     plt.xticks(rotation=90, fontsize=10)

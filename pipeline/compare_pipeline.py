@@ -63,6 +63,7 @@ PROP_METHODS = config['analysis_settings']['prop_methods']
 ALPHAS = config['analysis_settings']['alphas']
 MAX_WORKERS = config['analysis_settings']['max_workers']
 
+
 # Pre-Calculated Data
 PRE_CALCULATED_DATA = config['pre_calculated_data']
 
@@ -92,7 +93,8 @@ def run_analysis(test_name, prior_data, network, network_name, alpha, method, ou
         pathway_file=pathway_file,
         method=method,
         alpha=alpha if method == 'PEANUT' else 1,
-        run_propagation= True,
+        run_propagation= False,
+        JAC_THRESHOLD= config['analysis_settings']['JAC_THRESHOLD'],
         input_type='abs_Score' if method in ['PEANUT', 'ABS GSEA'] else 'Score'
     )
     if method == 'NGSEA':
@@ -127,13 +129,13 @@ def get_pathway_rank(output_path: str, pathway_name: str) -> tuple:
         if not pathway_row.empty:
             rank = pathway_row['Rank'].values[0]
             fdr_q_val = pathway_row['FDR q-val'].values[0]
-            # group = pathway_row['Group'].values[0] if 'Group' in pathway_row else None
-            return rank, fdr_q_val, results_df
+            group = pathway_row['Group'].values[0] if 'Group' in pathway_row else None
+            return rank, fdr_q_val, group, results_df
         else:
             logger.error(f"Pathway '{pathway_name}' not found in {output_path}.")
     except Exception as e:
         logger.error(f"Error reading {output_path}: {e}")
-    return None, None, None
+    return None, None, None, None
 
 
 
@@ -145,8 +147,7 @@ def process_single_file(
     alpha: float,
     method: str,
     file_name: str,
-    loaded_pathways: dict,
-    related_pathways: list
+    loaded_pathways: dict
 ) -> dict:
     """
     Process a single file: perform analysis and collect results.
@@ -167,7 +168,7 @@ def process_single_file(
     dataset_name, pathway_name = file_name.replace('.xlsx', '').split('_', 1)
     prior_data = read_prior_set(os.path.join(DIRECTORIES['input'], file_name))
     output_dir = os.path.join(
-        DIRECTORIES['output_base'], method, network_name, pathway_file, f"alpha_{alpha}", "no_filter"
+        DIRECTORIES['output_base'], method, network_name, pathway_file, f"alpha_{alpha}"
     )
     os.makedirs(output_dir, exist_ok=True)
     output_file_path = os.path.join(output_dir, file_name)
@@ -184,7 +185,7 @@ def process_single_file(
     )
 
     # Get rank and FDR q-val of the associated pathway
-    rank, fdr_q_val, results_df = get_pathway_rank(output_file_path, pathway_name)
+    rank, fdr_q_val, group, results_df = get_pathway_rank(output_file_path, pathway_name)
 
     higher_ranked = []
     higher_ranked_ranks = []
@@ -227,7 +228,7 @@ def process_single_file(
         'result': {
             'Dataset': dataset_name,
             'Pathway': pathway_name,
-            # 'Group': group,
+            'Group': group,
             'Network': network_name,
             'Pathway file': pathway_file,
             'Alpha': alpha,
@@ -256,11 +257,11 @@ def generate_summary_df(filtered_df, prop_methods):
     Returns:
         pd.DataFrame: Summary DataFrame.
     """
-    # Create pivot table
+    # Create pivot table including 'Group'
     pivot_df = filtered_df.pivot_table(
         index=['Dataset', 'Pathway'],
         columns='Method',
-        values=['Rank', 'Significant', 'Up-regulated'],
+        values=['Rank', 'Significant', 'Up-regulated', 'Group'],  # Added 'Group' here
         aggfunc='first'
     ).reset_index()
 
@@ -270,10 +271,10 @@ def generate_summary_df(filtered_df, prop_methods):
         for metric, method in pivot_df.columns
     ]
 
-    # Define the ordered columns
+    # Define the ordered columns, including 'Group'
     ordered_columns = ['Dataset', 'Pathway']
     for method in prop_methods:
-        for metric in ['Rank', 'Significant', 'Up-regulated']:
+        for metric in ['Rank', 'Significant', 'Up-regulated', 'Group']:
             column_name = f'{metric} {method}'
             ordered_columns.append(column_name)
 
@@ -282,7 +283,7 @@ def generate_summary_df(filtered_df, prop_methods):
 
     # Handle missing methods by filling with NaN
     for method in prop_methods:
-        for metric in ['Rank', 'Significant', 'Up-regulated']:
+        for metric in ['Rank', 'Significant', 'Up-regulated', 'Group']:
             column_name = f'{metric} {method}'
             if column_name not in pivot_df.columns:
                 pivot_df[column_name] = np.nan
@@ -317,24 +318,22 @@ def main():
         for network_name in NETWORKS:
             for pathway_file in PATHWAY_FILES:
                 for alpha in ALPHAS:
-                    for file_name in FILE_LIST:
-                        dataset_name, pathway_name = file_name.replace('.xlsx', '').split('_', 1)
-                        if pathway_name in PATHWAYS_DATA[pathway_file]:
-                            related_pathways = get_pre_calculated_data(pathway_name)
-                            for prop_method in PROP_METHODS:
-                                futures.append(
-                                    executor.submit(
-                                        process_single_file,
-                                        NETWORKS_DATA[network_name],
-                                        pathway_file,
-                                        network_name,
-                                        alpha,
-                                        prop_method,
-                                        file_name,
-                                        PATHWAYS_DATA,
-                                        related_pathways
+                        for file_name in FILE_LIST:
+                            dataset_name, pathway_name = file_name.replace('.xlsx', '').split('_', 1)
+                            if pathway_name in PATHWAYS_DATA[pathway_file]:
+                                for prop_method in PROP_METHODS:
+                                    futures.append(
+                                        executor.submit(
+                                            process_single_file,
+                                            NETWORKS_DATA[network_name],
+                                            pathway_file,
+                                            network_name,
+                                            alpha,
+                                            prop_method,
+                                            file_name,
+                                            PATHWAYS_DATA
+                                        )
                                     )
-                                )
 
         for future in as_completed(futures):
             result = future.result()
@@ -357,12 +356,12 @@ def main():
                     DIRECTORIES['summary_base'],
                     network_name,
                     pathway_file,
-                    f"alpha_{alpha}"
+                    f"alpha_{alpha}",
                 )
                 os.makedirs(summary_output_dir, exist_ok=True)
                 rankings_output_path = os.path.join(
                     summary_output_dir,
-                    f'rankings_summary_no_no.xlsx'
+                    f'rankings_summary.xlsx'
                 )
                 summary_df.to_excel(rankings_output_path, index=False)
                 logger.info(f"Rankings summary saved to {rankings_output_path}")

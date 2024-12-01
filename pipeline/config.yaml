@@ -10,12 +10,12 @@ analysis_settings:
   pathway_files:
     - "kegg"                                 # List of pathway files to process
   prop_methods:                                      # Propagation methods to use
-    - "NGSEA"
+    - "PEANUT"
  
   alphas:
     - 0.2                                            # Alpha values for analysis
   max_workers: 1                                    # Number of parallel workers
-  JAC_THRESHOLD: 0.2                                 # Jaccard index threshold for pathway filtering
+  JAC_THRESHOLD: 0.9                                 # Jaccard index threshold for pathway filtering
   FDR_threshold: 0.05     
 logging:
   level: "DEBUG"                                       # Logging level (e.g., DEBUG, INFO, WARNING)
