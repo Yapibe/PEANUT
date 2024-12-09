@@ -76,7 +76,6 @@ For users preferring command-line execution, the pipeline consists of:
   - `MIN_GENE_PER_PATHWAY`: Minimum number of genes per pathway to consider.
   - `MAX_GENE_PER_PATHWAY`: Maximum number of genes per pathway to consider.
   - `FDR_THRESHOLD`: FDR threshold for significance.
-  - `JAC_THRESHOLD`: Jaccard index threshold for comparing sets.
   - `P_VALUE_THRESHOLD`: P-value threshold for statistical significance.
 
 ### Directory Structure
@@ -90,7 +89,7 @@ For users preferring command-line execution, the pipeline consists of:
     - `utils.py`: Utility functions for data processing and file handling.
   - **pipeline/**: Backend code for pathway analysis.
     - **Data/**
-      - `Human`: contains gene names, pathways, network, and matrix data
+      - `H_sapiens`: contains gene names, pathways, network, and matrix data
     - **Inputs/**
       - `experiments_data`: contains experimental data for each condition
     - **Outputs/**: Generates plots for pathway comparison.
@@ -103,9 +102,6 @@ For users preferring command-line execution, the pipeline consists of:
     - `statistical_methods.py`: Contains statistical analysis methods.
     
 ### Statistical Methods
-- **Hypergeometric Test:** <br>
-  Used to identify statistically significant pathways by comparing the observed number of genes in a pathway to the expected number under a null model.
-
 - **Kolmogorov-Smirnov Test:** <br>
     Used to score each pathway by assessing if the expression changes of its genes deviate significantly from all other genes.
 

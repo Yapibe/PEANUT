@@ -1,9 +1,10 @@
+# pipeline/settings.py
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
-
-
+from typing import Optional, Dict, Set
+import pandas as pd
 @dataclass
 class Settings:
     """General arguments used throughout the pipeline."""
@@ -16,7 +17,6 @@ class Settings:
     minimum_gene_per_pathway: int = 15
     maximum_gene_per_pathway: int = 500
     FDR_THRESHOLD: float = 0.05
-    JAC_THRESHOLD: float = 0.2
 
     # Paths and directories
     root_folder: Path = field(init=False)
@@ -61,13 +61,11 @@ class ConditionSettings:
 
     condition_name: str
     experiment_name: str
+    scores_df: pd.DataFrame = field(default_factory=pd.DataFrame)
     output_path: Path = field(init=False)
     date: str = field(init=False)
-    filtered_genes: set = field(default_factory=set)
-    filtered_pathways: dict = field(default_factory=dict)
-    ks_significant_pathways_with_genes: dict = field(
-        default_factory=dict
-    )
+    filtered_genes: Set[int] = field(default_factory=set)
+    pathways_statistics: Dict[str, Dict] = field(default_factory=dict)
 
     def __post_init__(self):
         """Initialize the output path based on the experiment and condition names."""

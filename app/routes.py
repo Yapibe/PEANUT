@@ -46,8 +46,7 @@ async def execute_pipeline(
     pathway_file: str = Form(...),
     min_genes_per_pathway: int = Form(None),
     max_genes_per_pathway: int = Form(None),
-    fdr_threshold: float = Form(...),
-    JAC_threshold: float = Form(...),
+    fdr_threshold: float = Form(...)
 ):
     """Execute the pipeline with the given parameters."""
     logger.info("Received request to run pipeline")
@@ -57,7 +56,7 @@ async def execute_pipeline(
         f"Network: {network}, Pathway File: {pathway_file}, "
         f"Min Genes per Pathway: {min_genes_per_pathway}, "
         f"Max Genes per Pathway: {max_genes_per_pathway}, "
-        f"FDR Threshold: {fdr_threshold}, JAC Threshold: {JAC_threshold}"
+        f"FDR Threshold: {fdr_threshold}"
     )
 
     try:
@@ -69,8 +68,7 @@ async def execute_pipeline(
             pathway_file=pathway_file,
             min_genes_per_pathway=min_genes_per_pathway,
             max_genes_per_pathway=max_genes_per_pathway,
-            fdr_threshold=fdr_threshold,
-            jac_threshold=JAC_threshold,
+            fdr_threshold=fdr_threshold
         )
 
         job_code = str(uuid.uuid4())[:8]

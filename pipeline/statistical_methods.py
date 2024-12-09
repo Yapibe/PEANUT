@@ -1,82 +1,7 @@
 import numpy as np
 import pandas as pd
-from scipy.stats import hypergeom, ks_2samp, mannwhitneyu, rankdata
-
-
-def wilcoxon_rank_sums_test(
-    experiment_scores: np.ndarray,
-    control_scores: np.ndarray,
-    alternative: str = "two-sided",
-) -> float:
-    """
-    Perform the Wilcoxon rank-sum test to compare two independent samples.
-
-    Parameters:
-    - experiment_scores (array_like): Scores from the experimental group.
-    - control_scores (array_like): Scores from the control group.
-    - alternative (str): Defines the alternative hypothesis
-      ('two-sided', 'less', 'greater').
-
-    Returns:
-    - float: The P-value from the Wilcoxon rank-sum test.
-    """
-    from scipy.stats import ranksums
-
-    p_value = ranksums(
-        experiment_scores, control_scores, alternative=alternative
-    ).pvalue
-    return p_value
-
-
-def bh_correction(p_values: np.ndarray) -> np.ndarray:
-    """
-    Apply the Benjamini-Hochberg procedure for controlling the false discovery rate.
-
-    Parameters:
-    - p_values (array_like): Array of p-values from multiple tests.
-
-    Returns:
-    - np.ndarray: Array of adjusted p-values.
-    - np.ndarray: Array of adjusted p-values.
-    """
-    p_values = np.asarray(p_values)
-    n = len(p_values)
-    sorted_indices = np.argsort(p_values)
-    sorted_pvalues = p_values[sorted_indices]
-    adjusted_pvalues = np.empty(n, dtype=np.float64)
-
-    cumulative_min = 1.0
-    for i in reversed(range(n)):
-        rank = i + 1
-        adjusted_pval = sorted_pvalues[i] * n / rank
-        cumulative_min = min(cumulative_min, adjusted_pval)
-        adjusted_pvalues[sorted_indices[i]] = cumulative_min
-
-    return adjusted_pvalues
-
-
-def kolmogorov_smirnov_test(
-    experiment_scores: np.ndarray, control_scores: np.ndarray
-) -> float:
-    """
-    Perform the Kolmogorov-Smirnov test to compare two samples.
-
-    Parameters:
-    - experiment_scores (array_like): Scores from the experimental group.
-    - control_scores (array_like): Scores from the control group.
-
-    Returns:
-    - float: The P-value from the KS test indicating statistical difference.
-    - float: The P-value from the KS test indicating statistical difference.
-    """
-    result = ks_2samp(
-        experiment_scores,
-        control_scores,
-        alternative="two-sided",
-        mode="auto",
-    )
-    return result.pvalue
-
+from scipy.stats import ks_2samp, mannwhitneyu, rankdata
+from statsmodels.stats.multitest import multipletests
 
 def compute_mw_python(
     experiment_ranks: np.ndarray, control_ranks: np.ndarray
@@ -95,52 +20,6 @@ def compute_mw_python(
         experiment_ranks, control_ranks, alternative="two-sided"
     )
     return U, p_value
-
-
-def jaccard_index(set1: set, set2: set) -> float:
-    """
-    Calculate the Jaccard index, a measure of similarity between two sets.
-
-    Parameters:
-    - set1 (set): First set of elements.
-    - set2 (set): Second set of elements.
-
-    Returns:
-    - float: Jaccard index (intersection over union).
-    """
-    intersection_size = len(set1 & set2)
-    union_size = len(set1 | set2)
-    return intersection_size / union_size if union_size > 0 else 0.0
-
-
-def run_hyper(
-    genes_by_pathway: dict, scores_keys: set, significant_p_vals: dict
-) -> list:
-    """
-    Run the hypergeometric test to identify pathways with significant enrichment.
-
-    Parameters:
-    - genes_by_pathway (dict): Mapping of pathways to their constituent genes.
-    - scores_keys (set): Set of gene IDs with scores.
-    - significant_p_vals (dict): Mapping of gene IDs to significant P-values.
-
-    Returns:
-    - list: List of significant pathways identified by the hypergeometric test.
-    """
-    M = len(scores_keys)  # Total number of scored genes
-    n = len(significant_p_vals)  # Number of significant genes
-
-    significant_pathways = []
-    for pathway_name, pathway_genes in genes_by_pathway.items():
-        N = len(pathway_genes)  # Number of genes in the pathway
-        x = len(
-            set(pathway_genes) & significant_p_vals.keys()
-        )  # Overlap
-        if x >= 5:
-            p_value = hypergeom.sf(x - 1, M, N, n)
-            if p_value < 0.05:
-                significant_pathways.append(pathway_name)
-    return significant_pathways
 
 
 def global_gene_ranking(scores: dict) -> pd.Series:
@@ -194,3 +73,72 @@ def kolmogorov_smirnov_test_with_ranking(
         mode="auto",
     )
     return result.pvalue
+
+
+def perform_permutation_test(filtered_pathways: dict, genes_by_pathway: dict, scores: dict, n_iterations: int = 10000, pval_threshold: float = 0.05) -> dict:
+    """
+    Perform a permutation test to assess the significance of the observed pathway scores.
+    Updates pathways with adjusted permutation p-values and adds a boolean flag for significance.
+    
+    Parameters:
+    - filtered_pathways (dict): Dictionary of pathways with their details.
+    - genes_by_pathway (dict): Mapping of pathway names to their gene sets.
+    - scores (dict): Mapping of gene IDs to their scores.
+    - n_iterations (int): Number of permutations to perform.
+    - pval_threshold (float): Threshold for adjusted p-values to determine significance.
+    
+    Returns:
+    - dict: Updated filtered_pathways with permutation p-values and significance flags.
+    """
+    
+    score_values = np.array([score[0] for score in scores.values()])
+    
+    # Store observed means and p-values for all pathways
+    observed_means = []
+    raw_p_values = []
+    pathways_list = []
+    valid_pathways = []
+    
+    for pathway, data in filtered_pathways.items():
+        pathway_genes = genes_by_pathway[pathway]
+    
+        # Find the intersection of pathway genes with available scores
+        valid_genes = pathway_genes.intersection(scores.keys())
+        pathway_size = len(valid_genes)
+    
+        if pathway_size == 0:
+            data['Permutation p-val'] = np.nan
+            data['permutation_significant'] = False
+            continue
+    
+        # Calculate the observed mean score for the pathway
+        observed_mean = np.mean([scores[gene_id][0] for gene_id in valid_genes])
+    
+        # Generate null distribution for this pathway size
+        permuted_means = np.array([
+            np.mean(np.random.choice(score_values, size=pathway_size, replace=False))
+            for _ in range(n_iterations)
+        ])
+        empirical_p_val = np.mean(permuted_means >= observed_mean)
+    
+        # Collect data for multiple testing correction
+        observed_means.append(observed_mean)
+        raw_p_values.append(empirical_p_val)
+        pathways_list.append(pathway)
+        valid_pathways.append((pathway, data))
+    
+    # Adjust p-values for multiple testing using Benjamini-Hochberg
+    if raw_p_values:
+        adjusted_pvals = multipletests(raw_p_values, method='fdr_bh')[1]
+    
+        # Update pathways with adjusted p-values and significance flags
+        for i, (pathway, data) in enumerate(valid_pathways):
+            adjusted_pval = adjusted_pvals[i]
+            data['Permutation p-val'] = adjusted_pval
+            data['permutation_significant'] = adjusted_pval <= pval_threshold
+    else:
+        # Set permutation_significant to False for all pathways
+        for data in filtered_pathways.values():
+            data['permutation_significant'] = False
+    
+    return filtered_pathways

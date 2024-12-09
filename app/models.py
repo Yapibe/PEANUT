@@ -12,7 +12,6 @@ class SettingsInput(BaseModel):
     min_genes_per_pathway: Optional[int] = None
     max_genes_per_pathway: Optional[int] = None
     fdr_threshold: float
-    jac_threshold: float
 
 
 class PipelineOutput(BaseModel):

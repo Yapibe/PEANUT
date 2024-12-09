@@ -119,56 +119,45 @@
     <h1>PEANUT</h1>
     <div class="description">
       <p>
-        <strong>PEANUT</strong> (Pathway Enrichment Analysis through
-        Network Utilization) is a web-server designed to perform pathway
-        enrichment analysis by leveraging network propagation techniques
-        on up-to-date Protein-Protein Interaction (PPI) networks. The
-        tool enables researchers to propagate gene scores through the
-        PPI network, allowing for the identification of pathways that
-        are significantly associated with a set of seed genes.
+        <strong>PEANUT</strong> (<em>Pathway Enrichment Analysis through Network Utilization</em>) is a next-generation web server for pathway enrichment analysis. By integrating network propagation techniques into Protein-Protein Interaction (PPI) networks, PEANUT enhances the detection of biologically significant pathways, outperforming traditional methods in both sensitivity and accuracy. This tool provides researchers with a novel way to identify pathways associated with specific gene expression profiles, leveraging the inherent connectivity within biological networks.
       </p>
-      <p>Users can customize several parameters in PEANUT:</p>
+    
+      <p><strong>How PEANUT Works:</strong></p>
+      <p>
+        PEANUT uses network propagation to diffuse gene expression scores across the PPI network. This process amplifies the signals of interconnected genes, improving the detection of pathways that might be overlooked in traditional enrichment methods.
+      </p>
+    
+      <p><strong>Key Features:</strong></p>
       <ul>
         <li>
-          <strong>Propagation Alpha:</strong> This parameter controls
-          the extent to which information is propagated through the
-          network. A higher alpha emphasizes the direct interactions of
-          the seed genes, while a lower alpha allows for more diffusion
-          across the network.
+          <strong>Simultaneous Analysis:</strong> Run multiple conditions or datasets simultaneously, allowing for direct comparisons of results across conditions or methods. For example, GSEA and PEANUT analyses can be executed side-by-side to easily compare their outputs.
         </li>
         <li>
-          <strong>FDR Threshold:</strong> False Discovery Rate (FDR)
-          correction is applied to control for multiple testing,
-          ensuring that only pathways that meet the user-defined
-          significance threshold are considered.
+          <strong>Propagation Alpha:</strong> Control the depth of network propagation. Higher alpha values prioritize immediate interactions, while lower values enable a broader exploration of the network.
         </li>
         <li>
-          <strong>Species Selection:</strong> PEANUT uses up-to-date PPI
-          networks for different species, with Homo sapiens being the
-          primary network currently supported.
+          <strong>Custom Pathway Analysis:</strong> Import pre-ranked gene lists to tailor the analysis to specific datasets or hypotheses. Results include pathway ranks, statistical scores, and detailed visualizations.
+        </li>
+        <li>
+          <strong>Open Access:</strong> PEANUT is freely accessible online, designed for researchers across disciplines, and compatible with pre-ranked gene expression data from diverse biological studies.
         </li>
       </ul>
+    
+      <p><strong>Why Choose PEANUT?</strong></p>
       <p>
-        PEANUT also offers the ability to import custom gene sets and
-        pathway files, allowing for flexible analysis of various
-        biological datasets. Pathway enrichment results can be
-        downloaded for further analysis, providing users with a
-        comprehensive list of significantly enriched pathways based on
-        the network propagation results.
+        PEANUT represents a significant advancement in pathway enrichment by addressing limitations of traditional methods like GSEA. It integrates network propagation, providing biologically relevant insights by contextualizing gene expression data within the broader connectivity of PPI networks. 
       </p>
+    
       <p>
-        Whether you're studying disease pathways or biological
-        processes, PEANUT helps uncover biologically significant
-        pathways that may be missed by traditional enrichment approaches
-        by integrating network-based analysis.
+        Whether you're exploring disease mechanisms, functional gene sets, or novel biological pathways, PEANUT empowers you to gain deeper insights with precision and ease.
       </p>
-      <p>
-        <em>
-          Last updated on [insert date here] based on [insert PPI
-          network version here].
-        </em>
+    
+      <p class="info">
+        <em>Last updated: Dec 3, 2024</em>
       </p>
     </div>
+    
+    
     <h2>Start a new PEANUT job</h2>
     <form id="pipelineForm">
       <label for="test_name">Test Name</label>
@@ -222,10 +211,6 @@
         <label for="fdr_threshold">FDR threshold</label>
         <input type="number" id="fdr_threshold" name="fdr_threshold"
                step="0.01" min="0" value="0.05">
-
-        <label for="JAC_threshold">Jaccard threshold</label>
-        <input type="number" id="JAC_threshold" name="JAC_threshold"
-               step="0.1" value="0.2">
       </div>
 
       <button type="submit" id="submitButton">Submit Pathway Analysis</button>

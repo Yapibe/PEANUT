@@ -15,56 +15,6 @@ from .utils import set_input_type
 logger = logging.getLogger(__name__)
 
 
-def calculate_gene_scores(
-    network: nx.Graph, prior_data: pd.DataFrame
-) -> dict:
-    """
-    Calculate the score for each gene based on the provided equation.
-
-    Parameters:
-    - network (networkx.Graph): The network graph.
-    - prior_data (pd.DataFrame): DataFrame containing prior gene scores.
-
-    Returns:
-    - dict: Dictionary mapping gene IDs to their calculated scores.
-    """
-    try:
-        # Initialize all network genes with a score of 0
-        gene_scores = dict.fromkeys(network.nodes(), 0)
-
-        # Create a dictionary from prior_data
-        prior_data_dict = prior_data.set_index("GeneID")[
-            "Score"
-        ].to_dict()
-
-        # Assign scores to all genes in prior_data
-        for gene_id, score in prior_data_dict.items():
-            gene_scores[gene_id] = abs(score)
-
-        # Calculate the scores for genes in the prior data and in the network
-        for gene_id in prior_data_dict.keys():
-            if gene_id in network.nodes():
-                neighbors = list(network.neighbors(gene_id))
-
-                if neighbors:
-                    neighbor_scores = [
-                        abs(prior_data_dict.get(neighbor, 0))
-                        for neighbor in neighbors
-                    ]
-                    ni = len(neighbor_scores)
-                    sum_neighbor_scores = sum(neighbor_scores)
-                    gene_scores[gene_id] += (
-                        1 / ni
-                    ) * sum_neighbor_scores
-
-        return gene_scores
-    except Exception as e:
-        logger.error(
-            f"An error occurred in calculate_gene_scores: {e}"
-        )
-        return {}
-
-
 def generate_similarity_matrix(
     network: nx.Graph, settings: Settings
 ) -> tuple:
@@ -167,7 +117,7 @@ def read_sparse_matrix(
 def matrix_prop(
     propagation_input: dict,
     gene_indexes: dict,
-    inverse_matrix: sp.spmatrix,
+    matrix: sp.spmatrix,
 ) -> np.ndarray:
     """
     Propagates seed gene values through a precomputed inverse matrix.
@@ -186,15 +136,15 @@ def matrix_prop(
         for gene_id, value in propagation_input.items():
             F_0[gene_indexes[gene_id]] = value
 
-        F = inverse_matrix @ F_0
+        F = matrix @ F_0
         return F
     except Exception as e:
         logger.error(f"An error occurred in matrix_prop: {e}")
         return np.array([])
 
 
-def _handle_no_propagation_case(
-    prior_data: pd.DataFrame, network: nx.Graph
+def _handle_gsea_case(
+    prior_data: pd.DataFrame, network: nx.Graph, restrict_to_network: bool = False
 ) -> pd.DataFrame:
     """
     Handle the case where no propagation is performed (alpha = 1).
@@ -207,10 +157,17 @@ def _handle_no_propagation_case(
     - pd.DataFrame: DataFrame containing the gene scores.
     """
     try:
-        # Filter prior_data to include only genes in both prior_data and network
-        filtered_prior_data = prior_data[
-            prior_data["GeneID"].isin(network.nodes())
-        ].copy()
+        if restrict_to_network:
+            # Filter prior_data to include only network genes
+            filtered_prior_data = prior_data[
+                prior_data["GeneID"].isin(network.nodes())
+            ].copy()
+            logger.info("Restricting to network genes.")
+        else:
+            # No filtering, include all genes
+            filtered_prior_data = prior_data.copy()
+            logger.info("Processing all genes without network restriction.")
+
 
         # Sort the filtered_prior_data by GeneID
         sorted_prior_data = filtered_prior_data.sort_values(
@@ -225,7 +182,7 @@ def _handle_no_propagation_case(
         return sorted_prior_data
     except Exception as e:
         logger.error(
-            f"An error occurred in _handle_no_propagation_case: {e}"
+            f"An error occurred in _handle_gsea_case: {e}"
         )
         return pd.DataFrame()
 
@@ -251,20 +208,18 @@ def _normalize_prop_scores(
     try:
         # Set input type to 'ones' and convert to dictionary
         ones_input_df = set_input_type(filtered_prior_data, norm=True)
-        ones_input = ones_input_df.set_index("GeneID")[
-            "Score"
-        ].to_dict()
+        ones_input = ones_input_df.set_index('GeneID')['Score'].to_dict()
 
         # Perform propagation with ones input
-        ones_gene_scores_inverse = matrix_prop(
-            ones_input, network_gene_index, inverse_matrix=matrix
+        ones_gene_scores = matrix_prop(
+            ones_input, network_gene_index, matrix=matrix
         )
 
         # Adjust zero normalization scores
-        ones_gene_scores_inverse[ones_gene_scores_inverse == 0] = 1
+        ones_gene_scores[ones_gene_scores == 0] = 1
 
         # Normalize propagation scores
-        propagation_score /= np.abs(ones_gene_scores_inverse)
+        propagation_score /= ones_gene_scores
 
         # Create DataFrame for normalized scores
         all_network_genes = list(network_gene_index.keys())
@@ -284,27 +239,20 @@ def filter_network_genes(propagation_input_df, network):
     network_genes_df = propagation_input_df[
         propagation_input_df["GeneID"].isin(network.nodes())
     ].copy()
-    non_network_genes = propagation_input_df[
-        ~propagation_input_df["GeneID"].isin(network.nodes())
-    ].copy()
     filtered_propagation_input = {
         gene_id: score
         for gene_id, score in zip(
             network_genes_df["GeneID"], network_genes_df["Score"]
         )
     }
-    return (
-        network_genes_df,
-        non_network_genes,
-        filtered_propagation_input,
-    )
+    return network_genes_df, filtered_propagation_input
 
 
 async def perform_propagation(
     settings: Settings,
     condition_settings,
-    network: nx.Graph = None,
-    condition_data: pd.DataFrame = None,
+    network: nx.Graph,
+    condition_data: pd.DataFrame,
 ):
     """
     Perform the propagation of gene scores through the network for a specific condition.
@@ -312,8 +260,8 @@ async def perform_propagation(
     Parameters:
     - settings (Settings): General settings for the run.
     - condition_settings (ConditionSettings): Settings specific to the condition.
-    - network (networkx.Graph, optional): The network graph.
-    - condition_data (pd.DataFrame, optional): DataFrame containing condition gene scores.
+    - network (networkx.Graph): The network graph.
+    - condition_data (pd.DataFrame): DataFrame containing condition gene scores.
 
     Returns:
     - None
@@ -321,7 +269,7 @@ async def perform_propagation(
     try:
         if settings.alpha == 1:
             logger.info("Running GSEA without propagation")
-            full_propagated_scores_df = _handle_no_propagation_case(
+            full_propagated_scores_df = _handle_gsea_case(
                 condition_data, network
             )
             perform_enrichment(
@@ -348,17 +296,15 @@ async def perform_propagation(
         )
 
         # Filter genes in the network
-        (
-            network_genes_df,
-            _non_network_genes,
-            filtered_propagation_input,
-        ) = filter_network_genes(propagation_input_df, network)
+        network_genes_df, filtered_propagation_input = filter_network_genes(
+            propagation_input_df, network
+        )
 
         # Perform network propagation
         propagation_score = matrix_prop(
             filtered_propagation_input,
             network_gene_index,
-            inverse_matrix=matrix,
+            matrix=matrix,
         )
 
         # Normalize the propagation scores
@@ -389,7 +335,7 @@ async def perform_propagation(
         full_propagated_scores_df["Symbol"] = (
             full_propagated_scores_df["Symbol"].astype("category")
         )
-
+        condition_settings.scores_df = full_propagated_scores_df
         # Perform enrichment analysis for this condition
         perform_enrichment(
             settings, condition_settings, full_propagated_scores_df

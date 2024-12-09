@@ -2,7 +2,7 @@ import asyncio
 import logging
 import zipfile
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Any
 import pandas as pd
 import yaml
 
@@ -48,18 +48,23 @@ async def pipeline_main(
             pathway_file=settings.pathway_file,
             minimum_gene_per_pathway=settings.min_genes_per_pathway,
             maximum_gene_per_pathway=settings.max_genes_per_pathway,
-            FDR_THRESHOLD=settings.fdr_threshold,
-            JAC_THRESHOLD=settings.jac_threshold,
+            FDR_THRESHOLD=settings.fdr_threshold
         )
         network = read_network(run_settings.network_file_path)
 
-        all_condition_settings = []
+        all_condition_settings: List[Tuple[ConditionSettings, pd.DataFrame]] = []
 
         for condition_name, condition_data_df in conditions_data:
             condition_settings = ConditionSettings(
                 condition_name=condition_name,
                 experiment_name=run_settings.experiment_name,
             )
+        # for condition_path in conditions_data:
+        #     condition_data_df = pd.read_excel(condition_path)
+        #     condition_settings = ConditionSettings(
+        #         condition_name=condition_path.stem,
+        #         experiment_name=run_settings.experiment_name,
+        #     )
 
             # Perform propagation and enrichment for this condition
             await perform_propagation(
@@ -75,13 +80,13 @@ async def pipeline_main(
             )
 
         # Aggregate pathways across conditions for visualization
-        all_pathways = {}
+        all_pathways: Dict[str, Dict[str, Any]] = {}
         for condition_settings, condition_data_df in all_condition_settings:
             # Process condition for plotting
             process_condition(
                 condition_settings=condition_settings,
                 settings=run_settings,
-                condition_data_df=condition_data_df,
+                condition_data_df= condition_data_df,
                 all_pathways=all_pathways,
             )
 
@@ -122,9 +127,11 @@ async def pipeline_main(
 async def main():
     """Initialize the main function for the pipeline."""
     try:
-        await pipeline_main(
-            condition_data_files, settings
+        output_zip_path = await pipeline_main(
+            conditions_data=condition_data_files,
+            settings=settings
         )
+        logger.info(f"Results archived at: {output_zip_path}")
     except Exception as e:
         logger.error(f"An error occurred in main: {e}")
         raise

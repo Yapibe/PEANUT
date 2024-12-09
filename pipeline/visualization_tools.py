@@ -47,7 +47,7 @@ def plot_pathways_mean_scores(
         logger.info("Data for plotting is empty. Exiting function.")
         return None
 
-    # Filter pathways with p-value <= p_value_threshold for at least one condition
+    # Filter pathways with p-value <= FDR_THRESHOLD for at least one condition
     significant_pathways = data_df[data_df["P-value"] <= settings.FDR_THRESHOLD]["Pathway"].unique()
     data_df = data_df[data_df["Pathway"].isin(significant_pathways)]
 
@@ -65,11 +65,18 @@ def plot_pathways_mean_scores(
         index="Pathway", columns="Condition", values="P-value"
     ).fillna(1)
 
-    # Sort pathways by mean score
-    mean_scores_df = mean_scores_df.loc[
-        mean_scores_df.mean(axis=1).sort_values().index
-    ]
-    p_values_df = p_values_df.reindex(mean_scores_df.index)
+    # Compute ranks within each condition (higher mean scores get better ranks)
+    ranks_df = mean_scores_df.rank(ascending=False, method='average')
+
+    # Compute average rank across conditions
+    mean_ranks = ranks_df.mean(axis=1)
+
+    # Sort pathways based on average rank
+    sorted_pathways = mean_ranks.sort_values().index.tolist()
+
+    # Reorder DataFrames based on sorted pathways
+    mean_scores_df = mean_scores_df.loc[sorted_pathways]
+    p_values_df = p_values_df.loc[sorted_pathways]
 
     # Prepare data for plotting
     conditions = mean_scores_df.columns.tolist()
@@ -111,6 +118,7 @@ def plot_pathways_mean_scores(
             color=[style["color"] for style in bar_styles],
             edgecolor=[style["edgecolor"] for style in bar_styles],
             hatch=[style["hatch"] for style in bar_styles],
+            label=condition if i == 0 else None,
         )
 
     # Set y-axis labels to be pathway names
@@ -128,11 +136,12 @@ def plot_pathways_mean_scores(
     )
 
     # Create a legend for the conditions
+    handles, labels = ax.get_legend_handles_labels()
+    # Add non-significant marker to legend
     legend_handles = [
         plt.Rectangle((0, 0), 1, 1, facecolor=colors[i])
         for i in range(num_conditions)
-    ]
-    legend_handles.append(plt.Rectangle((0, 0), 1, 1, facecolor='none', edgecolor='black', hatch='//'))
+    ] + [plt.Rectangle((0, 0), 1, 1, facecolor='white', edgecolor='black', hatch='//')]
     legend_labels = conditions + ["Non-significant"]
     legend = ax.legend(
         legend_handles,
@@ -154,3 +163,4 @@ def plot_pathways_mean_scores(
     plt.savefig(output_file_path, format="png", bbox_inches="tight", bbox_extra_artists=[legend])
     plt.close()
     return output_file_path
+
