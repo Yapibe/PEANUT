@@ -6,7 +6,9 @@ pathway_file: 'kegg'
 min_genes_per_pathway: 15
 max_genes_per_pathway: 500
 fdr_threshold: 0.05
+run_gsea: false
+restrict_to_network: true
+create_similarity_matrix: true
 condition_data_files:
   - 'pipeline/Inputs/experiments_data/GSE/XLSX/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.xlsx'
-  - 'pipeline/Inputs/experiments_data/GSE/XLSX/GSE5281HIP_KEGG_ALZHEIMERS_DISEASE.xlsx'
-  - 'pipeline/Inputs/experiments_data/GSE/XLSX/GSE5281EC_KEGG_ALZHEIMERS_DISEASE.xlsx'
+

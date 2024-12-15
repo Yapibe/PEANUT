@@ -17,16 +17,17 @@ class Settings:
     minimum_gene_per_pathway: int = 15
     maximum_gene_per_pathway: int = 500
     FDR_THRESHOLD: float = 0.05
-
+    run_gsea: bool = False
+    restrict_to_network: bool = False
+    create_similarity_matrix: bool = False
+    similarity_matrix_path: Optional[Path] = field(init=False)
+    
     # Paths and directories
     root_folder: Path = field(init=False)
     data_dir: Path = field(init=False)
-    similarity_matrix_path: Optional[Path] = field(init=False)
     date: str = field(init=False)
     figure_title: str = "Pathway Enrichment"
     network_file_path: Path = field(init=False)
-    genes_names_file: str = "gene_info.json"
-    genes_names_file_path: Path = field(init=False)
     pathway_file_dir: Path = field(init=False)
     run_gsea: bool = field(default=False)
     plot_output_path: Path = field(init=False)
@@ -37,17 +38,19 @@ class Settings:
         self.data_dir = self.root_folder / "Data" / self.species
         self.date = datetime.today().strftime("%d_%m_%Y__%H_%M_%S")
 
-        # Adjust the similarity matrix paths based on normalization type
-        self.similarity_matrix_path = (
-            self.data_dir
-            / "matrix"
-            / f"{self.network}_{self.alpha}.npz"
-        )
+        # Set up matrix path based on create_similarity_matrix flag
+        if self.create_similarity_matrix:
+            user_matrix_dir = self.data_dir / "matrix" / "user_matrix"
+            user_matrix_dir.mkdir(parents=True, exist_ok=True)
+            self.similarity_matrix_path = user_matrix_dir / f"{self.network}_{self.alpha}.npz"
+        else:
+            self.similarity_matrix_path = (
+                self.data_dir
+                / "matrix"
+                / f"{self.network}_{self.alpha}.npz"
+            )
         self.network_file_path = (
             self.data_dir / "network" / self.network
-        )
-        self.genes_names_file_path = (
-            self.data_dir / "gene_names" / self.genes_names_file
         )
         self.pathway_file_dir = (
             self.data_dir / "pathways" / self.pathway_file

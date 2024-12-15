@@ -35,7 +35,7 @@ def load_pathways_genes(pathways_dir: Path) -> dict:
                     continue
                 pathway_name = parts[0]
                 try:
-                    genes = [int(gene) for gene in parts[2:]]
+                    genes = [str(gene) for gene in parts[2:]]
                 except ValueError:
                     logger.warning(
                         f"Non-integer gene ID found in pathway {pathway_name}, skipping pathway."
@@ -102,7 +102,7 @@ def load_propagation_scores(propagation_file_path: Path) -> dict:
 
 def load_pathways_and_propagation_scores(
     settings: Settings, scores_df: pd.DataFrame
-) -> Tuple[Dict[str, Set[int]], Dict[int, Tuple[float, float]]]:
+) -> Tuple[Dict[str, Set[int]], Dict[int, float]]:
     """
     Load the pathways based on the provided configuration and the propagation scores.
 
@@ -111,68 +111,37 @@ def load_pathways_and_propagation_scores(
         scores_df (pd.DataFrame): DataFrame containing the gene scores.
 
     Returns:
-        Tuple: A tuple containing the pathways and a dictionary mapping gene IDs to their scores and p-values.
+        Tuple: A tuple containing the pathways and a dictionary mapping gene IDs to their scores.
     """
     pathways_with_many_genes = load_pathways_genes(settings.pathway_file_dir)
     sorted_scores = scores_df.sort_values(by="GeneID").reset_index(drop=True)
 
-    # Optimize data types
-    sorted_scores["GeneID"] = sorted_scores["GeneID"].astype(int)
-    sorted_scores["Score"] = pd.to_numeric(
-        sorted_scores["Score"], downcast="float"
-    )
-    sorted_scores["P-value"] = pd.to_numeric(
-        sorted_scores["P-value"], downcast="float"
-    )
-
+    # Create the scores dictionary with only GeneID and Score
     scores = {
-        gene_id: (score, pvalue)
-        for gene_id, score, pvalue in zip(
-            sorted_scores["GeneID"],
-            sorted_scores["Score"],
-            sorted_scores["P-value"],
+        gene_id: score
+        for gene_id, score in zip(
+            sorted_scores["GeneID"], sorted_scores["Score"]
         )
     }
 
     scores_keys = set(scores.keys())
 
-    # Filter pathways based on gene counts within specified range and intersection with scored genes
+    # Filter pathways based on gene counts within the specified range and intersection with scored genes
     genes_by_pathway = {
-        pathway: set(genes).intersection(scores_keys)
+        pathway: set(map(str, genes)).intersection(scores_keys)
         for pathway, genes in pathways_with_many_genes.items()
         if settings.minimum_gene_per_pathway
-        <= len(set(genes).intersection(scores_keys))
+        <= len(set(map(str, genes)).intersection(scores_keys))
         <= settings.maximum_gene_per_pathway
-    }
+}
+
 
     return genes_by_pathway, scores
 
 
 
+
 # ###################################################################GET FUNCTIONS############################################################################
-
-
-def set_input_type(
-    prior_data: pd.DataFrame, norm: bool = False
-) -> pd.DataFrame:
-    """
-    Modify the 'Score' column based on the specified input type.
-
-    Args:
-        prior_data (pd.DataFrame): DataFrame containing all experimental data.
-        norm (bool): Flag indicating whether to normalize the 'Score' column.
-
-    Returns:
-        pd.DataFrame: DataFrame with the modified 'Score' column.
-    """
-    modified_prior_data = prior_data.copy()
-    if norm:
-        modified_prior_data["Score"] = 1
-    else:
-        modified_prior_data["Score"] = prior_data["Score"].abs()
-    return modified_prior_data
-
-
 def get_scores(score_path: Path) -> dict:
     """
     Load gene scores and P-values from a file.
@@ -486,7 +455,7 @@ def process_single_pathway(
         FDR_THRESHOLD (float): Threshold for significance.
 
     Returns:
-        Dict: Dictionary containing mean score, P-value, and trend.
+        Dict: Dictionary containing mean score and P-value.
     """
     try:
         # Get scores for genes in the pathway
@@ -498,64 +467,17 @@ def process_single_pathway(
         # Get the p-value for the pathway
         p_value = pathway_pvalues.get(pathway, 1.0)
 
-        # Determine if the pathway is significant
-        is_significant = p_value <= FDR_THRESHOLD
-
-        # Determine trend based on mean score and significance
-        if mean_score > 0:
-            trend = "Up*"
-        elif mean_score < 0:
-            trend = "Down*"
-        else:
-            trend = "Neutral"
-
-        # Remove asterisk if not significant
-        if not is_significant:
-            trend = trend.rstrip('*')
-
         # Compile the results
         result = {
             "Mean": mean_score,
             "P-value": p_value,
-            "Trend": trend,
         }
 
         return result
 
-    except KeyError as e:
-        logger.error(f"Missing expected data in pathway processing: {e}")
-        raise
     except Exception as e:
         logger.error(f"An error occurred while processing pathway '{pathway}': {e}")
         raise
-
-
-def filter_experiment_data(condition_data_df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Filter and preprocess experimental data.
-
-    Parameters:
-    - condition_data_df: Raw condition data DataFrame.
-
-    Returns:
-    - pd.DataFrame: Filtered and preprocessed DataFrame.
-    """
-    experiment_data_filtered_df = condition_data_df[
-        condition_data_df['Score'] != 0
-    ].copy()
-    experiment_data_filtered_df['GeneID'] = experiment_data_filtered_df[
-        'GeneID'
-    ].astype(int)
-    experiment_data_filtered_df['Score'] = pd.to_numeric(
-        experiment_data_filtered_df['Score'], downcast='float'
-    )
-    experiment_data_filtered_df['P-value'] = pd.to_numeric(
-        experiment_data_filtered_df['P-value'], downcast='float'
-    )
-    experiment_data_filtered_df['Symbol'] = experiment_data_filtered_df[
-        'Symbol'
-    ].astype('category')
-    return experiment_data_filtered_df
 
 
 def process_condition(
@@ -586,15 +508,16 @@ def process_condition(
         # Load pathways and filter based on min and max gene counts
         pathways_with_many_genes = load_pathways_genes(settings.pathway_file_dir)
 
-        # Filter and preprocess experimental data to obtain original scores
-        experiment_data_filtered_df = filter_experiment_data(condition_data_df)
+        # Ensure correct data types for GeneID and Score
+        condition_data_df["GeneID"] = condition_data_df["GeneID"].astype(str)
+        condition_data_df["Score"] = condition_data_df["Score"].astype(np.float32)
 
-        # Create scores dictionary with signs
+        # Create scores dictionary with consistent types
         scores = {
             gene_id: score
             for gene_id, score in zip(
-                experiment_data_filtered_df["GeneID"],
-                experiment_data_filtered_df["Score"],
+                condition_data_df["GeneID"],
+                condition_data_df["Score"],
             )
         }
 
@@ -602,10 +525,10 @@ def process_condition(
 
         # Filter pathways based on gene counts and intersection with scored genes
         genes_by_pathway = {
-            pathway: set(genes).intersection(scores_keys)
+            pathway: set(map(str, genes)).intersection(scores_keys)
             for pathway, genes in pathways_with_many_genes.items()
             if settings.minimum_gene_per_pathway
-            <= len(set(genes).intersection(scores_keys))
+            <= len(set(map(str, genes)).intersection(scores_keys))
             <= settings.maximum_gene_per_pathway
         }
 
@@ -632,4 +555,5 @@ def process_condition(
             exc_info=True,
         )
         raise
+
 

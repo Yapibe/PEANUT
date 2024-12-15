@@ -2,6 +2,12 @@ import numpy as np
 import pandas as pd
 from scipy.stats import ks_2samp, mannwhitneyu, rankdata
 from statsmodels.stats.multitest import multipletests
+import multiprocessing
+from functools import partial
+from typing import Dict, List, Tuple
+import logging
+
+logger = logging.getLogger(__name__)
 
 def compute_mw_python(
     experiment_ranks: np.ndarray, control_ranks: np.ndarray
@@ -22,26 +28,25 @@ def compute_mw_python(
     return U, p_value
 
 
-def global_gene_ranking(scores: dict) -> pd.Series:
+def global_gene_ranking(scores: Dict[int, float]) -> pd.Series:
     """
     Rank all genes globally based on their scores.
 
     Parameters:
-    - scores (dict): Mapping of gene IDs to their scores and p-values.
+    - scores (Dict[int, float]): Mapping of gene IDs to their scores.
 
     Returns:
     - pd.Series: Series with gene IDs as index and their global ranks as values.
     """
     gene_ids = list(scores.keys())
-    gene_scores = np.array(
-        [score[0] for score in scores.values()], dtype=np.float64
-    )
+    gene_scores = np.array(list(scores.values()), dtype=np.float64)
 
     # Rank scores (higher scores get higher rank numbers)
     ranks = rankdata(-gene_scores, method="average")
     global_ranking = pd.Series(ranks, index=gene_ids)
 
     return global_ranking
+
 
 
 def kolmogorov_smirnov_test_with_ranking(
@@ -75,70 +80,116 @@ def kolmogorov_smirnov_test_with_ranking(
     return result.pvalue
 
 
-def perform_permutation_test(filtered_pathways: dict, genes_by_pathway: dict, scores: dict, n_iterations: int = 10000, pval_threshold: float = 0.05) -> dict:
+def perform_permutation_for_pathway(
+    args: Tuple[str, Dict],
+    genes_by_pathway: Dict[str, List[int]],
+    scores: Dict[int, Tuple[float, float]],
+    score_values: np.ndarray,
+    n_iterations: int,
+    pval_threshold: float
+) -> Tuple[str, Dict]:
     """
-    Perform a permutation test to assess the significance of the observed pathway scores.
-    Updates pathways with adjusted permutation p-values and adds a boolean flag for significance.
-    
+    Perform permutation test for a single pathway.
+
+    Returns:
+    - Tuple containing pathway name and updated data.
+    """
+    pathway, data = args  # Unpack the tuple
+    pathway_genes = set(genes_by_pathway[pathway])
+    valid_genes = pathway_genes.intersection(scores.keys())
+    pathway_size = len(valid_genes)
+
+    if pathway_size == 0:
+        logger.warning(f"No valid genes found for pathway '{pathway}'. Skipping permutation test.")
+        data['Permutation p-val'] = np.nan
+        data['permutation_significant'] = False
+        return pathway, data
+
+    # Calculate the observed mean score for the pathway
+    observed_mean = np.mean([scores[gene_id] for gene_id in valid_genes])
+
+    # Generate null distribution for this pathway size
+    permuted_means = np.array([
+        np.mean(np.random.choice(score_values, size=pathway_size, replace=False))
+        for _ in range(n_iterations)
+    ])
+    empirical_p_val = np.mean(permuted_means >= observed_mean)
+
+    # Temporary: Assign raw p-value
+    data['Permutation p-val'] = empirical_p_val
+    data['permutation_significant'] = empirical_p_val <= pval_threshold
+
+    return pathway, data
+
+
+def perform_permutation_test_parallel(
+    filtered_pathways: Dict[str, Dict],
+    genes_by_pathway: Dict[str, List[int]],
+    scores: Dict[int, Tuple[float, float]],
+    n_iterations: int = 10000,
+    pval_threshold: float = 0.05
+) -> Dict[str, Dict]:
+    """
+    Perform permutation tests in parallel for all pathways.
+
     Parameters:
-    - filtered_pathways (dict): Dictionary of pathways with their details.
-    - genes_by_pathway (dict): Mapping of pathway names to their gene sets.
-    - scores (dict): Mapping of gene IDs to their scores.
+    - filtered_pathways (Dict[str, Dict]): Dictionary of pathways with their details.
+    - genes_by_pathway (Dict[str, List[int]]): Mapping of pathway names to their gene sets.
+    - scores (Dict[int, Tuple[float, float]]): Mapping of gene IDs to their scores.
     - n_iterations (int): Number of permutations to perform.
     - pval_threshold (float): Threshold for adjusted p-values to determine significance.
-    
+
     Returns:
-    - dict: Updated filtered_pathways with permutation p-values and significance flags.
+    - Dict[str, Dict]: Updated filtered_pathways with permutation p-values and significance flags.
     """
+    if not filtered_pathways:
+        logger.info("No pathways to test with the permutation test.")
+        return {}
+
+    # Extract score values for permutation
+    score_values = np.array(list(scores.values()))
+
+    # Prepare arguments for parallel processing
+    pathways = list(filtered_pathways.keys())
+    pathway_data = [(pathway, filtered_pathways[pathway]) for pathway in pathways]
     
-    score_values = np.array([score[0] for score in scores.values()])
-    
-    # Store observed means and p-values for all pathways
-    observed_means = []
-    raw_p_values = []
-    pathways_list = []
-    valid_pathways = []
-    
-    for pathway, data in filtered_pathways.items():
-        pathway_genes = genes_by_pathway[pathway]
-    
-        # Find the intersection of pathway genes with available scores
-        valid_genes = pathway_genes.intersection(scores.keys())
-        pathway_size = len(valid_genes)
-    
-        if pathway_size == 0:
-            data['Permutation p-val'] = np.nan
-            data['permutation_significant'] = False
-            continue
-    
-        # Calculate the observed mean score for the pathway
-        observed_mean = np.mean([scores[gene_id][0] for gene_id in valid_genes])
-    
-        # Generate null distribution for this pathway size
-        permuted_means = np.array([
-            np.mean(np.random.choice(score_values, size=pathway_size, replace=False))
-            for _ in range(n_iterations)
-        ])
-        empirical_p_val = np.mean(permuted_means >= observed_mean)
-    
-        # Collect data for multiple testing correction
-        observed_means.append(observed_mean)
-        raw_p_values.append(empirical_p_val)
-        pathways_list.append(pathway)
-        valid_pathways.append((pathway, data))
-    
-    # Adjust p-values for multiple testing using Benjamini-Hochberg
+    pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+
+    func = partial(
+        perform_permutation_for_pathway,
+        genes_by_pathway=genes_by_pathway,
+        scores=scores,
+        score_values=score_values,
+        n_iterations=n_iterations,
+        pval_threshold=pval_threshold
+    )
+
+    results = pool.map(func, pathway_data)
+    pool.close()
+    pool.join()
+
+    # Collect results
+    for pathway, data in results:
+        filtered_pathways[pathway] = data
+
+    # Adjust p-values using Benjamini-Hochberg method
+    raw_p_values = [
+        data['Permutation p-val'] for pathway, data in filtered_pathways.items()
+        if not np.isnan(data['Permutation p-val'])
+    ]
+
     if raw_p_values:
         adjusted_pvals = multipletests(raw_p_values, method='fdr_bh')[1]
-    
-        # Update pathways with adjusted p-values and significance flags
-        for i, (pathway, data) in enumerate(valid_pathways):
-            adjusted_pval = adjusted_pvals[i]
-            data['Permutation p-val'] = adjusted_pval
-            data['permutation_significant'] = adjusted_pval <= pval_threshold
+        idx = 0
+        for pathway, data in filtered_pathways.items():
+            if not np.isnan(data['Permutation p-val']):
+                data['Permutation p-val'] = adjusted_pvals[idx]
+                data['permutation_significant'] = adjusted_pvals[idx] <= pval_threshold
+                idx += 1
     else:
+        logger.info("No valid p-values obtained from permutation test.")
         # Set permutation_significant to False for all pathways
         for data in filtered_pathways.values():
             data['permutation_significant'] = False
-    
+
     return filtered_pathways

@@ -86,6 +86,7 @@
       padding: 10px;
       border: 1px solid #ccc;
       border-radius: 5px;
+      text-align: left;
     }
     .advanced-toggle {
       cursor: pointer;
@@ -112,6 +113,52 @@
       opacity: 0.7;
       pointer-events: none;
     }
+
+    .advanced-settings input[type="checkbox"] {
+        margin-top: 5px;
+    }
+
+    /* Optional: Adjust the spacing between the checkbox and the next element */
+    .advanced-settings label:nth-of-type(1) {
+        margin-bottom: 5px;
+    }
+
+    /* Style for the form group containing the checkbox and label */
+    .form-group {
+        display: flex;
+        align-items: center;
+        margin-top: 10px;
+        opacity: 1; /* Default opacity */
+        transition: opacity 0.5s;
+    }
+
+    /* Style the checkbox */
+    .form-group input[type="checkbox"] {
+        margin-right: 10px; /* Space between checkbox and label */
+        width: auto; /* Maintain default checkbox size */
+    }
+
+    /* Style the label for the checkbox */
+    .form-group label {
+        font-weight: bold;
+    }
+
+    /* Ensure other labels are block elements with consistent spacing */
+    .advanced-settings label {
+        display: block;
+        margin-top: 10px;
+        font-weight: bold;
+    }
+
+    /* Style the number inputs consistently */
+    .advanced-settings input[type="number"] {
+        width: 100%;
+        padding: 8px;
+        margin-top: 5px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        box-sizing: border-box;
+    }
   </style>
 </head>
 <body>
@@ -130,7 +177,7 @@
       <p><strong>Key Features:</strong></p>
       <ul>
         <li>
-          <strong>Simultaneous Analysis:</strong> Run multiple conditions or datasets simultaneously, allowing for direct comparisons of results across conditions or methods. For example, GSEA and PEANUT analyses can be executed side-by-side to easily compare their outputs.
+          <strong>Simultaneous Analysis:</strong> Run multiple conditions or datasets simultaneously, allowing for direct comparisons of results across conditions or methods. Furthermore, GSEA and PEANUT analyses can be executed side-by-side to easily compare their outputs.
         </li>
         <li>
           <strong>Propagation Alpha:</strong> Control the depth of network propagation. Higher alpha values prioritize immediate interactions, while lower values enable a broader exploration of the network.
@@ -143,17 +190,8 @@
         </li>
       </ul>
     
-      <p><strong>Why Choose PEANUT?</strong></p>
-      <p>
-        PEANUT represents a significant advancement in pathway enrichment by addressing limitations of traditional methods like GSEA. It integrates network propagation, providing biologically relevant insights by contextualizing gene expression data within the broader connectivity of PPI networks. 
-      </p>
-    
-      <p>
-        Whether you're exploring disease mechanisms, functional gene sets, or novel biological pathways, PEANUT empowers you to gain deeper insights with precision and ease.
-      </p>
-    
       <p class="info">
-        <em>Last updated: Dec 3, 2024</em>
+        <em>Last updated: {{ current_date }}</em>
       </p>
     </div>
     
@@ -168,16 +206,29 @@
         <option value="H_sapiens">Homo Sapiens (PPI)</option>
       </select>
 
+      <!-- Network Selection Section -->
+      <div class="form-section">
+        <label for="network">Network</label>
+        <select id="network" name="network" required>
+          <option value="Anat">Anat</option>
+          <option value="HumanNet">HumanNet</option>
+          <option value="custom">Upload Custom Network</option>
+        </select>
+
+        <!-- Custom Network Upload (hidden by default) -->
+        <div id="custom_network_section" style="display: none;">
+          <label for="network_file">Upload Network File (TSV format):</label>
+          <input type="file" id="network_file" name="network_file" accept=".tsv,.txt">
+          <p class="help-text">File should be tab-separated with two columns representing gene pairs.</p>
+        </div>
+      </div>
+
       <label for="alpha">Propagation alpha</label>
-      <input type="number" id="alpha" name="alpha" step="0.1"
-             min="0" value="1" required>
-
-      <label for="network">Network</label>
-      <select id="network" name="network" required>
-        <option value="Anat">Anat</option>
-        <option value="HumanNet">HumanNet</option>
+      <select id="alpha" name="alpha" required>
+        <option value="0.1">0.1</option>
+        <option value="0.2">0.2</option>
       </select>
-
+      
       <label for="pathway_file">Gene Set</label>
       <select id="pathway_file" name="pathway_file" required>
         <option value="kegg">KEGG</option>
@@ -185,33 +236,49 @@
         <option value="c2">C2</option>
       </select>
 
-      <label for="files">Input Preranked Tables (Excel format: .xlsx, .xls)</label>
+      <label for="files">Input Preranked Tables</label>
+      <p>
+        Supported Formats:
+        <a href="http://software.broadinstitute.org/cancer/software/gsea/wiki/index.php/Data_formats#RNK:_Ranked_list_file_format_.28.2A.rnk.29" target="_blank">
+          RNK
+        </a> or XLSX (Columns: GeneID, Score)
+      </p>
+      <input type="file" id="files" name="files" accept=".xlsx,.xls,.rnk" multiple required>
 
-      <div>
-        <input type="file" id="files" name="files" accept=".xlsx,.xls" multiple required>
-      </div>
-
-      <div class="advanced-toggle"
-           onclick="toggleAdvancedSettings()">
+      
+      <div class="advanced-toggle" onclick="toggleAdvancedSettings()">
         Advanced Settings ▼
-      </div>
-      <div class="advanced-settings" id="advancedSettings">
+    </div>
+    <div class="advanced-settings" id="advancedSettings">
+        <div class="form-group">
+            <input type="checkbox" id="run_gsea" name="run_gsea" onclick="toggleNetworkRestriction()">
+            <label for="run_gsea">Run Additional GSEA Analysis</label>
+        </div>
+    
+        <div class="form-group">
+            <input type="checkbox" id="network_restriction" name="network_restriction" disabled>
+            <label for="network_restriction">Network Restriction</label>
+        </div>
+    
         <label for="min_genes_per_pathway">
-          Minimum Genes per Pathway
+            Minimum Genes per Pathway
         </label>
         <input type="number" id="min_genes_per_pathway"
                name="min_genes_per_pathway" value="15">
-
+    
         <label for="max_genes_per_pathway">
-          Maximum Genes per Pathway
+            Maximum Genes per Pathway
         </label>
         <input type="number" id="max_genes_per_pathway"
                name="max_genes_per_pathway" value="500">
-
-        <label for="fdr_threshold">FDR threshold</label>
+    
+        <label for="fdr_threshold">
+            FDR Threshold
+        </label>
         <input type="number" id="fdr_threshold" name="fdr_threshold"
                step="0.01" min="0" value="0.05">
-      </div>
+    </div>
+    
 
       <button type="submit" id="submitButton">Submit Pathway Analysis</button>
       <button type="reset">Clear Form</button>
@@ -318,16 +385,16 @@
 
         // Collect form data except the files
         Array.from(form.elements).forEach(element => {
-          if (element.name && element.type !== 'file') {
-            formData.append(element.name, element.value);
-          }
+            if (element.name && element.type !== 'file') {
+               formData.append(element.name, element.type === 'checkbox' ? element.checked : element.value);
+            }
         });
 
         // Collect files from the file input
         const filesInput = document.getElementById('files');
         if (filesInput.files.length === 0) {
           alert('Please select at least one file.');
-          return;
+          return
         }
         for (let i = 0; i < filesInput.files.length; i++) {
           formData.append('files', filesInput.files[i]);
@@ -408,7 +475,45 @@
     document.addEventListener('DOMContentLoaded', () => {
       toggleClearButton(); 
     });
+    function toggleNetworkRestriction() {
+        const runGseaCheckbox = document.getElementById('run_gsea');
+        const networkRestrictionCheckbox = document.getElementById('network_restriction');
 
+        if (runGseaCheckbox.checked) {
+            networkRestrictionCheckbox.disabled = false;
+            networkRestrictionCheckbox.parentElement.style.opacity = '1';
+        } else {
+            networkRestrictionCheckbox.checked = false;
+            networkRestrictionCheckbox.disabled = true;
+            networkRestrictionCheckbox.parentElement.style.opacity = '0.6'; // Grayed out
+        }
+    }
+
+    // Initialize the state on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        toggleNetworkRestriction();
+    });
+
+    // Add this to your existing script section
+    document.addEventListener('DOMContentLoaded', function() {
+      const networkSelect = document.getElementById('network');
+      const customNetworkSection = document.getElementById('custom_network_section');
+      const networkFileInput = document.getElementById('network_file');
+
+      function updateNetworkSection() {
+        if (networkSelect.value === 'custom') {
+          customNetworkSection.style.display = 'block';
+          networkFileInput.setAttribute('required', '');
+        } else {
+          customNetworkSection.style.display = 'none';
+          networkFileInput.removeAttribute('required');
+        }
+      }
+
+      networkSelect.addEventListener('change', updateNetworkSection);
+      // Initialize the form state
+      updateNetworkSection();
+    });
   </script>
 </body>
 </html>

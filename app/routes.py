@@ -1,7 +1,7 @@
 import logging
 import uuid
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Optional
 from pathlib import Path
 from fastapi import (
     APIRouter,
@@ -14,7 +14,7 @@ from fastapi import (
 )
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
-
+from .utils import validate_rnk_file, validate_xlsx_file, validate_network_file
 from .models import JobStatus, PipelineOutput, SettingsInput
 from .pipeline_runner import run_pipeline
 
@@ -33,63 +33,89 @@ job_storage = {}
 async def read_index(request: Request):
     """Render the index page."""
     logger.debug(f"Root Path: {request.scope.get('root_path')}")
-    return templates.TemplateResponse("index.html", {"request": request, "url_for": request.url_for})
+    current_date = datetime.now().strftime("%b %d, %Y")
+    return templates.TemplateResponse("index.html", {"request": request, "url_for": request.url_for, "current_date": current_date})
 
 @router.post("/run-pipeline", response_model=PipelineOutput)
 async def execute_pipeline(
     background_tasks: BackgroundTasks,
     files: List[UploadFile] = File(...),
+    network_type: str = Form(...),
+    network_file: Optional[UploadFile] = None,
+    network: Optional[str] = None,
     test_name: str = Form(...),
     species: str = Form(...),
     alpha: float = Form(...),
-    network: str = Form(...),
     pathway_file: str = Form(...),
     min_genes_per_pathway: int = Form(None),
     max_genes_per_pathway: int = Form(None),
-    fdr_threshold: float = Form(...)
+    fdr_threshold: float = Form(...),
+    run_gsea: bool = Form(False),
+    restrict_to_network: bool = Form(False)
 ):
     """Execute the pipeline with the given parameters."""
     logger.info("Received request to run pipeline")
-    logger.info(
-        f"Files: {[file.filename for file in files]}, "
-        f"Test Name: {test_name}, Species: {species}, Alpha: {alpha}, "
-        f"Network: {network}, Pathway File: {pathway_file}, "
-        f"Min Genes per Pathway: {min_genes_per_pathway}, "
-        f"Max Genes per Pathway: {max_genes_per_pathway}, "
-        f"FDR Threshold: {fdr_threshold}"
-    )
-
+    
     try:
+        # Validate network selection
+        if network_type not in ['default', 'custom']:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid network type. Must be either 'default' or 'custom'."
+            )
+        
+        # Handle network validation
+        custom_network_df = None
+        if network_type == 'custom':
+            if not network_file:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Network file is required when using custom network."
+                )
+            network_content = await network_file.read()
+            custom_network_df = await validate_network_file(network_content, network_file.filename)
+        elif network_type == 'default' and not network:
+            raise HTTPException(
+                status_code=400,
+                detail="Network selection is required when using default network."
+            )
+
+        # Process input files
+        file_dfs = []
+        filenames = []
+        for file in files:
+            content = await file.read()
+            if file.filename.endswith('.rnk'):
+                df = await validate_rnk_file(content, file.filename)
+            else:
+                df = await validate_xlsx_file(content, file.filename)
+            file_dfs.append(df)
+            filenames.append(file.filename)
+
+        # Create settings object
         settings = SettingsInput(
             test_name=test_name,
             species=species,
             alpha=alpha,
-            network=network,
+            network_type=network_type,
+            network=network if network_type == 'default' else None,
+            custom_network_df=custom_network_df,
             pathway_file=pathway_file,
             min_genes_per_pathway=min_genes_per_pathway,
             max_genes_per_pathway=max_genes_per_pathway,
-            fdr_threshold=fdr_threshold
+            fdr_threshold=fdr_threshold,
+            run_gsea=run_gsea,
+            restrict_to_network=restrict_to_network
         )
 
-        job_code = str(uuid.uuid4())[:8]
-        job_storage[job_code] = {
-            "status": "Processing",
-            "output_file": None,
-            "expiry": datetime.now() + timedelta(days=7),
-        }
+        # Generate job code and set up storage
+        job_code = str(uuid.uuid4())
+        job_storage[job_code] = {"status": "Running"}
 
-        # Read file contents
-        file_contents = []
-        filenames = []
-        for file in files:
-            content = await file.read()
-            file_contents.append(content)
-            filenames.append(file.filename)
-
-        # Run pipeline in the background
+        # Run pipeline in background
         background_tasks.add_task(
             run_pipeline,
-            file_contents,
+            file_dfs,
             filenames,
             settings,
             job_storage,
@@ -97,11 +123,12 @@ async def execute_pipeline(
         )
 
         return PipelineOutput(
-            result="Job submitted successfully", job_code=job_code
+            result="Pipeline execution started",
+            job_code=job_code,
         )
 
     except Exception as e:
-        logger.error(f"Error occurred while running pipeline: {e}")
+        logger.error(f"Error in execute_pipeline: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -12,126 +12,11 @@ from .statistical_methods import (
     compute_mw_python,
     global_gene_ranking,
     kolmogorov_smirnov_test_with_ranking,
+    perform_permutation_test_parallel
 )
 from .utils import load_pathways_and_propagation_scores
 
 logger = logging.getLogger(__name__)
-
-import multiprocessing
-from functools import partial
-
-def perform_permutation_for_pathway(
-    args: Tuple[str, Dict],
-    genes_by_pathway: Dict[str, List[int]],
-    scores: Dict[int, Tuple[float, float]],
-    score_values: np.ndarray,
-    n_iterations: int,
-    pval_threshold: float
-) -> Tuple[str, Dict]:
-    """
-    Perform permutation test for a single pathway.
-
-    Returns:
-    - Tuple containing pathway name and updated data.
-    """
-    pathway, data = args  # Unpack the tuple
-    pathway_genes = set(genes_by_pathway[pathway])
-    valid_genes = pathway_genes.intersection(scores.keys())
-    pathway_size = len(valid_genes)
-
-    if pathway_size == 0:
-        logger.warning(f"No valid genes found for pathway '{pathway}'. Skipping permutation test.")
-        data['Permutation p-val'] = np.nan
-        data['permutation_significant'] = False
-        return pathway, data
-
-    # Calculate the observed mean score for the pathway
-    observed_mean = np.mean([scores[gene_id][0] for gene_id in valid_genes])
-
-    # Generate null distribution for this pathway size
-    permuted_means = np.array([
-        np.mean(np.random.choice(score_values, size=pathway_size, replace=False))
-        for _ in range(n_iterations)
-    ])
-    empirical_p_val = np.mean(permuted_means >= observed_mean)
-
-    # Temporary: Assign raw p-value
-    data['Permutation p-val'] = empirical_p_val
-    data['permutation_significant'] = empirical_p_val <= pval_threshold
-
-    return pathway, data
-
-
-def perform_permutation_test_parallel(
-    filtered_pathways: Dict[str, Dict],
-    genes_by_pathway: Dict[str, List[int]],
-    scores: Dict[int, Tuple[float, float]],
-    n_iterations: int = 10000,
-    pval_threshold: float = 0.05
-) -> Dict[str, Dict]:
-    """
-    Perform permutation tests in parallel for all pathways.
-
-    Parameters:
-    - filtered_pathways (Dict[str, Dict]): Dictionary of pathways with their details.
-    - genes_by_pathway (Dict[str, List[int]]): Mapping of pathway names to their gene sets.
-    - scores (Dict[int, Tuple[float, float]]): Mapping of gene IDs to their scores.
-    - n_iterations (int): Number of permutations to perform.
-    - pval_threshold (float): Threshold for adjusted p-values to determine significance.
-
-    Returns:
-    - Dict[str, Dict]: Updated filtered_pathways with permutation p-values and significance flags.
-    """
-    if not filtered_pathways:
-        logger.info("No pathways to test with the permutation test.")
-        return {}
-
-    score_values = np.array([score[0] for score in scores.values()])
-
-    # Prepare arguments for parallel processing
-    pathways = list(filtered_pathways.keys())
-    pathway_data = [(pathway, filtered_pathways[pathway]) for pathway in pathways]
-    
-    pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
-
-    func = partial(
-        perform_permutation_for_pathway,
-        genes_by_pathway=genes_by_pathway,
-        scores=scores,
-        score_values=score_values,
-        n_iterations=n_iterations,
-        pval_threshold=pval_threshold
-    )
-
-    results = pool.map(func, pathway_data)
-    pool.close()
-    pool.join()
-
-    # Collect results
-    for pathway, data in results:
-        filtered_pathways[pathway] = data
-
-    # Adjust p-values using Benjamini-Hochberg method
-    raw_p_values = [
-        data['Permutation p-val'] for pathway, data in filtered_pathways.items()
-        if not np.isnan(data['Permutation p-val'])
-    ]
-
-    if raw_p_values:
-        adjusted_pvals = multipletests(raw_p_values, method='fdr_bh')[1]
-        idx = 0
-        for pathway, data in filtered_pathways.items():
-            if not np.isnan(data['Permutation p-val']):
-                data['Permutation p-val'] = adjusted_pvals[idx]
-                data['permutation_significant'] = adjusted_pvals[idx] <= pval_threshold
-                idx += 1
-    else:
-        logger.info("No valid p-values obtained from permutation test.")
-        # Set permutation_significant to False for all pathways
-        for data in filtered_pathways.values():
-            data['permutation_significant'] = False
-
-    return filtered_pathways
 
 def perform_statist_ks(
     settings: Settings,
@@ -146,7 +31,7 @@ def perform_statist_ks(
     - settings (Settings): General settings for the experiment.
     - condition_settings (ConditionSettings): Condition-specific settings.
     - genes_by_pathway (Dict[str, List[int]]): Mapping of pathways to their constituent genes.
-    - scores (Dict[int, Tuple[float, float]]): Mapping of gene IDs to their scores and p-values.
+    - scores (Dict[int, Tuple[float, float]]): Mapping of gene IDs to their scores.
 
     Returns:
     - None
@@ -199,7 +84,7 @@ def perform_statist_mann_whitney(
 
     Parameters:
     - condition_settings (ConditionSettings): Condition-specific settings.
-    - scores (Dict[int, Tuple[float, float]]): Mapping of gene IDs to their scores and p-values.
+    - scores (Dict[int, Tuple[float, float]]): Mapping of gene IDs to their scores.
 
     Returns:
     - None
@@ -209,7 +94,7 @@ def perform_statist_mann_whitney(
 
         # Prepare for ranking
         filtered_scores = np.array(
-            [scores[gene_id][0] for gene_id in condition_settings.filtered_genes],
+            [scores[gene_id] for gene_id in condition_settings.filtered_genes],
             dtype=np.float32
         )
 
@@ -303,25 +188,17 @@ def perform_enrichment(
     - None
     """
     try:
-        genes_by_pathway, scores = (
-            load_pathways_and_propagation_scores(settings, scores_df)
-        )
+        genes_by_pathway, scores = load_pathways_and_propagation_scores(settings, scores_df)
 
         if settings.run_gsea:
             # Prepare data for GSEA
-            gene_expression_data = pd.DataFrame(
-                {
-                    "gene": list(scores.keys()),
-                    "logFC": [score[0] for score in scores.values()],
-                }
-            )
+            gene_expression_data = pd.DataFrame({
+                "gene": list(scores.keys()),
+                "logFC": list(scores.values()),  # Use scores directly as logFC
+            })
 
-            gene_expression_data["gene"] = gene_expression_data[
-                "gene"
-            ].astype(str)
-            gene_expression_data.sort_values(
-                by="logFC", ascending=False, inplace=True
-            )
+            gene_expression_data["gene"] = gene_expression_data["gene"].astype(str)
+            gene_expression_data.sort_values(by="logFC", ascending=False, inplace=True)
 
             # Run GSEA
             gsea_results = gp.prerank(
@@ -329,11 +206,27 @@ def perform_enrichment(
                 gene_sets=genes_by_pathway,
                 verbose=True,
                 no_plot=True,
+                min_size=settings.minimum_gene_per_pathway,
+                max_size=settings.maximum_gene_per_pathway,
             )
+        
             # Save results
-            gsea_results.res2d.to_excel(
-                condition_settings.output_path
-            )
+            gsea_results.res2d.reset_index(inplace=True)
+            gsea_results.res2d.index = gsea_results.res2d.index + 1
+            gsea_results.res2d.rename(columns={'index': 'Rank'}, inplace=True)
+            gsea_results.res2d.to_excel(condition_settings.output_path)
+
+            # Add pathway statistics to condition_settings
+            condition_settings.pathways_statistics = {
+                row['Term']: {
+                    'Rank': row['Rank'],
+                    'NES': row['NES'],
+                    'FDR q-val': row['FDR q-val'],
+                    'genes': genes_by_pathway.get(row['Term'], []),
+                    'gsea_significant': row['FDR q-val'] < settings.FDR_THRESHOLD
+                }
+                for _, row in gsea_results.res2d.iterrows()
+            }
         else:
             # Perform Kolmogorov-Smirnov test
             perform_statist_ks(settings, condition_settings, genes_by_pathway, scores)
