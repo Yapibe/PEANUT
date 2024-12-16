@@ -244,41 +244,41 @@
         </a> or XLSX (Columns: GeneID, Score)
       </p>
       <input type="file" id="files" name="files" accept=".xlsx,.xls,.rnk" multiple required>
-
+    
       
       <div class="advanced-toggle" onclick="toggleAdvancedSettings()">
         Advanced Settings ▼
-    </div>
+      </div>
     <div class="advanced-settings" id="advancedSettings">
-        <div class="form-group">
-            <input type="checkbox" id="run_gsea" name="run_gsea" onclick="toggleNetworkRestriction()">
-            <label for="run_gsea">Run Additional GSEA Analysis</label>
-        </div>
-    
-        <div class="form-group">
-            <input type="checkbox" id="network_restriction" name="network_restriction" disabled>
-            <label for="network_restriction">Network Restriction</label>
-        </div>
-    
-        <label for="min_genes_per_pathway">
-            Minimum Genes per Pathway
-        </label>
-        <input type="number" id="min_genes_per_pathway"
+          <div class="form-group">
+              <input type="checkbox" id="run_gsea" name="run_gsea" onclick="toggleNetworkRestriction()">
+              <label for="run_gsea">Run Additional GSEA Analysis</label>
+          </div>
+      
+          <div class="form-group">
+              <input type="checkbox" id="network_restriction" name="network_restriction" disabled>
+              <label for="network_restriction">Network Restriction</label>
+          </div>
+      
+          <label for="min_genes_per_pathway">
+              Minimum Genes per Pathway
+          </label>
+          <input type="number" id="min_genes_per_pathway"
                name="min_genes_per_pathway" value="15">
-    
-        <label for="max_genes_per_pathway">
-            Maximum Genes per Pathway
-        </label>
-        <input type="number" id="max_genes_per_pathway"
+      
+          <label for="max_genes_per_pathway">
+              Maximum Genes per Pathway
+          </label>
+          <input type="number" id="max_genes_per_pathway"
                name="max_genes_per_pathway" value="500">
-    
-        <label for="fdr_threshold">
-            FDR Threshold
-        </label>
-        <input type="number" id="fdr_threshold" name="fdr_threshold"
+      
+          <label for="fdr_threshold">
+              FDR Threshold
+          </label>
+          <input type="number" id="fdr_threshold" name="fdr_threshold"
                step="0.01" min="0" value="0.05">
-    </div>
-    
+      </div>
+      
 
       <button type="submit" id="submitButton">Submit Pathway Analysis</button>
       <button type="reset">Clear Form</button>
@@ -308,9 +308,9 @@
   <script>
     // Retrieve the root path from the meta tag
     const ROOT_PATH = document.querySelector('meta[name="root-path"]').content;
-  
+
     let statusCheckInterval = null;
-  
+
     function updateJobStatus(result, jobCode) {
       const resultDiv = document.getElementById('result');
       resultDiv.style.display = 'block';
@@ -320,9 +320,9 @@
         <p id="jobStatus">Status: ${result.status}</p>
         <p id="downloadLink"></p>
       `;
-  
+
       const downloadElement = document.getElementById('downloadLink');
-  
+
       if (result.status === 'Finished' && result.download_url) {
         downloadElement.innerHTML = `
         <a href="${result.download_url}">Download Results</a>`;
@@ -341,7 +341,7 @@
             Please contact support.</p>`;
       }
     }
-  
+
     function checkJobStatus(jobCode, isNewSubmission = false) {
       fetch(`${ROOT_PATH}/check-status/${jobCode}`)
         .then(response => {
@@ -386,14 +386,14 @@
         // Collect form data except the files
         Array.from(form.elements).forEach(element => {
             if (element.name && element.type !== 'file') {
-               formData.append(element.name, element.type === 'checkbox' ? element.checked : element.value);
+                formData.append(element.name, element.type === 'checkbox' ? element.checked : element.value);
             }
         });
 
         // Collect files from the file input
         const filesInput = document.getElementById('files');
         if (filesInput.files.length === 0) {
-          alert('Please select at least one file.');
+            alert('Please select at least one file.');
           return
         }
         for (let i = 0; i < filesInput.files.length; i++) {
@@ -405,47 +405,47 @@
         submitButton.textContent = "Submitting...";
 
         try {
-          const response = await fetch(`${ROOT_PATH}/run-pipeline`, {
-            method: 'POST',
-            body: formData
-          });
+            const response = await fetch(`${ROOT_PATH}/run-pipeline`, {
+                method: 'POST',
+                body: formData
+            });
 
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
-          const result = await response.json();
-          const resultDiv = document.getElementById('result');
-          resultDiv.style.display = 'block';
-          resultDiv.innerHTML = `
-            <h2>Job Submitted Successfully</h2>
-            <p>Your job code is: <strong>${result.job_code}</strong></p>
-            <p id="jobStatus">Status: Processing</p>
-            <p id="downloadLink"></p>
-          `;
+            const result = await response.json();
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <h2>Job Submitted Successfully</h2>
+                <p>Your job code is: <strong>${result.job_code}</strong></p>
+                <p id="jobStatus">Status: Processing</p>
+                <p id="downloadLink"></p>
+            `;
 
-          document.getElementById('jobStatusForm').style.display = 'none';
-          clearInterval(statusCheckInterval);
-          checkJobStatus(result.job_code, true);
+            document.getElementById('jobStatusForm').style.display = 'none';
+            clearInterval(statusCheckInterval);
+            checkJobStatus(result.job_code, true);
         } catch (error) {
-          console.error('Error:', error);
-          const resultDiv = document.getElementById('result');
-          resultDiv.style.display = 'block';
-          resultDiv.innerHTML = `
-            <p>Error: ${error.message}</p>`;
+            console.error('Error:', error);
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <p>Error: ${error.message}</p>`;
         } finally {
-          submitButton.disabled = false;
-          submitButton.textContent = "Submit";
+            submitButton.disabled = false;
+            submitButton.textContent = "Submit";
         }
       });
 
     document.getElementById('statusForm')
       .addEventListener('submit', (e) => {
-        e.preventDefault();
-        const jobCode = document.getElementById('jobCode').value;
-        clearInterval(statusCheckInterval);
-        checkJobStatus(jobCode, false);
-        document.getElementById('jobStatusForm').style.display = 'none';
+      e.preventDefault();
+      const jobCode = document.getElementById('jobCode').value;
+      clearInterval(statusCheckInterval);
+      checkJobStatus(jobCode, false);
+      document.getElementById('jobStatusForm').style.display = 'none';
       });
 
     function toggleAdvancedSettings() {
@@ -491,7 +491,7 @@
 
     // Initialize the state on page load
     document.addEventListener('DOMContentLoaded', () => {
-        toggleNetworkRestriction();
+      toggleNetworkRestriction();
     });
 
     // Add this to your existing script section
