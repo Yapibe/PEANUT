@@ -5,6 +5,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, Set
 import pandas as pd
+import logging
+
+logger = logging.getLogger(__name__)
+
 @dataclass
 class Settings:
     """General arguments used throughout the pipeline."""
@@ -38,23 +42,39 @@ class Settings:
         self.data_dir = self.root_folder / "Data" / self.species
         self.date = datetime.today().strftime("%d_%m_%Y__%H_%M_%S")
 
-        # Set up matrix path based on create_similarity_matrix flag
-        if self.create_similarity_matrix:
-            user_matrix_dir = self.data_dir / "matrix" / "user_matrix"
-            user_matrix_dir.mkdir(parents=True, exist_ok=True)
-            self.similarity_matrix_path = user_matrix_dir / f"{self.network}_{self.alpha}.npz"
+        # Set up matrix path based on network type and create_similarity_matrix flag
+        if self.network.startswith('custom/'):
+            # For custom networks, use the custom matrix directory
+            matrix_dir = self.data_dir / "matrix" / "custom"
+            matrix_dir.mkdir(parents=True, exist_ok=True)
+            self.similarity_matrix_path = matrix_dir / f"{Path(self.network).stem}_{self.alpha}.npz"
+            logger.info(f"Using custom matrix path: {self.similarity_matrix_path}")
         else:
-            self.similarity_matrix_path = (
-                self.data_dir
-                / "matrix"
-                / f"{self.network}_{self.alpha}.npz"
-            )
-        self.network_file_path = (
-            self.data_dir / "network" / self.network
-        )
-        self.pathway_file_dir = (
-            self.data_dir / "pathways" / self.pathway_file
-        )
+            # For default networks
+            if self.create_similarity_matrix:
+                matrix_dir = self.data_dir / "matrix" / "matrix"
+                matrix_dir.mkdir(parents=True, exist_ok=True)
+                self.similarity_matrix_path = matrix_dir / f"{self.network}_{self.alpha}.npz"
+            else:
+                self.similarity_matrix_path = self.data_dir / "matrix" / f"{self.network}_{self.alpha}.npz"
+            logger.info(f"Using default matrix path: {self.similarity_matrix_path}")
+
+        # Handle network file path
+        if self.network.startswith('custom/'):
+            # For custom networks, use the path provided in the settings
+            self.network_file_path = Path(self.network)
+            logger.info(f"Using custom network file: {self.network_file_path}")
+        else:
+            # For default networks, just use the network name
+            self.network_file_path = self.data_dir / "network" / self.network
+            logger.info(f"Using default network file: {self.network_file_path}")
+
+        # Ensure the network file exists
+        if not self.network_file_path.exists():
+            logger.error(f"Network file not found: {self.network_file_path}")
+            raise FileNotFoundError(f"Network file not found: {self.network_file_path}")
+
+        self.pathway_file_dir = self.data_dir / "pathways" / self.pathway_file
         self.plot_output_path = self.root_folder / "Outputs" / "Plots"
 
 

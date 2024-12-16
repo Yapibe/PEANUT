@@ -1,184 +1,245 @@
 import logging
-import uuid
-from datetime import datetime, timedelta
-from typing import List, Optional
 from pathlib import Path
-from fastapi import (
-    APIRouter,
-    BackgroundTasks,
-    File,
-    Form,
-    HTTPException,
-    UploadFile,
-    Request,
-)
-from fastapi.responses import HTMLResponse, FileResponse
+from typing import Dict, List, Optional
+from fastapi import APIRouter, UploadFile, HTTPException, BackgroundTasks, Request, Form, File
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
-from .utils import validate_rnk_file, validate_xlsx_file, validate_network_file
-from .models import JobStatus, PipelineOutput, SettingsInput
-from .pipeline_runner import run_pipeline
+import pandas as pd
+import uuid
+from datetime import datetime
+import tempfile
 
-router = APIRouter()
+from .models import SettingsInput, JobStatus
+from .utils import validate_network_file, validate_input_file, convert_gmt_to_pathway_format
+from .pipeline_runner import PipelineRunner
 
 logger = logging.getLogger(__name__)
+router = APIRouter()
 
-templates_dir = Path(__file__).resolve().parent / "templates"
-templates = Jinja2Templates(directory=str(templates_dir))
-logger.debug(f"Templates directory: {templates_dir}")
+# Set up templates
+templates = Jinja2Templates(directory="app/templates")
 
-# In-memory storage for job status (replace with database in production)
-job_storage = {}
+# In-memory job storage
+job_storage: Dict[str, Dict] = {}
 
-@router.get("/", response_class=HTMLResponse)
-async def read_index(request: Request):
-    """Render the index page."""
-    logger.debug(f"Root Path: {request.scope.get('root_path')}")
-    current_date = datetime.now().strftime("%b %d, %Y")
-    return templates.TemplateResponse("index.html", {"request": request, "url_for": request.url_for, "current_date": current_date})
-
-@router.post("/run-pipeline", response_model=PipelineOutput)
-async def execute_pipeline(
+@router.post("/run-pipeline")
+async def run_pipeline(
     background_tasks: BackgroundTasks,
-    files: List[UploadFile] = File(...),
-    network_type: str = Form(...),
-    network_file: Optional[UploadFile] = None,
-    network: Optional[str] = None,
-    test_name: str = Form(...),
+    experiment_name: str = Form(...),
     species: str = Form(...),
     alpha: float = Form(...),
+    network: str = Form(...),
     pathway_file: str = Form(...),
-    min_genes_per_pathway: int = Form(None),
-    max_genes_per_pathway: int = Form(None),
-    fdr_threshold: float = Form(...),
+    pathway_file_upload: Optional[UploadFile] = None,
+    min_genes_per_pathway: Optional[int] = Form(15),
+    max_genes_per_pathway: Optional[int] = Form(500),
+    fdr_threshold: float = Form(0.05),
     run_gsea: bool = Form(False),
-    restrict_to_network: bool = Form(False)
+    restrict_to_network: bool = Form(False),
+    plot_title: Optional[str] = Form("Pathway Enrichment"),
+    network_file: Optional[UploadFile] = None,
+    files: List[UploadFile] = File(...)
 ):
-    """Execute the pipeline with the given parameters."""
-    logger.info("Received request to run pipeline")
-    
+    """
+    Endpoint to run the pipeline with the provided settings and input files.
+    """
     try:
-        # Validate network selection
-        if network_type not in ['default', 'custom']:
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid network type. Must be either 'default' or 'custom'."
-            )
+        # Generate unique job code
+        job_code = str(uuid.uuid4())
+        logger.info(f"New job request received. Job code: {job_code}")
         
-        # Handle network validation
-        custom_network_df = None
-        if network_type == 'custom':
-            if not network_file:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Network file is required when using custom network."
-                )
+        # Initialize job storage
+        job_storage[job_code] = {
+            "status": "Processing",
+            "output_file": None,
+            "error": None
+        }
+        
+        # Handle network file if provided
+        if network_file and network == 'custom':
+            logger.debug("Reading custom network file")
             network_content = await network_file.read()
-            custom_network_df = await validate_network_file(network_content, network_file.filename)
-        elif network_type == 'default' and not network:
-            raise HTTPException(
-                status_code=400,
-                detail="Network selection is required when using default network."
+            # Create a new UploadFile with the content
+            new_network_file = UploadFile(
+                filename=network_file.filename,
+                file=pd.io.common.BytesIO(network_content)
             )
+            network_file = new_network_file
+        
+        # Determine if a custom network is being used
+        is_custom_network = network == 'custom' and network_file is not None
 
-        # Process input files
-        file_dfs = []
-        filenames = []
-        for file in files:
-            content = await file.read()
-            if file.filename.endswith('.rnk'):
-                df = await validate_rnk_file(content, file.filename)
-            else:
-                df = await validate_xlsx_file(content, file.filename)
-            file_dfs.append(df)
-            filenames.append(file.filename)
+        # Handle custom pathway file if provided
+        if pathway_file == 'custom' and pathway_file_upload:
+            logger.debug("Processing custom pathway file")
+            
+            # Read the GMT file content
+            content = await pathway_file_upload.read()
+            
+            # Create temporary directory for processing
+            with tempfile.TemporaryDirectory() as temp_dir:
+                temp_path = Path(temp_dir)
+                
+                # Save GMT file temporarily
+                gmt_path = temp_path / "custom.gmt"
+                gmt_path.write_bytes(content)
+                
+                try:
+                    # Create custom pathways directory
+                    custom_pathway_dir = Path("pipeline/Data") / species / "pathways" / "custom"
+                    output_file_path = custom_pathway_dir / f"custom_{experiment_name}.tsv"
+                    
+                    # Convert GMT file to pathway format
+                    convert_gmt_to_pathway_format(gmt_path, output_file_path)
+                    
+                    # Update pathway_file to use the custom file
+                    pathway_file = f"custom/custom_{experiment_name}"
+                    
+                except ValueError as e:
+                    logger.error(f"Error processing GMT file: {str(e)}")
+                    raise HTTPException(
+                        status_code=400,
+                        detail=str(e)
+                    )
 
         # Create settings object
         settings = SettingsInput(
-            test_name=test_name,
+            experiment_name=experiment_name,
             species=species,
             alpha=alpha,
-            network_type=network_type,
-            network=network if network_type == 'default' else None,
-            custom_network_df=custom_network_df,
+            network=network,
+            network_file=network_file,
             pathway_file=pathway_file,
             min_genes_per_pathway=min_genes_per_pathway,
             max_genes_per_pathway=max_genes_per_pathway,
             fdr_threshold=fdr_threshold,
             run_gsea=run_gsea,
-            restrict_to_network=restrict_to_network
+            restrict_to_network=restrict_to_network,
+            create_similarity_matrix=is_custom_network,
+            figure_title=plot_title
         )
-
-        # Generate job code and set up storage
-        job_code = str(uuid.uuid4())
-        job_storage[job_code] = {"status": "Running"}
-
+        
+        # Validate input files
+        file_dfs = []
+        filenames = []
+        for file in files:
+            file_type = file.filename.split('.')[-1].lower()
+            if file_type not in ['rnk', 'xlsx']:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Unsupported file type: {file_type}"
+                )
+            
+            # Read and validate file content
+            content = await file.read()
+            temp_path = Path(f"/tmp/{file.filename}")
+            temp_path.write_bytes(content)
+            
+            try:
+                df = validate_input_file(temp_path, file_type)
+                file_dfs.append(df)
+                filenames.append(file.filename)
+            finally:
+                temp_path.unlink()  # Clean up temporary file
+        
+        # Create pipeline runner
+        runner = PipelineRunner(job_code)
+        
         # Run pipeline in background
         background_tasks.add_task(
-            run_pipeline,
-            file_dfs,
-            filenames,
-            settings,
-            job_storage,
-            job_code,
+            _run_pipeline_task,
+            runner=runner,
+            settings=settings,
+            file_dfs=file_dfs,
+            filenames=filenames,
+            job_storage=job_storage,
+            job_code=job_code
         )
-
-        return PipelineOutput(
-            result="Pipeline execution started",
-            job_code=job_code,
-        )
-
-    except Exception as e:
-        logger.error(f"Error in execute_pipeline: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/check-status/{job_code}", response_model=JobStatus)
-async def check_job_status(request: Request, job_code: str):
-    """Check the status of a job."""
-    try:
-        logger.debug(f"Checking status for job_code: {job_code}")
-        if job_code not in job_storage:
-            logger.warning(f"Job code {job_code} not found in storage.")
-            raise HTTPException(status_code=404, detail="Job not found")
-
-        job = job_storage[job_code]
-        logger.debug(f"Job data: {job}")
-
-        if datetime.now() > job["expiry"]:
-            logger.info(f"Job {job_code} has expired.")
-            del job_storage[job_code]
-            raise HTTPException(status_code=404, detail="Job expired")
-
-        download_url = None
-        if job["status"] == "Finished" and job["output_file"]:
-            # Remove leading slash to prevent double slash in URL
-            clean_file_path = job['output_file'].lstrip('/')
-            # Construct relative download URL based on root_path
-            download_url = f"{request.scope.get('root_path')}/download-file/{clean_file_path}"
-            logger.debug(f"Download URL for job {job_code}: {download_url}")
         
-        return JobStatus(
-            status=job["status"],
-            download_url=download_url,
-        )
+        return {"job_code": job_code}
+        
     except Exception as e:
-        logger.error(f"Error in check_job_status for job_code {job_code}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        logger.error(f"Error processing pipeline request: {str(e)}")
+        raise HTTPException(status_code=422, detail=str(e))
 
-
-@router.get("/download-file/{file_path:path}", name='download_file')  # Added 'name' parameter
-async def download_file(request: Request, file_path: str):
-    """Download a file from the server."""
-    logger.info(f"User requested file: {file_path}")
+async def _run_pipeline_task(
+    runner: PipelineRunner,
+    settings: SettingsInput,
+    file_dfs: List[pd.DataFrame],
+    filenames: List[str],
+    job_storage: Dict,
+    job_code: str
+):
+    """Background task to run the pipeline."""
     try:
-        full_path = Path(file_path).resolve()
-        # Security check to prevent path traversal
-        if not full_path.is_file() or not str(full_path).startswith(str(Path.cwd())):
-            logger.error(f"Invalid file path: {full_path}")
-            raise HTTPException(status_code=404, detail="File not found")
-
-        logger.info(f"Serving file: {full_path}")
-        return FileResponse(str(full_path), filename=full_path.name)
+        # Run pipeline
+        results = await runner.run(settings, file_dfs, filenames)
+        
+        # Update job storage with results
+        job_storage[job_code].update({
+            "status": "Finished",
+            "output_file": str(results),  # results is now a Path object
+            "error": None
+        })
+        
     except Exception as e:
-        logger.error(f"Error occurred while sending file: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Pipeline execution failed for job {job_code}: {str(e)}")
+        job_storage[job_code].update({
+            "status": "Failed",
+            "error": str(e)
+        })
+
+@router.get("/check-status/{job_code}")
+async def check_status(job_code: str) -> JobStatus:
+    """
+    Check the status of a job by its code.
+    """
+    if job_code not in job_storage:
+        raise HTTPException(status_code=404, detail="Job not found")
+        
+    job = job_storage[job_code]
+    
+    # Prepare download URL if job is finished
+    download_url = None
+    if job["status"] == "Finished" and job["output_file"]:
+        download_url = f"/download/{job_code}"
+    
+    return JobStatus(
+        status=job["status"],
+        download_url=download_url,
+        error=job["error"]
+    )
+
+@router.get("/download/{job_code}")
+async def download_results(job_code: str):
+    """
+    Download results for a completed job.
+    """
+    if job_code not in job_storage:
+        raise HTTPException(status_code=404, detail="Job not found")
+        
+    job = job_storage[job_code]
+    if job["status"] != "Finished":
+        raise HTTPException(status_code=400, detail="Job not finished")
+        
+    if not job["output_file"]:
+        raise HTTPException(status_code=404, detail="Output file not found")
+    
+    # Get the experiment name from the output file path
+    output_path = Path(job["output_file"])
+    experiment_name = output_path.stem.split('_')[0]  # Get the first part before underscore
+        
+    return FileResponse(
+        job["output_file"],
+        filename=f"{experiment_name}_results.zip",
+        media_type="application/zip"
+    )
+
+@router.get("/", response_class=HTMLResponse)
+async def read_index(request: Request):
+    """Render the index page."""
+    current_date = datetime.now().strftime("%b %d, %Y")
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request, "current_date": current_date}
+    )

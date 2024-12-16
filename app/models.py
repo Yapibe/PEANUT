@@ -1,36 +1,39 @@
 from typing import Optional
-
-from pydantic import BaseModel
-import pandas as pd
+from fastapi import UploadFile
+from pydantic import BaseModel, Field
 
 
 class SettingsInput(BaseModel):
     """Settings for the pipeline run."""
-    test_name: str
+    experiment_name: str
     species: str
-    create_similarity_matrix: bool
-    # network_type: str  # 'default' or 'custom'
-    network: Optional[str] = None  # Used when network_type is 'default'
-    # custom_network_df: Optional[pd.DataFrame] = None  # Used when network_type is 'custom'
     alpha: float
+    network: str  # Can be 'Anat', 'HumanNet', or 'custom'
+    network_file: Optional[UploadFile] = None  # For custom network file upload
     pathway_file: str
-    min_genes_per_pathway: Optional[int] = None
-    max_genes_per_pathway: Optional[int] = None
-    fdr_threshold: float
+    min_genes_per_pathway: Optional[int] = Field(default=15, ge=1, le=1000)
+    max_genes_per_pathway: Optional[int] = Field(default=500, ge=1, le=5000)
+    fdr_threshold: float = Field(default=0.05, ge=0, le=1)
     run_gsea: bool = False
     restrict_to_network: bool = False
+    create_similarity_matrix: bool = False
+    figure_title: str = "Pathway Enrichment"
+
+    def is_custom_network(self) -> bool:
+        """Check if using a custom network."""
+        return self.network == 'custom' and self.network_file is not None
 
     model_config = {
-        "arbitrary_types_allowed": True  # Allow pandas DataFrame and other complex types
+        "arbitrary_types_allowed": True  # Allow UploadFile and other complex types
     }
+
 
 class PipelineOutput(BaseModel):
     result: str
     job_code: str
 
 
-
 class JobStatus(BaseModel):
     status: str
-    download_url: Optional[str] = None  # Make download_url optional
-
+    download_url: Optional[str] = None
+    error: Optional[str] = None

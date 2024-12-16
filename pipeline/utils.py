@@ -189,42 +189,6 @@ def get_scores(score_path: Path) -> dict:
 
 # ###################################################################READ FUNCTIONS############################################################################
 
-
-def read_temp_scores(file_name: Path) -> dict:
-    """
-    Read scores from a file into a dictionary.
-
-    Args:
-        file_name (Path): Path to the file containing the scores.
-
-    Returns:
-        dict: A dictionary mapping pathways to their scores.
-    """
-    try:
-        scores = pd.read_csv(
-            file_name,
-            sep=" ",
-            header=None,
-            names=["Pathway", "Score"],
-            index_col="Pathway",
-        )
-        return scores["Score"].to_dict()
-        scores = pd.read_csv(
-            file_name,
-            sep=" ",
-            header=None,
-            names=["Pathway", "Score"],
-            index_col="Pathway",
-        )
-        return scores["Score"].to_dict()
-    except FileNotFoundError:
-        logger.error(f"File not found: {file_name}")
-        return {}
-    except Exception as e:
-        logger.error(f"Error reading scores from {file_name}: {e}")
-        return {}
-
-
 def read_network(network_filename: Path) -> nx.Graph:
     """
     Read a network from a file and return a NetworkX graph.
@@ -236,37 +200,40 @@ def read_network(network_filename: Path) -> nx.Graph:
         nx.Graph: A graph object representing the network.
     """
     try:
+        logger.info(f"Reading network from: {network_filename}")
+        if not network_filename.exists():
+            logger.error(f"Network file not found: {network_filename}")
+            raise FileNotFoundError(f"Network file not found: {network_filename}")
+
         network = pd.read_table(
             network_filename, header=None, usecols=[0, 1, 2]
         )
-        return nx.from_pandas_edgelist(network, 0, 1, 2)
+        graph = nx.from_pandas_edgelist(network, 0, 1, 2)
+        logger.info(f"Successfully loaded network with {len(graph.nodes())} nodes and {len(graph.edges())} edges")
+        return graph
     except FileNotFoundError:
         logger.error(f"File not found: {network_filename}")
-        return nx.Graph()
+        raise
     except Exception as e:
         logger.error(f"An error occurred while reading network: {e}")
-        return nx.Graph()
+        raise
 
 
 def read_prior_set(
-    excel_input: Union[str, BytesIO, Path], is_bytes: bool = False
-) -> pd.DataFrame:
+    excel_input: Union[str, BytesIO, Path]) -> pd.DataFrame:
     """
     Read prior data set from an Excel file and apply preprocessing.
 
     Args:
         excel_input (str or BytesIO or Path): Path to the Excel file or a BytesIO object containing the prior data.
-        is_bytes (bool): Flag indicating if the input is a BytesIO object.
 
     Returns:
         pd.DataFrame: DataFrame containing the preprocessed prior data.
     """
     try:
-        if is_bytes:
-            prior_data = pd.read_excel(excel_input, engine="openpyxl")
-        else:
-            prior_data = pd.read_excel(excel_input, engine="openpyxl")
+        prior_data = pd.read_excel(excel_input, engine="openpyxl")
 
+        # Data preprocessing
         prior_data = prior_data.drop_duplicates(subset="GeneID")
         prior_data = prior_data[prior_data["Score"].notna()]
         prior_data = prior_data[prior_data["Score"] != "?"]
@@ -555,5 +522,4 @@ def process_condition(
             exc_info=True,
         )
         raise
-
 

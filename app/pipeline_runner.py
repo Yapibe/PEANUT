@@ -1,53 +1,95 @@
 import logging
-from typing import List
-import pandas as pd
 from pathlib import Path
-
+from typing import Optional, Dict, Any, List
+from .temp_manager import TempFileManager
 from .models import SettingsInput
-from pipeline.pipeline_main import pipeline_main
+from pipeline.settings import Settings
+from pipeline.pipeline_main import pipeline_main as execute_pipeline
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-
-async def run_pipeline(
-    file_dfs: List[pd.DataFrame],
-    filenames: List[str],
-    settings: SettingsInput,
-    job_storage: dict,
-    job_code: str,
-):
-    """
-    Run the pipeline with the given settings.
-    Parameters:
-    - file_dfs: List of validated DataFrames (one for each input file).
-    - filenames: List of filenames corresponding to the DataFrames.
-    - settings: User-provided settings for the pipeline.
-    - job_storage: Dictionary to track job statuses.
-    - job_code: Unique code for the job.
-    """
-    try:
-        # Prepare conditions_data
-        conditions_data = []
-        for filename, df in zip(filenames, file_dfs):
-            condition_name = Path(filename).stem
-            conditions_data.append((condition_name, df))
-
-        # Execute pipeline
-        output_file_path = await pipeline_main(conditions_data, settings)
-
-        logger.debug(f"Pipeline main returned output_file_path: {output_file_path}")
-
-        # Handle relative path
-        relative_output_path = Path(output_file_path).relative_to(Path.cwd())
-
-        # Update job status
-        job_storage[job_code]["status"] = "Finished"
-        job_storage[job_code]["output_file"] = str(relative_output_path)
-
-        logger.info(f"Job {job_code} finished successfully.")
-
-    except Exception as e:
-        logger.error(f"Error in pipeline execution for job_code {job_code}: {str(e)}", exc_info=True)
-        job_storage[job_code]["status"] = "Failed"
-        job_storage[job_code]["error"] = str(e)
-        raise
+class PipelineRunner:
+    """Handles pipeline execution and temporary file management."""
+    
+    def __init__(self, job_id: str):
+        self.job_id = job_id
+        self.temp_manager = TempFileManager()
+        
+    async def run(self, settings_input: SettingsInput, file_dfs: List[pd.DataFrame], filenames: List[str]) -> Dict[str, Any]:
+        """
+        Runs the pipeline with proper temporary file management.
+        
+        Args:
+            settings_input: Input settings for the pipeline
+            file_dfs: List of DataFrames containing input data
+            filenames: List of input file names
+            
+        Returns:
+            Dictionary containing job results
+            
+        Raises:
+            Exception: If pipeline execution fails
+        """
+        try:
+            logger.info(f"Starting pipeline for job {self.job_id}")
+            
+            # Handle custom network if provided
+            if settings_input.is_custom_network():
+                logger.debug("Custom network detected, preparing to handle file")
+                
+                # Ensure the file is open and seek to the beginning
+                if not settings_input.network_file.file.closed:
+                    settings_input.network_file.file.seek(0)
+                else:
+                    logger.error("Network file is closed before reading")
+                    raise ValueError("Network file is closed before reading")
+                
+                # Read file content early to avoid "closed file" issues
+                logger.debug("Reading network file content")
+                try:
+                    network_content = await settings_input.network_file.read()
+                    logger.debug(f"Successfully read network file content, size: {len(network_content)} bytes")
+                except Exception as e:
+                    logger.error(f"Failed to read network file: {str(e)}", exc_info=True)
+                    raise ValueError(f"Failed to read network file: {str(e)}")
+                
+                logger.debug("Creating temporary files")
+                with self.temp_manager.create_temp_files(settings_input.network_file.filename) as temp_mgr:
+                    logger.debug(f"Temporary files created at: {temp_mgr.network_path}")
+                    
+                    # Save network content to temporary path
+                    logger.debug("Writing network content to temporary file")
+                    try:
+                        with open(temp_mgr.network_path, 'wb') as f:
+                            f.write(network_content)
+                        logger.info(f"Saved custom network to {temp_mgr.network_path}")
+                    except Exception as e:
+                        logger.error(f"Failed to write network file: {str(e)}", exc_info=True)
+                        raise ValueError(f"Failed to write network file: {str(e)}")
+                
+                    # Update network path in settings
+                    settings_input.network = str(temp_mgr.network_path)
+                    logger.debug(f"Updated network path in settings: {settings_input.network}")
+                
+                    # Run pipeline while temporary files are valid
+                    logger.debug("Starting pipeline execution with custom network")
+                    results = await execute_pipeline(
+                        [(name, df) for name, df in zip(filenames, file_dfs)],
+                        settings_input
+                    )
+                    logger.debug("Pipeline execution completed")
+            else:
+                # Run pipeline with default network
+                logger.debug("Using default network")
+                results = await execute_pipeline(
+                    [(name, df) for name, df in zip(filenames, file_dfs)],
+                    settings_input
+                )
+            
+            logger.info(f"Pipeline completed successfully for job {self.job_id}")
+            return results
+            
+        except Exception as e:
+            logger.error(f"Pipeline failed for job {self.job_id}: {str(e)}", exc_info=True)
+            raise
