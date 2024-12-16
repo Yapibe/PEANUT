@@ -7,9 +7,10 @@ from fastapi.templating import Jinja2Templates
 import pandas as pd
 import uuid
 from datetime import datetime
+import tempfile
 
 from .models import SettingsInput, JobStatus
-from .utils import validate_network_file, validate_input_file
+from .utils import validate_network_file, validate_input_file, convert_gmt_to_pathway_format
 from .pipeline_runner import PipelineRunner
 
 logger = logging.getLogger(__name__)
@@ -29,11 +30,13 @@ async def run_pipeline(
     alpha: float = Form(...),
     network: str = Form(...),
     pathway_file: str = Form(...),
+    pathway_file_upload: Optional[UploadFile] = None,
     min_genes_per_pathway: Optional[int] = Form(15),
     max_genes_per_pathway: Optional[int] = Form(500),
     fdr_threshold: float = Form(0.05),
     run_gsea: bool = Form(False),
     restrict_to_network: bool = Form(False),
+    plot_title: Optional[str] = Form("Pathway Enrichment"),
     network_file: Optional[UploadFile] = None,
     files: List[UploadFile] = File(...)
 ):
@@ -66,6 +69,39 @@ async def run_pipeline(
         # Determine if a custom network is being used
         is_custom_network = network == 'custom' and network_file is not None
 
+        # Handle custom pathway file if provided
+        if pathway_file == 'custom' and pathway_file_upload:
+            logger.debug("Processing custom pathway file")
+            
+            # Read the GMT file content
+            content = await pathway_file_upload.read()
+            
+            # Create temporary directory for processing
+            with tempfile.TemporaryDirectory() as temp_dir:
+                temp_path = Path(temp_dir)
+                
+                # Save GMT file temporarily
+                gmt_path = temp_path / "custom.gmt"
+                gmt_path.write_bytes(content)
+                
+                try:
+                    # Create custom pathways directory
+                    custom_pathway_dir = Path("pipeline/Data") / species / "pathways" / "custom"
+                    output_file_path = custom_pathway_dir / f"custom_{experiment_name}.tsv"
+                    
+                    # Convert GMT file to pathway format
+                    convert_gmt_to_pathway_format(gmt_path, output_file_path)
+                    
+                    # Update pathway_file to use the custom file
+                    pathway_file = f"custom/custom_{experiment_name}"
+                    
+                except ValueError as e:
+                    logger.error(f"Error processing GMT file: {str(e)}")
+                    raise HTTPException(
+                        status_code=400,
+                        detail=str(e)
+                    )
+
         # Create settings object
         settings = SettingsInput(
             experiment_name=experiment_name,
@@ -79,7 +115,8 @@ async def run_pipeline(
             fdr_threshold=fdr_threshold,
             run_gsea=run_gsea,
             restrict_to_network=restrict_to_network,
-            create_similarity_matrix=is_custom_network  # Set to True if custom network is used
+            create_similarity_matrix=is_custom_network,
+            figure_title=plot_title
         )
         
         # Validate input files

@@ -54,6 +54,7 @@ async def pipeline_main(
                 minimum_gene_per_pathway=settings.min_genes_per_pathway,
                 maximum_gene_per_pathway=settings.max_genes_per_pathway,
                 FDR_THRESHOLD=settings.fdr_threshold,
+                figure_title=settings.figure_title
             )
         else:
             # Production mode: Process network path
@@ -76,6 +77,7 @@ async def pipeline_main(
                 minimum_gene_per_pathway=settings.min_genes_per_pathway,
                 maximum_gene_per_pathway=settings.max_genes_per_pathway,
                 FDR_THRESHOLD=settings.fdr_threshold,
+                figure_title=settings.figure_title
             )
         network = read_network(run_settings.network_file_path)
 
@@ -87,6 +89,7 @@ async def pipeline_main(
             # Debug mode: Process conditions directly from data
             for condition_name, condition_data_df in conditions_data:
                 # Propagation run
+                condition_data_df.columns = ['GeneID', 'Score']
                 propagation_settings = ConditionSettings(
                     condition_name=f"{condition_name}_Propagation",
                     experiment_name=run_settings.experiment_name,
@@ -224,7 +227,8 @@ async def main():
             fdr_threshold=config['fdr_threshold'],
             run_gsea=config['run_gsea'],
             restrict_to_network=config['restrict_to_network'],
-            create_similarity_matrix=config['create_similarity_matrix']
+            create_similarity_matrix=config['create_similarity_matrix'],
+            figure_title=config['figure_title']
         )
 
         # Load condition data files

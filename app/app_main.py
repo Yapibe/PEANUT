@@ -20,7 +20,6 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
-logger.debug("Logging has been configured with basicConfig")
 
 # FastAPI app lifespan
 async def lifespan(app: FastAPI):

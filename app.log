@@ -1089,3 +1089,579 @@ ZeroDivisionError: float division by zero
 2024-12-16 18:19:04,476 - app.app_main - INFO - Application is shutting down
 2024-12-16 18:19:06,902 - app.app_main - DEBUG - Logging has been configured with basicConfig
 2024-12-16 18:19:06,909 - app.app_main - INFO - Application is starting up
+2024-12-16 18:20:19,012 - app.routes - INFO - New job request received. Job code: dadb04e5-d0f8-4517-8979-e593298a4d52
+2024-12-16 18:20:19,023 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-16 18:20:19,024 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-16 18:20:19,025 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-16 18:20:19,026 - app.pipeline_runner - INFO - Starting pipeline for job dadb04e5-d0f8-4517-8979-e593298a4d52
+2024-12-16 18:20:19,026 - app.pipeline_runner - DEBUG - Using default network
+2024-12-16 18:20:19,027 - pipeline.settings - INFO - Using default matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.1.npz
+2024-12-16 18:20:19,027 - pipeline.settings - INFO - Using default network file: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-16 18:20:19,027 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-16 18:20:21,286 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-16 18:20:21,306 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, file:           GeneID     Score
+0           3360  0.317096
+1           1393 -0.092459
+2           3362  0.379495
+3           3363  0.122374
+4         286343 -0.780245
+...          ...       ...
+20643     113791  0.084842
+20644  100506457  0.150522
+20645     282679 -0.570184
+20646        581  0.045622
+20647       6059 -0.222887
+
+[20648 rows x 2 columns]
+2024-12-16 18:20:56,261 - pipeline.utils - ERROR - File not found: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/pathways/msig_c2_canonical
+2024-12-16 18:20:56,310 - pipeline.pathway_enrichment - ERROR - An error occurred during KS test: float division by zero
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/pipeline/pathway_enrichment.py", line 59, in perform_statist_ks
+    adjusted_p_values = multipletests(ks_p_values, method="fdr_bh")[1]
+  File "/home/yair/.local/lib/python3.10/site-packages/statsmodels/stats/multitest.py", line 156, in multipletests
+    alphacSidak = 1 - np.power((1. - alphaf), 1./ntests)
+ZeroDivisionError: float division by zero
+2024-12-16 18:20:56,319 - pipeline.pathway_enrichment - ERROR - An error occurred during enrichment analysis: float division by zero
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/pipeline/pathway_enrichment.py", line 232, in perform_enrichment
+    perform_statist_ks(settings, condition_settings, genes_by_pathway, scores)
+  File "/home/yair/projects/Yair_propagation/pipeline/pathway_enrichment.py", line 59, in perform_statist_ks
+    adjusted_p_values = multipletests(ks_p_values, method="fdr_bh")[1]
+  File "/home/yair/.local/lib/python3.10/site-packages/statsmodels/stats/multitest.py", line 156, in multipletests
+    alphacSidak = 1 - np.power((1. - alphaf), 1./ntests)
+ZeroDivisionError: float division by zero
+2024-12-16 18:20:56,319 - pipeline.propagation_routines - ERROR - An error occurred in perform_propagation: float division by zero
+2024-12-16 18:20:56,357 - pipeline.pipeline_main - DEBUG - Ensured output directory exists: /home/yair/projects/Yair_propagation/pipeline/Outputs
+2024-12-16 18:20:56,358 - pipeline.utils - ERROR - File not found: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/pathways/msig_c2_canonical
+2024-12-16 18:20:56,371 - pipeline.pipeline_main - DEBUG - Processed condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, output path: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__18_20_21.xlsx
+2024-12-16 18:20:56,372 - pipeline.visualization_tools - INFO - No pathways to plot for either propagation or GSEA. Exiting function.
+2024-12-16 18:20:56,372 - pipeline.pipeline_main - DEBUG - Generated propagation plot at: None
+2024-12-16 18:20:56,372 - pipeline.pipeline_main - DEBUG - Output file to be archived: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__18_20_21.xlsx
+2024-12-16 18:20:56,373 - pipeline.pipeline_main - ERROR - File not found, skipping: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__18_20_21.xlsx
+2024-12-16 18:20:56,374 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-16 18:20:56,375 - app.pipeline_runner - INFO - Pipeline completed successfully for job dadb04e5-d0f8-4517-8979-e593298a4d52
+2024-12-16 18:20:56,376 - app.temp_manager - DEBUG - TempFileManager destructor called
+2024-12-16 18:20:56,376 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-16 18:20:56,377 - app.temp_manager - DEBUG - No temp directory to clean up
+2024-12-16 18:20:56,377 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-16 18:22:09,968 - app.routes - INFO - New job request received. Job code: 992ba1ec-7408-479b-9337-932da8e5f4c2
+2024-12-16 18:22:09,981 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-16 18:22:09,983 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-16 18:22:09,984 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-16 18:22:09,986 - app.pipeline_runner - INFO - Starting pipeline for job 992ba1ec-7408-479b-9337-932da8e5f4c2
+2024-12-16 18:22:09,986 - app.pipeline_runner - DEBUG - Using default network
+2024-12-16 18:22:09,986 - pipeline.settings - INFO - Using default matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.1.npz
+2024-12-16 18:22:09,986 - pipeline.settings - INFO - Using default network file: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-16 18:22:09,986 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-16 18:22:13,038 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-16 18:22:13,043 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, file:           GeneID     Score
+0           3360  0.317096
+1           1393 -0.092459
+2           3362  0.379495
+3           3363  0.122374
+4         286343 -0.780245
+...          ...       ...
+20643     113791  0.084842
+20644  100506457  0.150522
+20645     282679 -0.570184
+20646        581  0.045622
+20647       6059 -0.222887
+
+[20648 rows x 2 columns]
+2024-12-16 18:24:59,570 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 2368 pathways.
+2024-12-16 18:25:17,732 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__18_22_13.xlsx.
+2024-12-16 18:25:17,861 - pipeline.pipeline_main - DEBUG - Ensured output directory exists: /home/yair/projects/Yair_propagation/pipeline/Outputs
+2024-12-16 18:25:18,330 - pipeline.pipeline_main - DEBUG - Processed condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, output path: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__18_22_13.xlsx
+2024-12-16 18:25:37,724 - pipeline.pipeline_main - DEBUG - Generated propagation plot at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 18:25:37,724 - pipeline.pipeline_main - DEBUG - Output file to be archived: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__18_22_13.xlsx
+2024-12-16 18:25:37,724 - pipeline.pipeline_main - DEBUG - Output file to be archived: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 18:25:37,727 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__18_22_13.xlsx
+2024-12-16 18:25:37,738 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 18:25:37,743 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-16 18:25:37,752 - app.pipeline_runner - INFO - Pipeline completed successfully for job 992ba1ec-7408-479b-9337-932da8e5f4c2
+2024-12-16 18:25:37,753 - app.temp_manager - DEBUG - TempFileManager destructor called
+2024-12-16 18:25:37,753 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-16 18:25:37,753 - app.temp_manager - DEBUG - No temp directory to clean up
+2024-12-16 18:25:37,753 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-16 18:27:20,026 - app.routes - INFO - New job request received. Job code: 81f1fc5a-29b1-4113-bef6-57d563d322ae
+2024-12-16 18:27:20,065 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-16 18:27:20,066 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-16 18:27:20,066 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-16 18:27:20,067 - app.pipeline_runner - INFO - Starting pipeline for job 81f1fc5a-29b1-4113-bef6-57d563d322ae
+2024-12-16 18:27:20,067 - app.pipeline_runner - DEBUG - Using default network
+2024-12-16 18:27:20,067 - pipeline.settings - INFO - Using default matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.1.npz
+2024-12-16 18:27:20,068 - pipeline.settings - INFO - Using default network file: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-16 18:27:20,068 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-16 18:27:23,397 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-16 18:27:23,403 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, file:           GeneID     Score
+0           3360  0.317096
+1           1393 -0.092459
+2           3362  0.379495
+3           3363  0.122374
+4         286343 -0.780245
+...          ...       ...
+20643     113791  0.084842
+20644  100506457  0.150522
+20645     282679 -0.570184
+20646        581  0.045622
+20647       6059 -0.222887
+
+[20648 rows x 2 columns]
+2024-12-16 18:28:48,801 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 396 pathways.
+2024-12-16 18:28:49,589 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__18_27_23.xlsx.
+2024-12-16 18:28:49,685 - pipeline.pipeline_main - DEBUG - Ensured output directory exists: /home/yair/projects/Yair_propagation/pipeline/Outputs
+2024-12-16 18:28:49,757 - pipeline.pipeline_main - DEBUG - Processed condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, output path: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__18_27_23.xlsx
+2024-12-16 18:29:14,247 - pipeline.pipeline_main - DEBUG - Generated propagation plot at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 18:29:14,248 - pipeline.pipeline_main - DEBUG - Output file to be archived: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__18_27_23.xlsx
+2024-12-16 18:29:14,249 - pipeline.pipeline_main - DEBUG - Output file to be archived: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 18:29:14,253 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__18_27_23.xlsx
+2024-12-16 18:29:14,256 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 18:29:14,257 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-16 18:29:14,259 - app.pipeline_runner - INFO - Pipeline completed successfully for job 81f1fc5a-29b1-4113-bef6-57d563d322ae
+2024-12-16 18:29:14,259 - app.temp_manager - DEBUG - TempFileManager destructor called
+2024-12-16 18:29:14,260 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-16 18:29:14,260 - app.temp_manager - DEBUG - No temp directory to clean up
+2024-12-16 18:29:14,260 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-16 18:34:12,913 - app.app_main - INFO - Application is shutting down
+2024-12-16 18:34:18,495 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-16 18:34:18,501 - app.app_main - INFO - Application is starting up
+2024-12-16 18:34:39,484 - app.app_main - INFO - Application is shutting down
+2024-12-16 18:34:42,114 - app.app_main - INFO - Application is starting up
+2024-12-16 18:43:58,244 - app.app_main - INFO - Application is starting up
+2024-12-16 18:46:24,443 - app.app_main - INFO - Application is shutting down
+2024-12-16 18:46:26,305 - app.app_main - INFO - Application is starting up
+2024-12-16 18:47:25,564 - app.app_main - INFO - Application is shutting down
+2024-12-16 18:47:27,563 - app.app_main - INFO - Application is starting up
+2024-12-16 18:48:01,714 - app.app_main - INFO - Application is shutting down
+2024-12-16 18:48:03,685 - app.app_main - INFO - Application is starting up
+2024-12-16 18:50:38,224 - app.app_main - INFO - Application is shutting down
+2024-12-16 18:50:40,194 - app.app_main - INFO - Application is starting up
+2024-12-16 18:51:23,672 - app.app_main - INFO - Application is shutting down
+2024-12-16 18:51:25,918 - app.app_main - INFO - Application is starting up
+2024-12-16 18:51:28,831 - app.app_main - INFO - Application is shutting down
+2024-12-16 18:51:30,747 - app.app_main - INFO - Application is starting up
+2024-12-16 18:51:54,343 - app.app_main - INFO - Application is shutting down
+2024-12-16 18:51:57,192 - app.app_main - INFO - Application is starting up
+2024-12-16 18:57:18,186 - app.app_main - INFO - Application is shutting down
+2024-12-16 18:57:20,450 - app.app_main - INFO - Application is starting up
+2024-12-16 19:02:54,908 - app.app_main - INFO - Application is shutting down
+2024-12-16 19:02:57,634 - app.app_main - INFO - Application is starting up
+2024-12-16 19:18:33,328 - app.app_main - INFO - Application is shutting down
+2024-12-16 19:18:54,259 - app.app_main - INFO - Application is starting up
+2024-12-16 19:32:04,527 - app.app_main - INFO - Application is shutting down
+2024-12-16 19:32:10,618 - app.app_main - INFO - Application is starting up
+2024-12-16 20:06:56,876 - app.app_main - INFO - Application is shutting down
+2024-12-16 20:07:15,415 - app.app_main - INFO - Application is starting up
+2024-12-16 20:07:45,243 - app.routes - INFO - New job request received. Job code: 61866878-385b-460f-8413-69ec3d958c0a
+2024-12-16 20:07:45,253 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-16 20:07:45,254 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-16 20:07:45,255 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-16 20:07:45,256 - app.pipeline_runner - INFO - Starting pipeline for job 61866878-385b-460f-8413-69ec3d958c0a
+2024-12-16 20:07:45,256 - app.pipeline_runner - DEBUG - Using default network
+2024-12-16 20:07:45,256 - pipeline.settings - INFO - Using default matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.2.npz
+2024-12-16 20:07:45,256 - pipeline.settings - INFO - Using default network file: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-16 20:07:45,257 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-16 20:07:47,516 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-16 20:07:47,520 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, file:           GeneID     Score
+0           3360  0.317096
+1           1393 -0.092459
+2           3362  0.379495
+3           3363  0.122374
+4         286343 -0.780245
+...          ...       ...
+20643     113791  0.084842
+20644  100506457  0.150522
+20645     282679 -0.570184
+20646        581  0.045622
+20647       6059 -0.222887
+
+[20648 rows x 2 columns]
+2024-12-16 20:09:47,510 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 396 pathways.
+2024-12-16 20:10:02,869 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_07_47.xlsx.
+2024-12-16 20:10:02,985 - pipeline.pipeline_main - DEBUG - Ensured output directory exists: /home/yair/projects/Yair_propagation/pipeline/Outputs
+2024-12-16 20:10:03,027 - pipeline.pipeline_main - DEBUG - Processed condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, output path: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_07_47.xlsx
+2024-12-16 20:10:05,685 - pipeline.pipeline_main - DEBUG - Generated propagation plot at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 20:10:05,685 - pipeline.pipeline_main - DEBUG - Output file to be archived: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_07_47.xlsx
+2024-12-16 20:10:05,686 - pipeline.pipeline_main - DEBUG - Output file to be archived: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 20:10:05,687 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_07_47.xlsx
+2024-12-16 20:10:05,692 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 20:10:05,693 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-16 20:10:05,696 - app.pipeline_runner - INFO - Pipeline completed successfully for job 61866878-385b-460f-8413-69ec3d958c0a
+2024-12-16 20:10:05,697 - app.temp_manager - DEBUG - TempFileManager destructor called
+2024-12-16 20:10:05,697 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-16 20:10:05,697 - app.temp_manager - DEBUG - No temp directory to clean up
+2024-12-16 20:10:05,698 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-16 20:15:54,928 - app.app_main - INFO - Application is shutting down
+2024-12-16 20:16:06,952 - app.app_main - INFO - Application is starting up
+2024-12-16 20:16:06,973 - app.routes - INFO - New job request received. Job code: 4bb0306d-2d08-4579-af21-e5a66e9f9fcb
+2024-12-16 20:16:06,993 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-16 20:16:06,994 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-16 20:16:06,995 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-16 20:16:06,996 - app.pipeline_runner - INFO - Starting pipeline for job 4bb0306d-2d08-4579-af21-e5a66e9f9fcb
+2024-12-16 20:16:06,996 - app.pipeline_runner - DEBUG - Using default network
+2024-12-16 20:16:06,996 - pipeline.settings - INFO - Using default matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.2.npz
+2024-12-16 20:16:06,996 - pipeline.settings - INFO - Using default network file: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-16 20:16:06,997 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-16 20:16:10,357 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-16 20:16:10,365 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, file:           GeneID     Score
+0           3360  0.317096
+1           1393 -0.092459
+2           3362  0.379495
+3           3363  0.122374
+4         286343 -0.780245
+...          ...       ...
+20643     113791  0.084842
+20644  100506457  0.150522
+20645     282679 -0.570184
+20646        581  0.045622
+20647       6059 -0.222887
+
+[20648 rows x 2 columns]
+2024-12-16 20:18:01,791 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 396 pathways.
+2024-12-16 20:18:22,514 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_16_10.xlsx.
+2024-12-16 20:18:22,627 - pipeline.pipeline_main - DEBUG - Ensured output directory exists: /home/yair/projects/Yair_propagation/pipeline/Outputs
+2024-12-16 20:18:22,684 - pipeline.pipeline_main - DEBUG - Processed condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, output path: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_16_10.xlsx
+2024-12-16 20:18:27,317 - pipeline.pipeline_main - DEBUG - Generated propagation plot at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 20:18:27,318 - pipeline.pipeline_main - DEBUG - Output file to be archived: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_16_10.xlsx
+2024-12-16 20:18:27,318 - pipeline.pipeline_main - DEBUG - Output file to be archived: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 20:18:27,321 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_16_10.xlsx
+2024-12-16 20:18:27,329 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 20:18:27,333 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-16 20:18:27,338 - app.pipeline_runner - INFO - Pipeline completed successfully for job 4bb0306d-2d08-4579-af21-e5a66e9f9fcb
+2024-12-16 20:18:27,339 - app.temp_manager - DEBUG - TempFileManager destructor called
+2024-12-16 20:18:27,340 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-16 20:18:27,340 - app.temp_manager - DEBUG - No temp directory to clean up
+2024-12-16 20:18:27,340 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-16 20:21:47,765 - app.app_main - INFO - Application is shutting down
+2024-12-16 20:22:25,909 - app.app_main - INFO - Application is starting up
+2024-12-16 20:23:45,194 - app.routes - INFO - New job request received. Job code: d1bfb2b6-a93d-4bd5-b094-73188ba6ee0d
+2024-12-16 20:23:45,209 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-16 20:23:45,213 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-16 20:23:45,214 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-16 20:23:45,222 - app.pipeline_runner - INFO - Starting pipeline for job d1bfb2b6-a93d-4bd5-b094-73188ba6ee0d
+2024-12-16 20:23:45,223 - app.pipeline_runner - DEBUG - Using default network
+2024-12-16 20:23:45,223 - pipeline.settings - INFO - Using default matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.1.npz
+2024-12-16 20:23:45,223 - pipeline.settings - INFO - Using default network file: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-16 20:23:45,224 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-16 20:23:49,231 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-16 20:23:49,252 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, file:           GeneID     Score
+0           3360  0.317096
+1           1393 -0.092459
+2           3362  0.379495
+3           3363  0.122374
+4         286343 -0.780245
+...          ...       ...
+20643     113791  0.084842
+20644  100506457  0.150522
+20645     282679 -0.570184
+20646        581  0.045622
+20647       6059 -0.222887
+
+[20648 rows x 2 columns]
+2024-12-16 20:26:26,184 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 396 pathways.
+2024-12-16 20:26:32,102 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_23_49.xlsx.
+2024-12-16 20:26:32,241 - pipeline.pipeline_main - DEBUG - Ensured output directory exists: /home/yair/projects/Yair_propagation/pipeline/Outputs
+2024-12-16 20:26:32,313 - pipeline.pipeline_main - DEBUG - Processed condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, output path: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_23_49.xlsx
+2024-12-16 20:26:32,314 - pipeline.visualization_tools - DEBUG - Starting plot_pathways_mean_scores
+2024-12-16 20:26:32,314 - pipeline.visualization_tools - DEBUG - Combined pathways: 389
+2024-12-16 20:26:32,322 - pipeline.visualization_tools - DEBUG - Data records created: 389 rows
+2024-12-16 20:26:32,336 - pipeline.visualization_tools - DEBUG - Pathway significance calculated. Significant pathways: 126
+2024-12-16 20:26:32,358 - pipeline.visualization_tools - DEBUG - Sorted pathways: ['KEGG_MEDICUS_REFERENCE_ITGA_B_FAK_CDC42_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ITGA_B_RHOGAP_RHOA_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ITGA_B_RHOGEF_RHOA_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ITGA_B_FAK_RAC_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ITGA_B_TALIN_VINCULIN_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ITGA_B_RHOG_RAC_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_REGULATION_OF_GF_RTK_RAS_ERK_SIGNALING_UBIQUITINATION_OF_RTK_BY_CBL', 'KEGG_CHRONIC_MYELOID_LEUKEMIA', 'KEGG_FOCAL_ADHESION', 'KEGG_NON_SMALL_CELL_LUNG_CANCER', 'KEGG_GLIOMA', 'KEGG_CYTOKINE_CYTOKINE_RECEPTOR_INTERACTION', 'KEGG_PANCREATIC_CANCER', 'KEGG_MEDICUS_REFERENCE_TLR7_9_IRF7_SIGNALING_PATHWAY', 'KEGG_PROSTATE_CANCER', 'KEGG_INTESTINAL_IMMUNE_NETWORK_FOR_IGA_PRODUCTION', 'KEGG_VEGF_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_WNT_SIGNALING_MODULATION_WNT_INHIBITOR', 'KEGG_MEDICUS_REFERENCE_RIG_I_NFKB_SIGNALING_PATHWAY', 'KEGG_ARRHYTHMOGENIC_RIGHT_VENTRICULAR_CARDIOMYOPATHY_ARVC', 'KEGG_ADHERENS_JUNCTION', 'KEGG_MEDICUS_REFERENCE_WNT_SIGNALING_MODULATION_WNT_ACYLATION', 'KEGG_ASTHMA', 'KEGG_MEDICUS_REFERENCE_MDA5_IRF7_3_SIGNALING_PATHWAY', 'KEGG_ENDOMETRIAL_CANCER', 'KEGG_COMPLEMENT_AND_COAGULATION_CASCADES', 'KEGG_MEDICUS_REFERENCE_RIG_I_IRF7_3_SIGNALING_PATHWAY', 'KEGG_ALLOGRAFT_REJECTION', 'KEGG_MEDICUS_REFERENCE_PDGF_PDGFR_RAS_ERK_SIGNALING_PATHWAY', 'KEGG_AUTOIMMUNE_THYROID_DISEASE', 'KEGG_MEDICUS_REFERENCE_TLR7_8_9_IRF5_SIGNALING_PATHWAY', 'KEGG_B_CELL_RECEPTOR_SIGNALING_PATHWAY', 'KEGG_PATHWAYS_IN_CANCER', 'KEGG_CHEMOKINE_SIGNALING_PATHWAY', 'KEGG_GRAFT_VERSUS_HOST_DISEASE', 'KEGG_WNT_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_TYPE_I_IFN_SIGNALING_PATHWAY', 'KEGG_TYPE_I_DIABETES_MELLITUS', 'KEGG_STEROID_HORMONE_BIOSYNTHESIS', 'KEGG_JAK_STAT_SIGNALING_PATHWAY', 'KEGG_INSULIN_SIGNALING_PATHWAY', 'KEGG_THYROID_CANCER', 'KEGG_MEDICUS_PATHOGEN_HIV_GP120_TO_CXCR4_GNAQ_PLCB_G_CALCINEURIN', 'KEGG_ACUTE_MYELOID_LEUKEMIA', 'KEGG_MEDICUS_REFERENCE_CYTOKINE_JAK_STAT_SIGNALING_PATHWAY', 'KEGG_REGULATION_OF_ACTIN_CYTOSKELETON', 'KEGG_COLORECTAL_CANCER', 'KEGG_RENAL_CELL_CARCINOMA', 'KEGG_NEUROACTIVE_LIGAND_RECEPTOR_INTERACTION', 'KEGG_MAPK_SIGNALING_PATHWAY', 'KEGG_VIRAL_MYOCARDITIS', 'KEGG_MEDICUS_REFERENCE_TYPE_I_INTERFERON_TO_JAK_STAT_SIGNALING_PATHWAY', 'KEGG_ERBB_SIGNALING_PATHWAY', 'KEGG_OLFACTORY_TRANSDUCTION', 'KEGG_FC_GAMMA_R_MEDIATED_PHAGOCYTOSIS', 'KEGG_RETINOL_METABOLISM', 'KEGG_NEUROTROPHIN_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_EGF_EGFR_PLCG_CALCINEURIN_SIGNALING_PATHWAY', 'KEGG_RENIN_ANGIOTENSIN_SYSTEM', 'KEGG_TOLL_LIKE_RECEPTOR_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_TYPE_II_INTERFERON_TO_JAK_STAT_SIGNALING_PATHWAY', 'KEGG_ANTIGEN_PROCESSING_AND_PRESENTATION', 'KEGG_SYSTEMIC_LUPUS_ERYTHEMATOSUS', 'KEGG_GAP_JUNCTION', 'KEGG_TASTE_TRANSDUCTION', 'KEGG_MEDICUS_ENV_FACTOR_E2_TO_RAS_ERK_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_BCR_PLCG_CALCINEURIN_SIGNALING_PATHWAY', 'KEGG_ASCORBATE_AND_ALDARATE_METABOLISM', 'KEGG_ENDOCYTOSIS', 'KEGG_METABOLISM_OF_XENOBIOTICS_BY_CYTOCHROME_P450', 'KEGG_DRUG_METABOLISM_CYTOCHROME_P450', 'KEGG_PENTOSE_AND_GLUCURONATE_INTERCONVERSIONS', 'KEGG_MEDICUS_REFERENCE_N_GLYCAN_BIOSYNTHESIS', 'KEGG_MEDICUS_REFERENCE_IFN_RIPK1_3_SIGNALING_PATHWAY', 'KEGG_DRUG_METABOLISM_OTHER_ENZYMES', 'KEGG_GLYCOSAMINOGLYCAN_BIOSYNTHESIS_HEPARAN_SULFATE', 'KEGG_EPITHELIAL_CELL_SIGNALING_IN_HELICOBACTER_PYLORI_INFECTION', 'KEGG_MEDICUS_REFERENCE_PINK_PARKIN_MEDIATED_AUTOPHAGOSOME_FORMATION', 'KEGG_SPHINGOLIPID_METABOLISM', 'KEGG_CELL_CYCLE', 'KEGG_UBIQUITIN_MEDIATED_PROTEOLYSIS', 'KEGG_PATHOGENIC_ESCHERICHIA_COLI_INFECTION', 'KEGG_ONE_CARBON_POOL_BY_FOLATE', 'KEGG_MEDICUS_PATHOGEN_SHIGELLA_IPGD_TO_ARNO_ARF_ACTB_G_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ORGANIZATION_OF_THE_INNER_KINETOCHORE', 'KEGG_PORPHYRIN_AND_CHLOROPHYLL_METABOLISM', 'KEGG_MEDICUS_PATHOGEN_SALMONELLA_SOPB_TO_ARNO_ARF_ACTB_G_SIGNALING_PATHWAY', 'KEGG_STARCH_AND_SUCROSE_METABOLISM', 'KEGG_VIBRIO_CHOLERAE_INFECTION', 'KEGG_PROPANOATE_METABOLISM', 'KEGG_MEDICUS_REFERENCE_ARNO_ARF_ACTB_G_SIGNALING_PATHWAY', 'KEGG_VALINE_LEUCINE_AND_ISOLEUCINE_DEGRADATION', 'KEGG_ALZHEIMERS_DISEASE', 'KEGG_SPLICEOSOME', 'KEGG_MEDICUS_REFERENCE_CORE_NER_REACTION', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_HTT_TO_ANTEROGRADE_AXONAL_TRANSPORT', 'KEGG_PYRUVATE_METABOLISM', 'KEGG_HUNTINGTONS_DISEASE', 'KEGG_MEDICUS_REFERENCE_ELECTRON_TRANSFER_IN_COMPLEX_IV', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_ABETA_TO_ELECTRON_TRANSFER_IN_COMPLEX_IV', 'KEGG_NUCLEOTIDE_EXCISION_REPAIR', 'KEGG_MEDICUS_PATHOGEN_SALMONELLA_SOPE_TO_RAC_SIGNALING_PATHWAY', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_ABETA_TO_ELECTRON_TRANSFER_IN_COMPLEX_I', 'KEGG_MEDICUS_ENV_FACTOR_ARSENIC_TO_ELECTRON_TRANSFER_IN_COMPLEX_IV', 'KEGG_MEDICUS_REFERENCE_PROMOTION_OF_MICROTUBULE_GROWTH', 'KEGG_PARKINSONS_DISEASE', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_TDP43_TO_ELECTRON_TRANSFER_IN_COMPLEX_I', 'KEGG_MEDICUS_VARIANT_MUTATION_INACTIVATED_PINK1_TO_ELECTRON_TRANSFER_IN_COMPLEX_I', 'KEGG_MEDICUS_REFERENCE_ELECTRON_TRANSFER_IN_COMPLEX_I', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_ABETA_TO_ANTEROGRADE_AXONAL_TRANSPORT', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_SNCA_TO_ELECTRON_TRANSFER_IN_COMPLEX_I', 'KEGG_OXIDATIVE_PHOSPHORYLATION', 'KEGG_MEDICUS_REFERENCE_GLOBAL_GENOME_NER', 'KEGG_MEDICUS_REFERENCE_MITOCHONDRIAL_COMPLEX_UCP1_IN_THERMOGENESIS', 'KEGG_CITRATE_CYCLE_TCA_CYCLE', 'KEGG_MEDICUS_REFERENCE_KINETOCHORE_FIBER_ORGANIZATION', 'KEGG_MEDICUS_REFERENCE_ASSEMBLY_AND_TRAFFICKING_OF_TELOMERASE', 'KEGG_PROTEASOME', 'KEGG_MEDICUS_VARIANT_MUTATION_INACTIVATED_VCP_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_SOD1_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_REFERENCE_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_ABETA_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_MUTATION_INACTIVATED_UBQLN2_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_SCRAPIE_CONFORMATION_PRPSC_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_HTT_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_SNCA_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION']
+2024-12-16 20:26:32,364 - pipeline.visualization_tools - DEBUG - Number of conditions: 1, Number of pathways: 126
+2024-12-16 20:26:32,579 - pipeline.visualization_tools - DEBUG - Condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, Pathway positions: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125], Mean scores: [ 3.32334513e-01  3.29764092e-01  3.18145418e-01  2.81201241e-01
+  2.67529851e-01  2.57033464e-01  2.48174436e-01  2.02296569e-01
+  2.00988430e-01  1.96340036e-01  1.93313985e-01  1.91773307e-01
+  1.90587674e-01  1.87059623e-01  1.86309294e-01  1.84859376e-01
+  1.83712322e-01  1.76904807e-01  1.76685775e-01  1.73487158e-01
+  1.71861301e-01  1.71612923e-01  1.71543748e-01  1.71325699e-01
+  1.70785618e-01  1.68757566e-01  1.67798146e-01  1.63284141e-01
+  1.62270280e-01  1.62254142e-01  1.61115677e-01  1.60710463e-01
+  1.56347944e-01  1.52972233e-01  1.52971129e-01  1.49014635e-01
+  1.45311565e-01  1.42797005e-01  1.42463472e-01  1.40641018e-01
+  1.39261819e-01  1.38783611e-01  1.35575091e-01  1.35241539e-01
+  1.30450042e-01  1.29152407e-01  1.24438493e-01  1.21431111e-01
+  1.19686841e-01  1.15937170e-01  1.11139464e-01  1.11091247e-01
+  1.11056764e-01  1.10599161e-01  1.10076591e-01  1.04624421e-01
+  1.04147737e-01  1.03145707e-01  9.76635603e-02  9.62547718e-02
+  9.51559190e-02  9.49451903e-02  9.48333000e-02  9.24401628e-02
+  8.67811659e-02  8.50381835e-02  8.37538770e-02  6.51226884e-02
+  5.62429438e-02  5.55883505e-02  4.87949359e-02  4.76387597e-02
+  3.98071976e-02  2.33767267e-02  2.15706174e-02  1.95470878e-02
+  1.58030533e-02  7.19064623e-03  5.75490817e-03 -9.14777247e-05
+ -3.10359819e-03 -4.81241709e-03 -6.29198505e-03 -1.33443531e-02
+ -1.39010790e-02 -1.59127673e-02 -2.13358711e-02 -3.01077391e-02
+ -3.05051158e-02 -4.29473634e-02 -5.35062382e-02 -7.16485604e-02
+ -1.14305330e-01 -1.17350121e-01 -1.34553104e-01 -1.39805829e-01
+ -1.44872790e-01 -1.49385492e-01 -1.51473303e-01 -1.58520689e-01
+ -1.68784793e-01 -1.74578312e-01 -1.84841893e-01 -1.89527161e-01
+ -1.91254944e-01 -2.23283513e-01 -2.24106238e-01 -2.29216651e-01
+ -2.31091871e-01 -2.34557882e-01 -2.35206164e-01 -2.37769784e-01
+ -2.39527621e-01 -2.66236337e-01 -3.01471302e-01 -3.11348547e-01
+ -3.86079923e-01 -4.20037615e-01 -4.85909954e-01 -4.86583959e-01
+ -5.01321509e-01 -5.04914097e-01 -5.06285156e-01 -5.21982105e-01
+ -5.22280869e-01 -5.27226292e-01]
+2024-12-16 20:26:40,167 - pipeline.visualization_tools - INFO - Plot saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 20:26:40,172 - pipeline.pipeline_main - DEBUG - Generated propagation plot at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 20:26:40,173 - pipeline.pipeline_main - DEBUG - Output file to be archived: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_23_49.xlsx
+2024-12-16 20:26:40,174 - pipeline.pipeline_main - DEBUG - Output file to be archived: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 20:26:40,181 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_23_49.xlsx
+2024-12-16 20:26:40,200 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 20:26:40,203 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-16 20:26:40,208 - app.pipeline_runner - INFO - Pipeline completed successfully for job d1bfb2b6-a93d-4bd5-b094-73188ba6ee0d
+2024-12-16 20:26:40,210 - app.temp_manager - DEBUG - TempFileManager destructor called
+2024-12-16 20:26:40,211 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-16 20:26:40,212 - app.temp_manager - DEBUG - No temp directory to clean up
+2024-12-16 20:26:40,213 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-16 20:30:15,163 - app.app_main - INFO - Application is shutting down
+2024-12-16 20:30:52,007 - app.app_main - INFO - Application is starting up
+2024-12-16 20:30:58,420 - app.routes - INFO - New job request received. Job code: d7aa1aea-dc00-46f8-ac52-875ec5558dd9
+2024-12-16 20:30:58,438 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-16 20:30:58,440 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-16 20:30:58,440 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-16 20:30:58,441 - app.pipeline_runner - INFO - Starting pipeline for job d7aa1aea-dc00-46f8-ac52-875ec5558dd9
+2024-12-16 20:30:58,442 - app.pipeline_runner - DEBUG - Using default network
+2024-12-16 20:30:58,442 - pipeline.settings - INFO - Using default matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.1.npz
+2024-12-16 20:30:58,442 - pipeline.settings - INFO - Using default network file: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-16 20:30:58,442 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-16 20:31:04,240 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-16 20:31:04,257 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, file:           GeneID     Score
+0           3360  0.317096
+1           1393 -0.092459
+2           3362  0.379495
+3           3363  0.122374
+4         286343 -0.780245
+...          ...       ...
+20643     113791  0.084842
+20644  100506457  0.150522
+20645     282679 -0.570184
+20646        581  0.045622
+20647       6059 -0.222887
+
+[20648 rows x 2 columns]
+2024-12-16 20:34:56,928 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 396 pathways.
+2024-12-16 20:35:14,735 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_31_04.xlsx.
+2024-12-16 20:35:14,858 - pipeline.pipeline_main - DEBUG - Ensured output directory exists: /home/yair/projects/Yair_propagation/pipeline/Outputs
+2024-12-16 20:35:14,907 - pipeline.pipeline_main - DEBUG - Processed condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, output path: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_31_04.xlsx
+2024-12-16 20:35:14,908 - pipeline.visualization_tools - DEBUG - Starting plot_pathways_mean_scores
+2024-12-16 20:35:14,908 - pipeline.visualization_tools - DEBUG - Combined pathways: 389
+2024-12-16 20:35:14,911 - pipeline.visualization_tools - DEBUG - Data records created: 389 rows
+2024-12-16 20:35:14,922 - pipeline.visualization_tools - DEBUG - Pathway significance calculated. Significant pathways: 126
+2024-12-16 20:35:14,937 - pipeline.visualization_tools - DEBUG - Sorted pathways: ['KEGG_MEDICUS_REFERENCE_ITGA_B_FAK_CDC42_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ITGA_B_RHOGAP_RHOA_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ITGA_B_RHOGEF_RHOA_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ITGA_B_FAK_RAC_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ITGA_B_TALIN_VINCULIN_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ITGA_B_RHOG_RAC_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_REGULATION_OF_GF_RTK_RAS_ERK_SIGNALING_UBIQUITINATION_OF_RTK_BY_CBL', 'KEGG_CHRONIC_MYELOID_LEUKEMIA', 'KEGG_FOCAL_ADHESION', 'KEGG_NON_SMALL_CELL_LUNG_CANCER', 'KEGG_GLIOMA', 'KEGG_CYTOKINE_CYTOKINE_RECEPTOR_INTERACTION', 'KEGG_PANCREATIC_CANCER', 'KEGG_MEDICUS_REFERENCE_TLR7_9_IRF7_SIGNALING_PATHWAY', 'KEGG_PROSTATE_CANCER', 'KEGG_INTESTINAL_IMMUNE_NETWORK_FOR_IGA_PRODUCTION', 'KEGG_VEGF_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_WNT_SIGNALING_MODULATION_WNT_INHIBITOR', 'KEGG_MEDICUS_REFERENCE_RIG_I_NFKB_SIGNALING_PATHWAY', 'KEGG_ARRHYTHMOGENIC_RIGHT_VENTRICULAR_CARDIOMYOPATHY_ARVC', 'KEGG_ADHERENS_JUNCTION', 'KEGG_MEDICUS_REFERENCE_WNT_SIGNALING_MODULATION_WNT_ACYLATION', 'KEGG_ASTHMA', 'KEGG_MEDICUS_REFERENCE_MDA5_IRF7_3_SIGNALING_PATHWAY', 'KEGG_ENDOMETRIAL_CANCER', 'KEGG_COMPLEMENT_AND_COAGULATION_CASCADES', 'KEGG_MEDICUS_REFERENCE_RIG_I_IRF7_3_SIGNALING_PATHWAY', 'KEGG_ALLOGRAFT_REJECTION', 'KEGG_MEDICUS_REFERENCE_PDGF_PDGFR_RAS_ERK_SIGNALING_PATHWAY', 'KEGG_AUTOIMMUNE_THYROID_DISEASE', 'KEGG_MEDICUS_REFERENCE_TLR7_8_9_IRF5_SIGNALING_PATHWAY', 'KEGG_B_CELL_RECEPTOR_SIGNALING_PATHWAY', 'KEGG_PATHWAYS_IN_CANCER', 'KEGG_CHEMOKINE_SIGNALING_PATHWAY', 'KEGG_GRAFT_VERSUS_HOST_DISEASE', 'KEGG_WNT_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_TYPE_I_IFN_SIGNALING_PATHWAY', 'KEGG_TYPE_I_DIABETES_MELLITUS', 'KEGG_STEROID_HORMONE_BIOSYNTHESIS', 'KEGG_JAK_STAT_SIGNALING_PATHWAY', 'KEGG_INSULIN_SIGNALING_PATHWAY', 'KEGG_THYROID_CANCER', 'KEGG_MEDICUS_PATHOGEN_HIV_GP120_TO_CXCR4_GNAQ_PLCB_G_CALCINEURIN', 'KEGG_ACUTE_MYELOID_LEUKEMIA', 'KEGG_MEDICUS_REFERENCE_CYTOKINE_JAK_STAT_SIGNALING_PATHWAY', 'KEGG_REGULATION_OF_ACTIN_CYTOSKELETON', 'KEGG_COLORECTAL_CANCER', 'KEGG_RENAL_CELL_CARCINOMA', 'KEGG_NEUROACTIVE_LIGAND_RECEPTOR_INTERACTION', 'KEGG_MAPK_SIGNALING_PATHWAY', 'KEGG_VIRAL_MYOCARDITIS', 'KEGG_MEDICUS_REFERENCE_TYPE_I_INTERFERON_TO_JAK_STAT_SIGNALING_PATHWAY', 'KEGG_ERBB_SIGNALING_PATHWAY', 'KEGG_OLFACTORY_TRANSDUCTION', 'KEGG_FC_GAMMA_R_MEDIATED_PHAGOCYTOSIS', 'KEGG_RETINOL_METABOLISM', 'KEGG_NEUROTROPHIN_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_EGF_EGFR_PLCG_CALCINEURIN_SIGNALING_PATHWAY', 'KEGG_RENIN_ANGIOTENSIN_SYSTEM', 'KEGG_TOLL_LIKE_RECEPTOR_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_TYPE_II_INTERFERON_TO_JAK_STAT_SIGNALING_PATHWAY', 'KEGG_ANTIGEN_PROCESSING_AND_PRESENTATION', 'KEGG_SYSTEMIC_LUPUS_ERYTHEMATOSUS', 'KEGG_GAP_JUNCTION', 'KEGG_TASTE_TRANSDUCTION', 'KEGG_MEDICUS_ENV_FACTOR_E2_TO_RAS_ERK_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_BCR_PLCG_CALCINEURIN_SIGNALING_PATHWAY', 'KEGG_ASCORBATE_AND_ALDARATE_METABOLISM', 'KEGG_ENDOCYTOSIS', 'KEGG_METABOLISM_OF_XENOBIOTICS_BY_CYTOCHROME_P450', 'KEGG_DRUG_METABOLISM_CYTOCHROME_P450', 'KEGG_PENTOSE_AND_GLUCURONATE_INTERCONVERSIONS', 'KEGG_MEDICUS_REFERENCE_N_GLYCAN_BIOSYNTHESIS', 'KEGG_MEDICUS_REFERENCE_IFN_RIPK1_3_SIGNALING_PATHWAY', 'KEGG_DRUG_METABOLISM_OTHER_ENZYMES', 'KEGG_GLYCOSAMINOGLYCAN_BIOSYNTHESIS_HEPARAN_SULFATE', 'KEGG_EPITHELIAL_CELL_SIGNALING_IN_HELICOBACTER_PYLORI_INFECTION', 'KEGG_MEDICUS_REFERENCE_PINK_PARKIN_MEDIATED_AUTOPHAGOSOME_FORMATION', 'KEGG_SPHINGOLIPID_METABOLISM', 'KEGG_CELL_CYCLE', 'KEGG_UBIQUITIN_MEDIATED_PROTEOLYSIS', 'KEGG_PATHOGENIC_ESCHERICHIA_COLI_INFECTION', 'KEGG_ONE_CARBON_POOL_BY_FOLATE', 'KEGG_MEDICUS_PATHOGEN_SHIGELLA_IPGD_TO_ARNO_ARF_ACTB_G_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ORGANIZATION_OF_THE_INNER_KINETOCHORE', 'KEGG_PORPHYRIN_AND_CHLOROPHYLL_METABOLISM', 'KEGG_MEDICUS_PATHOGEN_SALMONELLA_SOPB_TO_ARNO_ARF_ACTB_G_SIGNALING_PATHWAY', 'KEGG_STARCH_AND_SUCROSE_METABOLISM', 'KEGG_VIBRIO_CHOLERAE_INFECTION', 'KEGG_PROPANOATE_METABOLISM', 'KEGG_MEDICUS_REFERENCE_ARNO_ARF_ACTB_G_SIGNALING_PATHWAY', 'KEGG_VALINE_LEUCINE_AND_ISOLEUCINE_DEGRADATION', 'KEGG_ALZHEIMERS_DISEASE', 'KEGG_SPLICEOSOME', 'KEGG_MEDICUS_REFERENCE_CORE_NER_REACTION', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_HTT_TO_ANTEROGRADE_AXONAL_TRANSPORT', 'KEGG_PYRUVATE_METABOLISM', 'KEGG_HUNTINGTONS_DISEASE', 'KEGG_MEDICUS_REFERENCE_ELECTRON_TRANSFER_IN_COMPLEX_IV', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_ABETA_TO_ELECTRON_TRANSFER_IN_COMPLEX_IV', 'KEGG_NUCLEOTIDE_EXCISION_REPAIR', 'KEGG_MEDICUS_PATHOGEN_SALMONELLA_SOPE_TO_RAC_SIGNALING_PATHWAY', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_ABETA_TO_ELECTRON_TRANSFER_IN_COMPLEX_I', 'KEGG_MEDICUS_ENV_FACTOR_ARSENIC_TO_ELECTRON_TRANSFER_IN_COMPLEX_IV', 'KEGG_MEDICUS_REFERENCE_PROMOTION_OF_MICROTUBULE_GROWTH', 'KEGG_PARKINSONS_DISEASE', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_TDP43_TO_ELECTRON_TRANSFER_IN_COMPLEX_I', 'KEGG_MEDICUS_VARIANT_MUTATION_INACTIVATED_PINK1_TO_ELECTRON_TRANSFER_IN_COMPLEX_I', 'KEGG_MEDICUS_REFERENCE_ELECTRON_TRANSFER_IN_COMPLEX_I', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_ABETA_TO_ANTEROGRADE_AXONAL_TRANSPORT', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_SNCA_TO_ELECTRON_TRANSFER_IN_COMPLEX_I', 'KEGG_OXIDATIVE_PHOSPHORYLATION', 'KEGG_MEDICUS_REFERENCE_GLOBAL_GENOME_NER', 'KEGG_MEDICUS_REFERENCE_MITOCHONDRIAL_COMPLEX_UCP1_IN_THERMOGENESIS', 'KEGG_CITRATE_CYCLE_TCA_CYCLE', 'KEGG_MEDICUS_REFERENCE_KINETOCHORE_FIBER_ORGANIZATION', 'KEGG_MEDICUS_REFERENCE_ASSEMBLY_AND_TRAFFICKING_OF_TELOMERASE', 'KEGG_PROTEASOME', 'KEGG_MEDICUS_VARIANT_MUTATION_INACTIVATED_VCP_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_SOD1_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_REFERENCE_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_ABETA_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_MUTATION_INACTIVATED_UBQLN2_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_SCRAPIE_CONFORMATION_PRPSC_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_HTT_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_SNCA_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION']
+2024-12-16 20:35:14,943 - pipeline.visualization_tools - DEBUG - Number of conditions: 1, Number of pathways: 126
+2024-12-16 20:35:15,077 - pipeline.visualization_tools - DEBUG - Condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, Pathway positions: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125], Mean scores: [ 3.32334513e-01  3.29764092e-01  3.18145418e-01  2.81201241e-01
+  2.67529851e-01  2.57033464e-01  2.48174436e-01  2.02296569e-01
+  2.00988430e-01  1.96340036e-01  1.93313985e-01  1.91773307e-01
+  1.90587674e-01  1.87059623e-01  1.86309294e-01  1.84859376e-01
+  1.83712322e-01  1.76904807e-01  1.76685775e-01  1.73487158e-01
+  1.71861301e-01  1.71612923e-01  1.71543748e-01  1.71325699e-01
+  1.70785618e-01  1.68757566e-01  1.67798146e-01  1.63284141e-01
+  1.62270280e-01  1.62254142e-01  1.61115677e-01  1.60710463e-01
+  1.56347944e-01  1.52972233e-01  1.52971129e-01  1.49014635e-01
+  1.45311565e-01  1.42797005e-01  1.42463472e-01  1.40641018e-01
+  1.39261819e-01  1.38783611e-01  1.35575091e-01  1.35241539e-01
+  1.30450042e-01  1.29152407e-01  1.24438493e-01  1.21431111e-01
+  1.19686841e-01  1.15937170e-01  1.11139464e-01  1.11091247e-01
+  1.11056764e-01  1.10599161e-01  1.10076591e-01  1.04624421e-01
+  1.04147737e-01  1.03145707e-01  9.76635603e-02  9.62547718e-02
+  9.51559190e-02  9.49451903e-02  9.48333000e-02  9.24401628e-02
+  8.67811659e-02  8.50381835e-02  8.37538770e-02  6.51226884e-02
+  5.62429438e-02  5.55883505e-02  4.87949359e-02  4.76387597e-02
+  3.98071976e-02  2.33767267e-02  2.15706174e-02  1.95470878e-02
+  1.58030533e-02  7.19064623e-03  5.75490817e-03 -9.14777247e-05
+ -3.10359819e-03 -4.81241709e-03 -6.29198505e-03 -1.33443531e-02
+ -1.39010790e-02 -1.59127673e-02 -2.13358711e-02 -3.01077391e-02
+ -3.05051158e-02 -4.29473634e-02 -5.35062382e-02 -7.16485604e-02
+ -1.14305330e-01 -1.17350121e-01 -1.34553104e-01 -1.39805829e-01
+ -1.44872790e-01 -1.49385492e-01 -1.51473303e-01 -1.58520689e-01
+ -1.68784793e-01 -1.74578312e-01 -1.84841893e-01 -1.89527161e-01
+ -1.91254944e-01 -2.23283513e-01 -2.24106238e-01 -2.29216651e-01
+ -2.31091871e-01 -2.34557882e-01 -2.35206164e-01 -2.37769784e-01
+ -2.39527621e-01 -2.66236337e-01 -3.01471302e-01 -3.11348547e-01
+ -3.86079923e-01 -4.20037615e-01 -4.85909954e-01 -4.86583959e-01
+ -5.01321509e-01 -5.04914097e-01 -5.06285156e-01 -5.21982105e-01
+ -5.22280869e-01 -5.27226292e-01]
+2024-12-16 20:35:17,587 - pipeline.visualization_tools - INFO - Plot saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 20:35:17,588 - pipeline.pipeline_main - DEBUG - Generated propagation plot at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 20:35:17,588 - pipeline.pipeline_main - DEBUG - Output file to be archived: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_31_04.xlsx
+2024-12-16 20:35:17,589 - pipeline.pipeline_main - DEBUG - Output file to be archived: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 20:35:17,591 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_31_04.xlsx
+2024-12-16 20:35:17,596 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 20:35:17,598 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-16 20:35:17,601 - app.pipeline_runner - INFO - Pipeline completed successfully for job d7aa1aea-dc00-46f8-ac52-875ec5558dd9
+2024-12-16 20:35:17,601 - app.temp_manager - DEBUG - TempFileManager destructor called
+2024-12-16 20:35:17,602 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-16 20:35:17,602 - app.temp_manager - DEBUG - No temp directory to clean up
+2024-12-16 20:35:17,602 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-16 20:40:27,135 - app.app_main - INFO - Application is shutting down
+2024-12-16 20:40:44,320 - app.app_main - INFO - Application is starting up
+2024-12-16 20:41:12,236 - app.app_main - INFO - Application is shutting down
+2024-12-16 20:41:16,411 - app.app_main - INFO - Application is starting up
+2024-12-16 20:41:22,812 - app.routes - INFO - New job request received. Job code: 1c865413-6c30-4b25-b3e1-6c3a73b5a8f1
+2024-12-16 20:41:22,839 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-16 20:41:22,841 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-16 20:41:22,843 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-16 20:41:22,845 - app.pipeline_runner - INFO - Starting pipeline for job 1c865413-6c30-4b25-b3e1-6c3a73b5a8f1
+2024-12-16 20:41:22,845 - app.pipeline_runner - DEBUG - Using default network
+2024-12-16 20:41:22,845 - pipeline.settings - INFO - Using default matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.1.npz
+2024-12-16 20:41:22,846 - pipeline.settings - INFO - Using default network file: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-16 20:41:22,848 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-16 20:41:27,593 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-16 20:41:27,613 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, file:           GeneID     Score
+0           3360  0.317096
+1           1393 -0.092459
+2           3362  0.379495
+3           3363  0.122374
+4         286343 -0.780245
+...          ...       ...
+20643     113791  0.084842
+20644  100506457  0.150522
+20645     282679 -0.570184
+20646        581  0.045622
+20647       6059 -0.222887
+
+[20648 rows x 2 columns]
+2024-12-16 20:44:04,050 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 396 pathways.
+2024-12-16 20:44:24,876 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_41_27.xlsx.
+2024-12-16 20:44:24,960 - pipeline.pipeline_main - DEBUG - Ensured output directory exists: /home/yair/projects/Yair_propagation/pipeline/Outputs
+2024-12-16 20:44:25,009 - pipeline.pipeline_main - DEBUG - Processed condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, output path: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_41_27.xlsx
+2024-12-16 20:44:25,009 - pipeline.visualization_tools - DEBUG - Starting plot_pathways_mean_scores
+2024-12-16 20:44:25,009 - pipeline.visualization_tools - DEBUG - Combined pathways: 389
+2024-12-16 20:44:25,012 - pipeline.visualization_tools - DEBUG - Data records created: 389 rows
+2024-12-16 20:44:25,025 - pipeline.visualization_tools - DEBUG - Pathway significance calculated. Significant pathways: 126
+2024-12-16 20:44:25,038 - pipeline.visualization_tools - DEBUG - Sorted pathways: ['KEGG_MEDICUS_REFERENCE_ITGA_B_FAK_CDC42_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ITGA_B_RHOGAP_RHOA_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ITGA_B_RHOGEF_RHOA_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ITGA_B_FAK_RAC_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ITGA_B_TALIN_VINCULIN_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ITGA_B_RHOG_RAC_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_REGULATION_OF_GF_RTK_RAS_ERK_SIGNALING_UBIQUITINATION_OF_RTK_BY_CBL', 'KEGG_CHRONIC_MYELOID_LEUKEMIA', 'KEGG_FOCAL_ADHESION', 'KEGG_NON_SMALL_CELL_LUNG_CANCER', 'KEGG_GLIOMA', 'KEGG_CYTOKINE_CYTOKINE_RECEPTOR_INTERACTION', 'KEGG_PANCREATIC_CANCER', 'KEGG_MEDICUS_REFERENCE_TLR7_9_IRF7_SIGNALING_PATHWAY', 'KEGG_PROSTATE_CANCER', 'KEGG_INTESTINAL_IMMUNE_NETWORK_FOR_IGA_PRODUCTION', 'KEGG_VEGF_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_WNT_SIGNALING_MODULATION_WNT_INHIBITOR', 'KEGG_MEDICUS_REFERENCE_RIG_I_NFKB_SIGNALING_PATHWAY', 'KEGG_ARRHYTHMOGENIC_RIGHT_VENTRICULAR_CARDIOMYOPATHY_ARVC', 'KEGG_ADHERENS_JUNCTION', 'KEGG_MEDICUS_REFERENCE_WNT_SIGNALING_MODULATION_WNT_ACYLATION', 'KEGG_ASTHMA', 'KEGG_MEDICUS_REFERENCE_MDA5_IRF7_3_SIGNALING_PATHWAY', 'KEGG_ENDOMETRIAL_CANCER', 'KEGG_COMPLEMENT_AND_COAGULATION_CASCADES', 'KEGG_MEDICUS_REFERENCE_RIG_I_IRF7_3_SIGNALING_PATHWAY', 'KEGG_ALLOGRAFT_REJECTION', 'KEGG_MEDICUS_REFERENCE_PDGF_PDGFR_RAS_ERK_SIGNALING_PATHWAY', 'KEGG_AUTOIMMUNE_THYROID_DISEASE', 'KEGG_MEDICUS_REFERENCE_TLR7_8_9_IRF5_SIGNALING_PATHWAY', 'KEGG_B_CELL_RECEPTOR_SIGNALING_PATHWAY', 'KEGG_PATHWAYS_IN_CANCER', 'KEGG_CHEMOKINE_SIGNALING_PATHWAY', 'KEGG_GRAFT_VERSUS_HOST_DISEASE', 'KEGG_WNT_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_TYPE_I_IFN_SIGNALING_PATHWAY', 'KEGG_TYPE_I_DIABETES_MELLITUS', 'KEGG_STEROID_HORMONE_BIOSYNTHESIS', 'KEGG_JAK_STAT_SIGNALING_PATHWAY', 'KEGG_INSULIN_SIGNALING_PATHWAY', 'KEGG_THYROID_CANCER', 'KEGG_MEDICUS_PATHOGEN_HIV_GP120_TO_CXCR4_GNAQ_PLCB_G_CALCINEURIN', 'KEGG_ACUTE_MYELOID_LEUKEMIA', 'KEGG_MEDICUS_REFERENCE_CYTOKINE_JAK_STAT_SIGNALING_PATHWAY', 'KEGG_REGULATION_OF_ACTIN_CYTOSKELETON', 'KEGG_COLORECTAL_CANCER', 'KEGG_RENAL_CELL_CARCINOMA', 'KEGG_NEUROACTIVE_LIGAND_RECEPTOR_INTERACTION', 'KEGG_MAPK_SIGNALING_PATHWAY', 'KEGG_VIRAL_MYOCARDITIS', 'KEGG_MEDICUS_REFERENCE_TYPE_I_INTERFERON_TO_JAK_STAT_SIGNALING_PATHWAY', 'KEGG_ERBB_SIGNALING_PATHWAY', 'KEGG_OLFACTORY_TRANSDUCTION', 'KEGG_FC_GAMMA_R_MEDIATED_PHAGOCYTOSIS', 'KEGG_RETINOL_METABOLISM', 'KEGG_NEUROTROPHIN_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_EGF_EGFR_PLCG_CALCINEURIN_SIGNALING_PATHWAY', 'KEGG_RENIN_ANGIOTENSIN_SYSTEM', 'KEGG_TOLL_LIKE_RECEPTOR_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_TYPE_II_INTERFERON_TO_JAK_STAT_SIGNALING_PATHWAY', 'KEGG_ANTIGEN_PROCESSING_AND_PRESENTATION', 'KEGG_SYSTEMIC_LUPUS_ERYTHEMATOSUS', 'KEGG_GAP_JUNCTION', 'KEGG_TASTE_TRANSDUCTION', 'KEGG_MEDICUS_ENV_FACTOR_E2_TO_RAS_ERK_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_BCR_PLCG_CALCINEURIN_SIGNALING_PATHWAY', 'KEGG_ASCORBATE_AND_ALDARATE_METABOLISM', 'KEGG_ENDOCYTOSIS', 'KEGG_METABOLISM_OF_XENOBIOTICS_BY_CYTOCHROME_P450', 'KEGG_DRUG_METABOLISM_CYTOCHROME_P450', 'KEGG_PENTOSE_AND_GLUCURONATE_INTERCONVERSIONS', 'KEGG_MEDICUS_REFERENCE_N_GLYCAN_BIOSYNTHESIS', 'KEGG_MEDICUS_REFERENCE_IFN_RIPK1_3_SIGNALING_PATHWAY', 'KEGG_DRUG_METABOLISM_OTHER_ENZYMES', 'KEGG_GLYCOSAMINOGLYCAN_BIOSYNTHESIS_HEPARAN_SULFATE', 'KEGG_EPITHELIAL_CELL_SIGNALING_IN_HELICOBACTER_PYLORI_INFECTION', 'KEGG_MEDICUS_REFERENCE_PINK_PARKIN_MEDIATED_AUTOPHAGOSOME_FORMATION', 'KEGG_SPHINGOLIPID_METABOLISM', 'KEGG_CELL_CYCLE', 'KEGG_UBIQUITIN_MEDIATED_PROTEOLYSIS', 'KEGG_PATHOGENIC_ESCHERICHIA_COLI_INFECTION', 'KEGG_ONE_CARBON_POOL_BY_FOLATE', 'KEGG_MEDICUS_PATHOGEN_SHIGELLA_IPGD_TO_ARNO_ARF_ACTB_G_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ORGANIZATION_OF_THE_INNER_KINETOCHORE', 'KEGG_PORPHYRIN_AND_CHLOROPHYLL_METABOLISM', 'KEGG_MEDICUS_PATHOGEN_SALMONELLA_SOPB_TO_ARNO_ARF_ACTB_G_SIGNALING_PATHWAY', 'KEGG_STARCH_AND_SUCROSE_METABOLISM', 'KEGG_VIBRIO_CHOLERAE_INFECTION', 'KEGG_PROPANOATE_METABOLISM', 'KEGG_MEDICUS_REFERENCE_ARNO_ARF_ACTB_G_SIGNALING_PATHWAY', 'KEGG_VALINE_LEUCINE_AND_ISOLEUCINE_DEGRADATION', 'KEGG_ALZHEIMERS_DISEASE', 'KEGG_SPLICEOSOME', 'KEGG_MEDICUS_REFERENCE_CORE_NER_REACTION', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_HTT_TO_ANTEROGRADE_AXONAL_TRANSPORT', 'KEGG_PYRUVATE_METABOLISM', 'KEGG_HUNTINGTONS_DISEASE', 'KEGG_MEDICUS_REFERENCE_ELECTRON_TRANSFER_IN_COMPLEX_IV', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_ABETA_TO_ELECTRON_TRANSFER_IN_COMPLEX_IV', 'KEGG_NUCLEOTIDE_EXCISION_REPAIR', 'KEGG_MEDICUS_PATHOGEN_SALMONELLA_SOPE_TO_RAC_SIGNALING_PATHWAY', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_ABETA_TO_ELECTRON_TRANSFER_IN_COMPLEX_I', 'KEGG_MEDICUS_ENV_FACTOR_ARSENIC_TO_ELECTRON_TRANSFER_IN_COMPLEX_IV', 'KEGG_MEDICUS_REFERENCE_PROMOTION_OF_MICROTUBULE_GROWTH', 'KEGG_PARKINSONS_DISEASE', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_TDP43_TO_ELECTRON_TRANSFER_IN_COMPLEX_I', 'KEGG_MEDICUS_VARIANT_MUTATION_INACTIVATED_PINK1_TO_ELECTRON_TRANSFER_IN_COMPLEX_I', 'KEGG_MEDICUS_REFERENCE_ELECTRON_TRANSFER_IN_COMPLEX_I', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_ABETA_TO_ANTEROGRADE_AXONAL_TRANSPORT', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_SNCA_TO_ELECTRON_TRANSFER_IN_COMPLEX_I', 'KEGG_OXIDATIVE_PHOSPHORYLATION', 'KEGG_MEDICUS_REFERENCE_GLOBAL_GENOME_NER', 'KEGG_MEDICUS_REFERENCE_MITOCHONDRIAL_COMPLEX_UCP1_IN_THERMOGENESIS', 'KEGG_CITRATE_CYCLE_TCA_CYCLE', 'KEGG_MEDICUS_REFERENCE_KINETOCHORE_FIBER_ORGANIZATION', 'KEGG_MEDICUS_REFERENCE_ASSEMBLY_AND_TRAFFICKING_OF_TELOMERASE', 'KEGG_PROTEASOME', 'KEGG_MEDICUS_VARIANT_MUTATION_INACTIVATED_VCP_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_SOD1_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_REFERENCE_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_ABETA_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_MUTATION_INACTIVATED_UBQLN2_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_SCRAPIE_CONFORMATION_PRPSC_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_HTT_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_SNCA_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION']
+2024-12-16 20:44:25,043 - pipeline.visualization_tools - DEBUG - Number of conditions: 1, Number of pathways: 126
+2024-12-16 20:44:25,166 - pipeline.visualization_tools - DEBUG - Condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, Pathway positions: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125], Mean scores: [ 3.32334513e-01  3.29764092e-01  3.18145418e-01  2.81201241e-01
+  2.67529851e-01  2.57033464e-01  2.48174436e-01  2.02296569e-01
+  2.00988430e-01  1.96340036e-01  1.93313985e-01  1.91773307e-01
+  1.90587674e-01  1.87059623e-01  1.86309294e-01  1.84859376e-01
+  1.83712322e-01  1.76904807e-01  1.76685775e-01  1.73487158e-01
+  1.71861301e-01  1.71612923e-01  1.71543748e-01  1.71325699e-01
+  1.70785618e-01  1.68757566e-01  1.67798146e-01  1.63284141e-01
+  1.62270280e-01  1.62254142e-01  1.61115677e-01  1.60710463e-01
+  1.56347944e-01  1.52972233e-01  1.52971129e-01  1.49014635e-01
+  1.45311565e-01  1.42797005e-01  1.42463472e-01  1.40641018e-01
+  1.39261819e-01  1.38783611e-01  1.35575091e-01  1.35241539e-01
+  1.30450042e-01  1.29152407e-01  1.24438493e-01  1.21431111e-01
+  1.19686841e-01  1.15937170e-01  1.11139464e-01  1.11091247e-01
+  1.11056764e-01  1.10599161e-01  1.10076591e-01  1.04624421e-01
+  1.04147737e-01  1.03145707e-01  9.76635603e-02  9.62547718e-02
+  9.51559190e-02  9.49451903e-02  9.48333000e-02  9.24401628e-02
+  8.67811659e-02  8.50381835e-02  8.37538770e-02  6.51226884e-02
+  5.62429438e-02  5.55883505e-02  4.87949359e-02  4.76387597e-02
+  3.98071976e-02  2.33767267e-02  2.15706174e-02  1.95470878e-02
+  1.58030533e-02  7.19064623e-03  5.75490817e-03 -9.14777247e-05
+ -3.10359819e-03 -4.81241709e-03 -6.29198505e-03 -1.33443531e-02
+ -1.39010790e-02 -1.59127673e-02 -2.13358711e-02 -3.01077391e-02
+ -3.05051158e-02 -4.29473634e-02 -5.35062382e-02 -7.16485604e-02
+ -1.14305330e-01 -1.17350121e-01 -1.34553104e-01 -1.39805829e-01
+ -1.44872790e-01 -1.49385492e-01 -1.51473303e-01 -1.58520689e-01
+ -1.68784793e-01 -1.74578312e-01 -1.84841893e-01 -1.89527161e-01
+ -1.91254944e-01 -2.23283513e-01 -2.24106238e-01 -2.29216651e-01
+ -2.31091871e-01 -2.34557882e-01 -2.35206164e-01 -2.37769784e-01
+ -2.39527621e-01 -2.66236337e-01 -3.01471302e-01 -3.11348547e-01
+ -3.86079923e-01 -4.20037615e-01 -4.85909954e-01 -4.86583959e-01
+ -5.01321509e-01 -5.04914097e-01 -5.06285156e-01 -5.21982105e-01
+ -5.22280869e-01 -5.27226292e-01]
+2024-12-16 20:44:32,271 - pipeline.visualization_tools - INFO - Plot saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 20:44:32,273 - pipeline.pipeline_main - DEBUG - Generated propagation plot at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 20:44:32,283 - pipeline.pipeline_main - DEBUG - Output file to be archived: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_41_27.xlsx
+2024-12-16 20:44:32,285 - pipeline.pipeline_main - DEBUG - Output file to be archived: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 20:44:32,289 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_41_27.xlsx
+2024-12-16 20:44:32,298 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 20:44:32,310 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-16 20:44:32,316 - app.pipeline_runner - INFO - Pipeline completed successfully for job 1c865413-6c30-4b25-b3e1-6c3a73b5a8f1
+2024-12-16 20:44:32,324 - app.temp_manager - DEBUG - TempFileManager destructor called
+2024-12-16 20:44:32,326 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-16 20:44:32,327 - app.temp_manager - DEBUG - No temp directory to clean up
+2024-12-16 20:44:32,328 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-16 20:46:10,565 - app.app_main - INFO - Application is shutting down
+2024-12-16 20:46:28,075 - app.app_main - INFO - Application is starting up
+2024-12-16 20:46:28,105 - app.routes - INFO - New job request received. Job code: 2c9121c0-b6ef-4458-a1d1-624125d68907
+2024-12-16 20:46:28,125 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-16 20:46:28,126 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-16 20:46:28,127 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-16 20:46:28,128 - app.pipeline_runner - INFO - Starting pipeline for job 2c9121c0-b6ef-4458-a1d1-624125d68907
+2024-12-16 20:46:28,128 - app.pipeline_runner - DEBUG - Using default network
+2024-12-16 20:46:28,129 - pipeline.settings - INFO - Using default matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.1.npz
+2024-12-16 20:46:28,130 - pipeline.settings - INFO - Using default network file: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-16 20:46:28,130 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-16 20:46:32,242 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-16 20:46:32,252 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, file:           GeneID     Score
+0           3360  0.317096
+1           1393 -0.092459
+2           3362  0.379495
+3           3363  0.122374
+4         286343 -0.780245
+...          ...       ...
+20643     113791  0.084842
+20644  100506457  0.150522
+20645     282679 -0.570184
+20646        581  0.045622
+20647       6059 -0.222887
+
+[20648 rows x 2 columns]
+2024-12-16 20:48:10,882 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 396 pathways.
+2024-12-16 20:49:19,138 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_46_32.xlsx.
+2024-12-16 20:49:19,235 - pipeline.pipeline_main - DEBUG - Ensured output directory exists: /home/yair/projects/Yair_propagation/pipeline/Outputs
+2024-12-16 20:49:19,281 - pipeline.pipeline_main - DEBUG - Processed condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, output path: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_46_32.xlsx
+2024-12-16 20:49:19,281 - pipeline.visualization_tools - DEBUG - Starting plot_pathways_mean_scores
+2024-12-16 20:49:19,281 - pipeline.visualization_tools - DEBUG - Combined pathways: 389
+2024-12-16 20:49:19,283 - pipeline.visualization_tools - DEBUG - Data records created: 389 rows
+2024-12-16 20:49:19,297 - pipeline.visualization_tools - DEBUG - Pathway significance calculated. Significant pathways: 126
+2024-12-16 20:49:19,312 - pipeline.visualization_tools - DEBUG - Sorted pathways: ['KEGG_MEDICUS_REFERENCE_ITGA_B_FAK_CDC42_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ITGA_B_RHOGAP_RHOA_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ITGA_B_RHOGEF_RHOA_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ITGA_B_FAK_RAC_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ITGA_B_TALIN_VINCULIN_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ITGA_B_RHOG_RAC_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_REGULATION_OF_GF_RTK_RAS_ERK_SIGNALING_UBIQUITINATION_OF_RTK_BY_CBL', 'KEGG_CHRONIC_MYELOID_LEUKEMIA', 'KEGG_FOCAL_ADHESION', 'KEGG_NON_SMALL_CELL_LUNG_CANCER', 'KEGG_GLIOMA', 'KEGG_CYTOKINE_CYTOKINE_RECEPTOR_INTERACTION', 'KEGG_PANCREATIC_CANCER', 'KEGG_MEDICUS_REFERENCE_TLR7_9_IRF7_SIGNALING_PATHWAY', 'KEGG_PROSTATE_CANCER', 'KEGG_INTESTINAL_IMMUNE_NETWORK_FOR_IGA_PRODUCTION', 'KEGG_VEGF_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_WNT_SIGNALING_MODULATION_WNT_INHIBITOR', 'KEGG_MEDICUS_REFERENCE_RIG_I_NFKB_SIGNALING_PATHWAY', 'KEGG_ARRHYTHMOGENIC_RIGHT_VENTRICULAR_CARDIOMYOPATHY_ARVC', 'KEGG_ADHERENS_JUNCTION', 'KEGG_MEDICUS_REFERENCE_WNT_SIGNALING_MODULATION_WNT_ACYLATION', 'KEGG_ASTHMA', 'KEGG_MEDICUS_REFERENCE_MDA5_IRF7_3_SIGNALING_PATHWAY', 'KEGG_ENDOMETRIAL_CANCER', 'KEGG_COMPLEMENT_AND_COAGULATION_CASCADES', 'KEGG_MEDICUS_REFERENCE_RIG_I_IRF7_3_SIGNALING_PATHWAY', 'KEGG_ALLOGRAFT_REJECTION', 'KEGG_MEDICUS_REFERENCE_PDGF_PDGFR_RAS_ERK_SIGNALING_PATHWAY', 'KEGG_AUTOIMMUNE_THYROID_DISEASE', 'KEGG_MEDICUS_REFERENCE_TLR7_8_9_IRF5_SIGNALING_PATHWAY', 'KEGG_B_CELL_RECEPTOR_SIGNALING_PATHWAY', 'KEGG_PATHWAYS_IN_CANCER', 'KEGG_CHEMOKINE_SIGNALING_PATHWAY', 'KEGG_GRAFT_VERSUS_HOST_DISEASE', 'KEGG_WNT_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_TYPE_I_IFN_SIGNALING_PATHWAY', 'KEGG_TYPE_I_DIABETES_MELLITUS', 'KEGG_STEROID_HORMONE_BIOSYNTHESIS', 'KEGG_JAK_STAT_SIGNALING_PATHWAY', 'KEGG_INSULIN_SIGNALING_PATHWAY', 'KEGG_THYROID_CANCER', 'KEGG_MEDICUS_PATHOGEN_HIV_GP120_TO_CXCR4_GNAQ_PLCB_G_CALCINEURIN', 'KEGG_ACUTE_MYELOID_LEUKEMIA', 'KEGG_MEDICUS_REFERENCE_CYTOKINE_JAK_STAT_SIGNALING_PATHWAY', 'KEGG_REGULATION_OF_ACTIN_CYTOSKELETON', 'KEGG_COLORECTAL_CANCER', 'KEGG_RENAL_CELL_CARCINOMA', 'KEGG_NEUROACTIVE_LIGAND_RECEPTOR_INTERACTION', 'KEGG_MAPK_SIGNALING_PATHWAY', 'KEGG_VIRAL_MYOCARDITIS', 'KEGG_MEDICUS_REFERENCE_TYPE_I_INTERFERON_TO_JAK_STAT_SIGNALING_PATHWAY', 'KEGG_ERBB_SIGNALING_PATHWAY', 'KEGG_OLFACTORY_TRANSDUCTION', 'KEGG_FC_GAMMA_R_MEDIATED_PHAGOCYTOSIS', 'KEGG_RETINOL_METABOLISM', 'KEGG_NEUROTROPHIN_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_EGF_EGFR_PLCG_CALCINEURIN_SIGNALING_PATHWAY', 'KEGG_RENIN_ANGIOTENSIN_SYSTEM', 'KEGG_TOLL_LIKE_RECEPTOR_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_TYPE_II_INTERFERON_TO_JAK_STAT_SIGNALING_PATHWAY', 'KEGG_ANTIGEN_PROCESSING_AND_PRESENTATION', 'KEGG_SYSTEMIC_LUPUS_ERYTHEMATOSUS', 'KEGG_GAP_JUNCTION', 'KEGG_TASTE_TRANSDUCTION', 'KEGG_MEDICUS_ENV_FACTOR_E2_TO_RAS_ERK_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_BCR_PLCG_CALCINEURIN_SIGNALING_PATHWAY', 'KEGG_ASCORBATE_AND_ALDARATE_METABOLISM', 'KEGG_ENDOCYTOSIS', 'KEGG_METABOLISM_OF_XENOBIOTICS_BY_CYTOCHROME_P450', 'KEGG_DRUG_METABOLISM_CYTOCHROME_P450', 'KEGG_PENTOSE_AND_GLUCURONATE_INTERCONVERSIONS', 'KEGG_MEDICUS_REFERENCE_N_GLYCAN_BIOSYNTHESIS', 'KEGG_MEDICUS_REFERENCE_IFN_RIPK1_3_SIGNALING_PATHWAY', 'KEGG_DRUG_METABOLISM_OTHER_ENZYMES', 'KEGG_GLYCOSAMINOGLYCAN_BIOSYNTHESIS_HEPARAN_SULFATE', 'KEGG_EPITHELIAL_CELL_SIGNALING_IN_HELICOBACTER_PYLORI_INFECTION', 'KEGG_MEDICUS_REFERENCE_PINK_PARKIN_MEDIATED_AUTOPHAGOSOME_FORMATION', 'KEGG_SPHINGOLIPID_METABOLISM', 'KEGG_CELL_CYCLE', 'KEGG_UBIQUITIN_MEDIATED_PROTEOLYSIS', 'KEGG_PATHOGENIC_ESCHERICHIA_COLI_INFECTION', 'KEGG_ONE_CARBON_POOL_BY_FOLATE', 'KEGG_MEDICUS_PATHOGEN_SHIGELLA_IPGD_TO_ARNO_ARF_ACTB_G_SIGNALING_PATHWAY', 'KEGG_MEDICUS_REFERENCE_ORGANIZATION_OF_THE_INNER_KINETOCHORE', 'KEGG_PORPHYRIN_AND_CHLOROPHYLL_METABOLISM', 'KEGG_MEDICUS_PATHOGEN_SALMONELLA_SOPB_TO_ARNO_ARF_ACTB_G_SIGNALING_PATHWAY', 'KEGG_STARCH_AND_SUCROSE_METABOLISM', 'KEGG_VIBRIO_CHOLERAE_INFECTION', 'KEGG_PROPANOATE_METABOLISM', 'KEGG_MEDICUS_REFERENCE_ARNO_ARF_ACTB_G_SIGNALING_PATHWAY', 'KEGG_VALINE_LEUCINE_AND_ISOLEUCINE_DEGRADATION', 'KEGG_ALZHEIMERS_DISEASE', 'KEGG_SPLICEOSOME', 'KEGG_MEDICUS_REFERENCE_CORE_NER_REACTION', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_HTT_TO_ANTEROGRADE_AXONAL_TRANSPORT', 'KEGG_PYRUVATE_METABOLISM', 'KEGG_HUNTINGTONS_DISEASE', 'KEGG_MEDICUS_REFERENCE_ELECTRON_TRANSFER_IN_COMPLEX_IV', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_ABETA_TO_ELECTRON_TRANSFER_IN_COMPLEX_IV', 'KEGG_NUCLEOTIDE_EXCISION_REPAIR', 'KEGG_MEDICUS_PATHOGEN_SALMONELLA_SOPE_TO_RAC_SIGNALING_PATHWAY', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_ABETA_TO_ELECTRON_TRANSFER_IN_COMPLEX_I', 'KEGG_MEDICUS_ENV_FACTOR_ARSENIC_TO_ELECTRON_TRANSFER_IN_COMPLEX_IV', 'KEGG_MEDICUS_REFERENCE_PROMOTION_OF_MICROTUBULE_GROWTH', 'KEGG_PARKINSONS_DISEASE', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_TDP43_TO_ELECTRON_TRANSFER_IN_COMPLEX_I', 'KEGG_MEDICUS_VARIANT_MUTATION_INACTIVATED_PINK1_TO_ELECTRON_TRANSFER_IN_COMPLEX_I', 'KEGG_MEDICUS_REFERENCE_ELECTRON_TRANSFER_IN_COMPLEX_I', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_ABETA_TO_ANTEROGRADE_AXONAL_TRANSPORT', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_SNCA_TO_ELECTRON_TRANSFER_IN_COMPLEX_I', 'KEGG_OXIDATIVE_PHOSPHORYLATION', 'KEGG_MEDICUS_REFERENCE_GLOBAL_GENOME_NER', 'KEGG_MEDICUS_REFERENCE_MITOCHONDRIAL_COMPLEX_UCP1_IN_THERMOGENESIS', 'KEGG_CITRATE_CYCLE_TCA_CYCLE', 'KEGG_MEDICUS_REFERENCE_KINETOCHORE_FIBER_ORGANIZATION', 'KEGG_MEDICUS_REFERENCE_ASSEMBLY_AND_TRAFFICKING_OF_TELOMERASE', 'KEGG_PROTEASOME', 'KEGG_MEDICUS_VARIANT_MUTATION_INACTIVATED_VCP_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_SOD1_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_REFERENCE_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_ABETA_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_MUTATION_INACTIVATED_UBQLN2_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_SCRAPIE_CONFORMATION_PRPSC_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_HTT_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION', 'KEGG_MEDICUS_VARIANT_MUTATION_CAUSED_ABERRANT_SNCA_TO_26S_PROTEASOME_MEDIATED_PROTEIN_DEGRADATION']
+2024-12-16 20:49:19,316 - pipeline.visualization_tools - DEBUG - Number of conditions: 1, Number of pathways: 126
+2024-12-16 20:49:19,426 - pipeline.visualization_tools - DEBUG - Condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, Pathway positions: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125], Mean scores: [ 3.32334513e-01  3.29764092e-01  3.18145418e-01  2.81201241e-01
+  2.67529851e-01  2.57033464e-01  2.48174436e-01  2.02296569e-01
+  2.00988430e-01  1.96340036e-01  1.93313985e-01  1.91773307e-01
+  1.90587674e-01  1.87059623e-01  1.86309294e-01  1.84859376e-01
+  1.83712322e-01  1.76904807e-01  1.76685775e-01  1.73487158e-01
+  1.71861301e-01  1.71612923e-01  1.71543748e-01  1.71325699e-01
+  1.70785618e-01  1.68757566e-01  1.67798146e-01  1.63284141e-01
+  1.62270280e-01  1.62254142e-01  1.61115677e-01  1.60710463e-01
+  1.56347944e-01  1.52972233e-01  1.52971129e-01  1.49014635e-01
+  1.45311565e-01  1.42797005e-01  1.42463472e-01  1.40641018e-01
+  1.39261819e-01  1.38783611e-01  1.35575091e-01  1.35241539e-01
+  1.30450042e-01  1.29152407e-01  1.24438493e-01  1.21431111e-01
+  1.19686841e-01  1.15937170e-01  1.11139464e-01  1.11091247e-01
+  1.11056764e-01  1.10599161e-01  1.10076591e-01  1.04624421e-01
+  1.04147737e-01  1.03145707e-01  9.76635603e-02  9.62547718e-02
+  9.51559190e-02  9.49451903e-02  9.48333000e-02  9.24401628e-02
+  8.67811659e-02  8.50381835e-02  8.37538770e-02  6.51226884e-02
+  5.62429438e-02  5.55883505e-02  4.87949359e-02  4.76387597e-02
+  3.98071976e-02  2.33767267e-02  2.15706174e-02  1.95470878e-02
+  1.58030533e-02  7.19064623e-03  5.75490817e-03 -9.14777247e-05
+ -3.10359819e-03 -4.81241709e-03 -6.29198505e-03 -1.33443531e-02
+ -1.39010790e-02 -1.59127673e-02 -2.13358711e-02 -3.01077391e-02
+ -3.05051158e-02 -4.29473634e-02 -5.35062382e-02 -7.16485604e-02
+ -1.14305330e-01 -1.17350121e-01 -1.34553104e-01 -1.39805829e-01
+ -1.44872790e-01 -1.49385492e-01 -1.51473303e-01 -1.58520689e-01
+ -1.68784793e-01 -1.74578312e-01 -1.84841893e-01 -1.89527161e-01
+ -1.91254944e-01 -2.23283513e-01 -2.24106238e-01 -2.29216651e-01
+ -2.31091871e-01 -2.34557882e-01 -2.35206164e-01 -2.37769784e-01
+ -2.39527621e-01 -2.66236337e-01 -3.01471302e-01 -3.11348547e-01
+ -3.86079923e-01 -4.20037615e-01 -4.85909954e-01 -4.86583959e-01
+ -5.01321509e-01 -5.04914097e-01 -5.06285156e-01 -5.21982105e-01
+ -5.22280869e-01 -5.27226292e-01], Significance: [ True  True  True  True  True  True  True  True  True  True  True  True
+  True  True  True  True  True  True  True  True  True  True  True  True
+  True  True  True  True  True  True  True  True  True  True  True  True
+  True  True  True  True  True  True  True  True  True  True  True  True
+  True  True  True  True  True  True  True  True  True  True  True  True
+  True  True  True  True  True  True  True  True  True  True  True  True
+  True  True  True  True  True  True  True  True  True  True  True  True
+  True  True  True  True  True  True  True  True  True  True  True  True
+  True  True  True  True  True  True  True  True  True  True  True  True
+  True  True  True  True  True  True  True  True  True  True  True  True
+  True  True  True  True  True  True]
+2024-12-16 20:49:21,551 - pipeline.visualization_tools - INFO - Plot saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 20:49:21,552 - pipeline.pipeline_main - DEBUG - Generated propagation plot at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 20:49:21,552 - pipeline.pipeline_main - DEBUG - Output file to be archived: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_46_32.xlsx
+2024-12-16 20:49:21,553 - pipeline.pipeline_main - DEBUG - Output file to be archived: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 20:49:21,554 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__20_46_32.xlsx
+2024-12-16 20:49:21,557 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 20:49:21,558 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-16 20:49:21,560 - app.pipeline_runner - INFO - Pipeline completed successfully for job 2c9121c0-b6ef-4458-a1d1-624125d68907
+2024-12-16 20:49:21,561 - app.temp_manager - DEBUG - TempFileManager destructor called
+2024-12-16 20:49:21,561 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-16 20:49:21,562 - app.temp_manager - DEBUG - No temp directory to clean up
+2024-12-16 20:49:21,562 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-16 20:59:00,057 - app.app_main - INFO - Application is shutting down

@@ -17,6 +17,7 @@ class SettingsInput(BaseModel):
     run_gsea: bool = False
     restrict_to_network: bool = False
     create_similarity_matrix: bool = False
+    figure_title: str = "Pathway Enrichment"
 
     def is_custom_network(self) -> bool:
         """Check if using a custom network."""

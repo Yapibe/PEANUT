@@ -260,12 +260,25 @@
       </select>
 
       <label for="pathway_file">Gene Set
-        <span data-tippy-content="Select the gene set for pathway analysis.">?</span>
+        <span data-tippy-content="Select a predefined gene set or upload your own GMT file.">?</span>
       </label>
-      <select id="pathway_file" name="pathway_file" required>
+      <select id="pathway_file" name="pathway_file" onchange="toggleCustomPathway()" required>
         <option value="kegg">KEGG</option>
         <option value="msig_c2_canonical">MSig c2 Canonical Pathways</option>
+        <option value="custom">Upload Custom Gene Set (GMT)</option>
       </select>
+
+      <div id="custom_pathway_section" style="display: none;">
+        <label for="pathway_file_upload">Upload GMT File
+          <span data-tippy-content="Upload a GMT file containing your custom gene sets. Format: [Pathway Name][Description][Gene1][Gene2]...">?</span>
+        </label>
+        <input type="file" id="pathway_file_upload" name="pathway_file_upload" accept=".gmt">
+        <p class="help-text">
+          File must be in GMT format.<br>
+          Each line: [Pathway Name][Description][Gene1][Gene2]...<br>
+          Maximum file size: 20MB
+        </p>
+      </div>
 
       <label for="files">Input Preranked Tables
         <span data-tippy-content="Upload your preranked gene expression files. Supported formats include RNK and XLSX.">?</span>
@@ -291,6 +304,13 @@
               <input type="checkbox" id="network_restriction" name="network_restriction" disabled>
               <label for="network_restriction">Network Restriction</label>
           </div>
+      
+          <label for="plot_title">Plot Title
+              <span data-tippy-content="Customize the title of the final plot. Default: 'Pathway Enrichment'">?</span>
+          </label>
+          <input type="text" id="plot_title" name="plot_title" 
+                 value="Pathway Enrichment" 
+                 placeholder="Enter plot title">
       
           <label for="min_genes_per_pathway">
               Minimum Genes per Pathway
@@ -727,6 +747,20 @@
       const isVisible = content.style.display === 'block';
       content.style.display = isVisible ? 'none' : 'block';
       button.textContent = isVisible ? 'Advanced Settings ▼' : 'Advanced Settings ▲';
+    }
+
+    function toggleCustomPathway() {
+        const pathwaySelect = document.getElementById('pathway_file');
+        const customSection = document.getElementById('custom_pathway_section');
+        const fileInput = document.getElementById('pathway_file_upload');
+        
+        if (pathwaySelect.value === 'custom') {
+            customSection.style.display = 'block';
+            fileInput.required = true;
+        } else {
+            customSection.style.display = 'none';
+            fileInput.required = false;
+        }
     }
   </script>
 </body>

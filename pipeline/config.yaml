@@ -4,9 +4,9 @@ species: 'H_sapiens'
 alpha: 0.2
 
 # Network configuration
-network_type: 'custom'  # 'default' or 'custom'
-network_name: 'small_graph'  # For default: 'Anat' or 'HumanNet', for custom: filename without extension
-network_path: 'pipeline/Data/H_sapiens/network/custom/small_graph'  # Full path for custom networks
+network_type: 'default'  # 'default' or 'custom'
+network_name: 'Anat'  # For default: 'Anat' or 'HumanNet', for custom: filename without extension
+network_path: 'pipeline/Data/H_sapiens/network/Anat'  # Full path for custom networks
 
 pathway_file: 'kegg'
 min_genes_per_pathway: 15
@@ -14,7 +14,8 @@ max_genes_per_pathway: 500
 fdr_threshold: 0.05
 run_gsea: false
 restrict_to_network: false
-create_similarity_matrix: true
+create_similarity_matrix: false
+figure_title: 'Pathway Enrichment'
 
 # Test input files
 condition_data_files:

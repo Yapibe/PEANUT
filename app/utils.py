@@ -130,3 +130,44 @@ def validate_input_file(file_path: Path, file_type: str) -> pd.DataFrame:
         logger.error(f"Error validating {file_type} file {file_path}: {str(e)}")
         raise
 
+def convert_gmt_to_pathway_format(gmt_path: Path, output_path: Path) -> None:
+    """
+    Converts a GMT file to the pathway format used by the pipeline.
+    
+    Args:
+        gmt_path: Path to the input GMT file
+        output_path: Path where the converted file should be saved
+        
+    Raises:
+        ValueError: If the GMT file format is invalid
+    """
+    try:
+        new_data = []
+        with open(gmt_path, 'r') as file:
+            for line in file:
+                parts = line.strip().split('\t')
+                if len(parts) < 3:  # Ensure minimum required parts
+                    raise ValueError("Invalid GMT file format: each line must have at least 3 columns")
+                pathway_name = parts[0]
+                genes = parts[2:]  # Skip the description
+                new_data.append([pathway_name] + genes)
+        
+        # Convert to DataFrame and save
+        new_pathways_df = pd.DataFrame(new_data)
+        
+        # Ensure output directory exists
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Save to TSV format
+        new_pathways_df.to_csv(
+            output_path,
+            index=False,
+            header=False,
+            sep='\t'
+        )
+        logger.info(f"Successfully converted GMT file to pathway format: {output_path}")
+        
+    except Exception as e:
+        logger.error(f"Error converting GMT file: {str(e)}")
+        raise ValueError(f"Failed to convert GMT file: {str(e)}")
+
