@@ -1036,3 +1036,56 @@ ZeroDivisionError: float division by zero
 
 [20648 rows x 2 columns]
 2024-12-15 21:14:55,614 - pipeline.propagation_routines - INFO - Inverting the matrix using Conjugate Gradient method
+2024-12-16 15:07:30,373 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-16 15:07:30,382 - app.app_main - INFO - Application is starting up
+2024-12-16 15:07:40,526 - app.app_main - INFO - Application is shutting down
+2024-12-16 15:38:56,176 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-16 15:38:56,184 - app.app_main - INFO - Application is starting up
+2024-12-16 16:26:32,563 - app.routes - INFO - New job request received. Job code: 5f067211-7d37-44d1-a35b-72b762745b4d
+2024-12-16 16:26:32,692 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-16 16:26:32,715 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-16 16:26:32,716 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-16 16:26:32,718 - app.pipeline_runner - INFO - Starting pipeline for job 5f067211-7d37-44d1-a35b-72b762745b4d
+2024-12-16 16:26:32,719 - app.pipeline_runner - DEBUG - Using default network
+2024-12-16 16:26:32,722 - pipeline.settings - INFO - Using default matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.1.npz
+2024-12-16 16:26:32,723 - pipeline.settings - INFO - Using default network file: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-16 16:26:32,724 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-16 16:26:37,582 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-16 16:26:37,664 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, file:           GeneID     Score
+0           3360  0.317096
+1           1393 -0.092459
+2           3362  0.379495
+3           3363  0.122374
+4         286343 -0.780245
+...          ...       ...
+20643     113791  0.084842
+20644  100506457  0.150522
+20645     282679 -0.570184
+20646        581  0.045622
+20647       6059 -0.222887
+
+[20648 rows x 2 columns]
+2024-12-16 16:28:46,461 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 396 pathways.
+2024-12-16 16:29:02,539 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__16_26_37.xlsx.
+2024-12-16 16:29:02,654 - pipeline.pipeline_main - DEBUG - Ensured output directory exists: /home/yair/projects/Yair_propagation/pipeline/Outputs
+2024-12-16 16:29:02,775 - pipeline.pipeline_main - DEBUG - Processed condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, output path: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__16_26_37.xlsx
+2024-12-16 16:29:12,386 - pipeline.pipeline_main - DEBUG - Generated propagation plot at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 16:29:12,387 - pipeline.pipeline_main - DEBUG - Output file to be archived: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__16_26_37.xlsx
+2024-12-16 16:29:12,388 - pipeline.pipeline_main - DEBUG - Output file to be archived: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 16:29:12,482 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_16_12_2024__16_26_37.xlsx
+2024-12-16 16:29:12,492 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_plot.png
+2024-12-16 16:29:12,493 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-16 16:29:12,498 - app.pipeline_runner - INFO - Pipeline completed successfully for job 5f067211-7d37-44d1-a35b-72b762745b4d
+2024-12-16 16:29:12,499 - app.temp_manager - DEBUG - TempFileManager destructor called
+2024-12-16 16:29:12,500 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-16 16:29:12,500 - app.temp_manager - DEBUG - No temp directory to clean up
+2024-12-16 16:29:12,500 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-16 18:18:17,534 - app.app_main - INFO - Application is shutting down
+2024-12-16 18:18:24,312 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-16 18:18:24,328 - app.app_main - INFO - Application is starting up
+2024-12-16 18:18:43,202 - app.app_main - INFO - Application is shutting down
+2024-12-16 18:18:45,898 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-16 18:18:45,906 - app.app_main - INFO - Application is starting up
+2024-12-16 18:19:04,476 - app.app_main - INFO - Application is shutting down
+2024-12-16 18:19:06,902 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-16 18:19:06,909 - app.app_main - INFO - Application is starting up

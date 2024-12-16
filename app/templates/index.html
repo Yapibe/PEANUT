@@ -14,7 +14,12 @@
   <!-- Add a meta tag to store the root path -->
   <meta name="root-path" content="{{ request.scope.get('root_path', '') }}">
 
+  <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/dist/tippy.css">
+  <script src="https://unpkg.com/@popperjs/core@2"></script>
+  <script src="https://unpkg.com/tippy.js@6"></script>
+
   <style>
+
     body {
       font-family: Arial, sans-serif;
       max-width: 1500px;
@@ -24,10 +29,12 @@
       line-height: 1.6;
     }
     .container {
-      background-color: white;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      max-width: 1500px;
+      margin: 0 auto;
       padding: 10px;
-      border-radius: 5px;
-      box-shadow: 0 0 10px rgba(200, 7, 7, 0.1);
     }
     h1, h2 {
       color: #333;
@@ -58,22 +65,16 @@
     button {
       margin-top: 20px;
       padding: 10px 20px;
-      background-color: #4CAF50;
       color: white;
       border: none;
       border-radius: 3px;
       cursor: pointer;
       transition: background-color 0.3s;
     }
-    button:hover {
-      background-color: #45a049;
-    }
-    button[type="reset"] {
-      background-color: #f44336;
-    }
-    button[type="reset"]:hover {
-      background-color: #da190b;
-    }
+    button[type="submit"] { background-color: #4CAF50; }
+    button[type="submit"]:hover { background-color: #45a049; }
+    button[type="reset"] { background-color: #f44336; }
+    button[type="reset"]:hover { background-color: #da190b; }
     .info {
       margin-top: 20px;
       font-style: italic;
@@ -151,6 +152,27 @@
         border-radius: 3px;
         box-sizing: border-box;
     }
+
+    .form-section {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    /* Button styling */
+    button {
+      padding: 10px 20px;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button[type="submit"] { background-color: #4CAF50; }
+    button[type="submit"]:hover { background-color: #45a049; }
+    button[type="reset"] { background-color: #f44336; }
+    button[type="reset"]:hover { background-color: #da190b; }
   </style>
 </head>
 <body>
@@ -190,17 +212,22 @@
     
     <h2>Start a new PEANUT job</h2>
     <form id="pipelineForm">
-      <label for="experiment_name">Experiment Name</label>
+      <label for="experiment_name">Experiment Name
+        <span data-tippy-content="Enter a unique name for your experiment.">?</span>
+      </label>
       <input type="text" id="experiment_name" name="experiment_name" required>
 
-      <label for="species">Species</label>
+      <label for="species">Species
+        <span data-tippy-content="Select the species for your analysis.">?</span>
+      </label>
       <select id="species" name="species" required>
         <option value="H_sapiens">Homo Sapiens (PPI)</option>
       </select>
 
-      <!-- Network Selection Section -->
       <div class="form-section">
-        <label for="network">Network Type</label>
+        <label for="network">Network Type
+          <span data-tippy-content="Choose the network type or upload a custom network.">?</span>
+        </label>
         <select id="network" name="network" aria-controls="custom_network_section" aria-expanded="false" required>
           <option value="Anat">Anat</option>
           <option value="HumanNet">HumanNet</option>
@@ -212,39 +239,45 @@
           <label for="network_file">Upload Network File:</label>
           <input type="file" id="network_file" name="network_file" accept=".txt,.tsv" aria-describedby="network_file_help">
           <p class="help-text" id="network_file_help">
-            File should be tab-separated with three columns: Source (integer/string) Target (integer/string) Weight<br>
+            File should be tab-separated with three columns: Source (integer/string), Target (integer/string), Weight (float)<br>
             Example:<br>
             1234    5678    0.8<br>
             2345    6789    0.5<br>
             Maximum file size: 50MB
           </p>
+          <p class="warning-text" style="color: red; font-weight: bold;">
+            Note: Running with a custom network may take approximately 120 minutes.
+          </p>
         </div>
       </div>
 
-      <label for="alpha">Propagation alpha</label>
+      <label for="alpha">Propagation Alpha
+        <span data-tippy-content="Set the alpha value for network propagation.">?</span>
+      </label>
       <select id="alpha" name="alpha" required>
         <option value="0.1">0.1</option>
         <option value="0.2">0.2</option>
       </select>
-      
-      <label for="pathway_file">Gene Set</label>
+
+      <label for="pathway_file">Gene Set
+        <span data-tippy-content="Select the gene set for pathway analysis.">?</span>
+      </label>
       <select id="pathway_file" name="pathway_file" required>
         <option value="kegg">KEGG</option>
-        <option value="reactome">Reactome</option>
-        <option value="c2">C2</option>
+        <option value="msig_c2_canonical">MSig c2 Canonical Pathways</option>
       </select>
 
-      <label for="files">Input Preranked Tables</label>
+      <label for="files">Input Preranked Tables
+        <span data-tippy-content="Upload your preranked gene expression files. Supported formats include RNK and XLSX.">?</span>
+      </label>
       <p>
         Supported Formats:
         <a href="http://software.broadinstitute.org/cancer/software/gsea/wiki/index.php/Data_formats#RNK:_Ranked_list_file_format_.28.2A.rnk.29" target="_blank">
           RNK
-        </a> or XLSX (Columns: GeneID, Score)<br>
-        Maximum file size: 20MB per file
+        </a> or XLSX (Columns: GeneID, Score)
       </p>
       <input type="file" id="files" name="files" accept=".xlsx,.xls,.rnk" multiple required>
-    
-      
+
       <div class="advanced-toggle" onclick="toggleAdvancedSettings()" aria-expanded="false" aria-controls="advancedSettings">
         Advanced Settings ▼
       </div>
@@ -369,51 +402,27 @@
     }
 
     /**
-     * Displays the retry form to the user.
-     */
-    function showRetryForm() {
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = `
-        <p>Job code cannot be found. Please try again.</p>
-        <form id="retryStatusForm">
-          <label for="retryJobCode">Enter Job Code:</label>
-          <input type="text" id="retryJobCode" name="retryJobCode" required>
-          <button type="submit">Check Status</button>
-        </form>
-      `;
-      document.getElementById('retryStatusForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const retryJobCode = document.getElementById('retryJobCode').value;
-        clearInterval(statusCheckInterval);
-        checkJobStatus(retryJobCode, false);
-      });
-    }
-
-    /**
      * Checks the status of a job given its code.
      * @param {string} jobCode - The unique job code.
      * @param {boolean} isNewSubmission - Flag indicating if it's a new submission.
      */
-    function checkJobStatus(jobCode, isNewSubmission = false) {
-      fetch(`${ROOT_PATH}/check-status/${jobCode}`)
-        .then(response => {
-          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-          return response.json();
-        })
-        .then(result => {
-          updateJobStatus(result, jobCode);
-          if (isNewSubmission && result.status === 'Processing') {
-            statusCheckInterval = setInterval(() => checkJobStatus(jobCode, true), 5000);
-          } else if (result.status !== 'Processing') {
+    async function checkJobStatus(jobCode, isNewSubmission = false) {
+        try {
+            const response = await fetch(`${ROOT_PATH}/check-status/${jobCode}`);
+            if (!response.ok) throw new Error();
+            
+            const result = await response.json();
+            updateJobStatus(result, jobCode);
+            
+            if (isNewSubmission && result.status === 'Processing') {
+                statusCheckInterval = setInterval(() => checkJobStatus(jobCode, true), 5000);
+            } else if (result.status !== 'Processing') {
+                clearInterval(statusCheckInterval);
+            }
+        } catch {
+            showRetryForm();
             clearInterval(statusCheckInterval);
-          }
-        })
-        .catch(error => {
-          const resultDiv = document.getElementById('result');
-          resultDiv.style.display = 'block';
-          showRetryForm();
-          clearInterval(statusCheckInterval);
-        });
+        }
     }
 
     /**
@@ -421,22 +430,9 @@
      */
     function validateFileUpload() {
         const networkFileInput = document.getElementById('network_file');
-        const MAX_NETWORK_SIZE_MB = 50; // Maximum network file size in MB
-
         networkFileInput.addEventListener('change', function() {
             const file = this.files[0];
-            if (!file) return;
-
-            // Validate file type
-            const validTypes = ['text/plain', 'text/tab-separated-values'];
-            if (!validTypes.includes(file.type)) {
-                alert('Invalid file type. Please upload a .txt or .tsv file.');
-                this.value = ''; // Clear the input
-                return;
-            }
-
-            // Validate file size
-            if (!validateFileSize(file, MAX_NETWORK_SIZE_MB)) {
+            if (file && !validateFileSize(file, MAX_NETWORK_SIZE_MB)) {
                 this.value = ''; // Clear the input
             }
         });
@@ -572,81 +568,73 @@
     }
 
     /**
-     * Validates the uploaded network file's MIME type.
-     */
-    function validateFileUpload() {
-      const networkFileInput = document.getElementById('network_file');
-      networkFileInput.addEventListener('change', function() {
-          const file = this.files[0];
-          const errorSpan = document.getElementById('network_file_error');
-          errorSpan.textContent = ''; // Clear previous errors
-
-          if (file) {
-              const validTypes = ['text/plain', 'text/tab-separated-values'];
-              if (!validTypes.includes(file.type)) {
-                  alert('Invalid file type. Please upload a .txt or .tsv file.');
-                  this.value = ''; // Clear the input
-                  return;
-              }
-          }
-      });
-    }
-
-    /**
      * Initializes all necessary functions on DOMContentLoaded.
      */
     document.addEventListener('DOMContentLoaded', () => {
-      // Initialize toggle functions
-      toggleNetworkRestriction();
-      validateFileUpload();
+        // Initialize all form elements
+        const minGenesInput = document.getElementById('min_genes_per_pathway');
+        const maxGenesInput = document.getElementById('max_genes_per_pathway');
+        const fdrInput = document.getElementById('fdr_threshold');
+        const networkSelect = document.getElementById('network');
+        const customNetworkSection = document.getElementById('custom_network_section');
+        const networkFileInput = document.getElementById('network_file');
+        const pipelineForm = document.getElementById('pipelineForm');
+        const statusForm = document.getElementById('statusForm');
 
-      // Event listener for network selection
-      const networkSelect = document.getElementById('network');
-      const customNetworkSection = document.getElementById('custom_network_section');
-      const networkFileInput = document.getElementById('network_file');
-
-      function updateNetworkSection() {
-        const isCustom = networkSelect.value === 'custom';
-        customNetworkSection.style.display = isCustom ? 'block' : 'none';
-        customNetworkSection.setAttribute('aria-hidden', !isCustom);
-        networkSelect.setAttribute('aria-expanded', isCustom);
-        
-        if (isCustom) {
-          networkFileInput.setAttribute('required', '');
-        } else {
-          networkFileInput.removeAttribute('required');
+        // Initialize network section handling
+        function updateNetworkSection() {
+            const isCustom = networkSelect.value === 'custom';
+            customNetworkSection.style.display = isCustom ? 'block' : 'none';
+            customNetworkSection.setAttribute('aria-hidden', !isCustom);
+            networkSelect.setAttribute('aria-expanded', isCustom);
+            networkFileInput.required = isCustom;
         }
-      }
 
-      networkSelect.addEventListener('change', updateNetworkSection);
-      updateNetworkSection(); // Initial state
+        // Initialize validation functions
+        function validateGeneInputs() {
+            const minVal = parseInt(minGenesInput.value);
+            const maxVal = parseInt(maxGenesInput.value);
+            
+            if (minVal >= maxVal) {
+                minGenesInput.setCustomValidity('Minimum must be less than maximum');
+                maxGenesInput.setCustomValidity('Maximum must be greater than minimum');
+            } else {
+                minGenesInput.setCustomValidity('');
+                maxGenesInput.setCustomValidity('');
+            }
+        }
 
-      // Initialize form handlers
-      const pipelineForm = document.getElementById('pipelineForm');
-      if (pipelineForm) {
-        pipelineForm.addEventListener('submit', handleFormSubmit);
-      }
+        function validateFDR() {
+            const fdrVal = parseFloat(fdrInput.value);
+            if (fdrVal <= 0 || fdrVal >= 1) {
+                fdrInput.setCustomValidity('FDR threshold must be between 0 and 1');
+            } else {
+                fdrInput.setCustomValidity('');
+            }
+        }
 
-      const statusForm = document.getElementById('statusForm');
-      if (statusForm) {
-        statusForm.addEventListener('submit', handleStatusFormSubmit);
-      }
-
-      // Initialize validation
-      const minGenesInput = document.getElementById('min_genes_per_pathway');
-      const maxGenesInput = document.getElementById('max_genes_per_pathway');
-      const fdrInput = document.getElementById('fdr_threshold');
-
-      if (minGenesInput && maxGenesInput) {
-        validateGeneInputs();
+        // Add event listeners
+        networkSelect.addEventListener('change', updateNetworkSection);
         minGenesInput.addEventListener('input', validateGeneInputs);
         maxGenesInput.addEventListener('input', validateGeneInputs);
-      }
-
-      if (fdrInput) {
-        validateFDR();
         fdrInput.addEventListener('input', validateFDR);
-      }
+        
+        if (pipelineForm) {
+            pipelineForm.addEventListener('submit', handleFormSubmit);
+        }
+        
+        if (statusForm) {
+            statusForm.addEventListener('submit', handleStatusFormSubmit);
+        }
+
+        // Initialize file upload validation
+        validateFileUpload();
+
+        // Run initial validations
+        updateNetworkSection();
+        validateGeneInputs();
+        validateFDR();
+        toggleNetworkRestriction();
     });
 
     /**
@@ -669,21 +657,6 @@
         checkJobStatus(retryJobCode, false);
       });
     }
-
-    /**
-     * Adds event listeners to forms after DOM is ready.
-     */
-    document.addEventListener('DOMContentLoaded', () => {
-      const pipelineForm = document.getElementById('pipelineForm');
-      if (pipelineForm) {
-        pipelineForm.addEventListener('submit', handleFormSubmit);
-      }
-
-      const statusForm = document.getElementById('statusForm');
-      if (statusForm) {
-        statusForm.addEventListener('submit', handleStatusFormSubmit);
-      }
-    });
 
     // Add this to your existing script section
     document.addEventListener('DOMContentLoaded', function() {
@@ -724,6 +697,37 @@
         validateGeneInputs();
         validateFDR();
     });
+
+    function validateForm() {
+        const validators = {
+            geneInputs: () => {
+                const min = parseInt(minGenesInput.value);
+                const max = parseInt(maxGenesInput.value);
+                return min < max;
+            },
+            fdr: () => {
+                const val = parseFloat(fdrInput.value);
+                return val > 0 && val < 1;
+            }
+        };
+
+        return Object.values(validators).every(v => v());
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      tippy('[data-tippy-content]', {
+        placement: 'right',
+        arrow: true,
+        theme: 'light',
+      });
+    });
+
+    function toggleCollapsible(button) {
+      const content = button.nextElementSibling;
+      const isVisible = content.style.display === 'block';
+      content.style.display = isVisible ? 'none' : 'block';
+      button.textContent = isVisible ? 'Advanced Settings ▼' : 'Advanced Settings ▲';
+    }
   </script>
 </body>
 </html>
