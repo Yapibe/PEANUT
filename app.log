@@ -1,57 +1,469 @@
-2024-12-11 13:37:00,091 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 13:37:00,097 - app.app_main - INFO - Application is starting up
-2024-12-11 13:37:05,584 - app.routes - INFO - Received request to run pipeline
-2024-12-11 13:37:05,584 - app.routes - INFO - Files: ['GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.xlsx'], Test Name: multiple, Species: H_sapiens, Alpha: 0.1, Network: Anat, Pathway File: kegg, Min Genes per Pathway: 15, Max Genes per Pathway: 500, FDR Threshold: 0.05, Run GSEA: True, Network Restriction: False
-2024-12-11 13:37:05,585 - app.utils - INFO - Validating uploaded Excel file
-2024-12-11 13:37:06,232 - app.utils - INFO - Excel file preprocessed successfully
-2024-12-11 13:37:06,237 - app.utils - INFO - Excel file validated successfully
-2024-12-11 13:38:03,683 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 396 pathways.
-2024-12-11 13:38:04,113 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/multiple_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE_Propagation_11_12_2024__13_37_08.xlsx.
-2024-12-11 13:38:04,258 - pipeline.propagation_routines - INFO - Running GSEA without propagation
-2024-12-11 13:38:04,258 - pipeline.propagation_routines - INFO - Processing all genes without network restriction.
-2024-12-11 13:38:30,047 - pipeline.visualization_tools - INFO - No significant pathways to plot. Exiting function.
-2024-12-11 13:38:30,049 - pipeline.visualization_tools - INFO - No significant pathways to plot. Exiting function.
-2024-12-11 13:38:30,051 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 13:38:31,257 - app.pipeline_runner - DEBUG - Pipeline main returned output_file_path: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 13:38:31,258 - app.pipeline_runner - INFO - Job 0c3373f1 finished successfully.
-2024-12-11 13:38:31,275 - app.routes - DEBUG - Checking status for job_code: 0c3373f1
-2024-12-11 13:38:31,276 - app.routes - DEBUG - Job data: {'status': 'Finished', 'output_file': 'pipeline/Outputs/Archives/multiple_results.zip', 'expiry': datetime.datetime(2024, 12, 18, 13, 37, 5, 585186)}
-2024-12-11 13:38:31,276 - app.routes - DEBUG - Download URL for job 0c3373f1: /peanut/download-file/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 13:38:42,856 - app.routes - INFO - User requested file: pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 13:38:42,857 - app.routes - INFO - Serving file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 13:39:48,249 - app.app_main - INFO - Application is shutting down
-2024-12-11 13:39:51,425 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 13:39:51,433 - app.app_main - INFO - Application is starting up
-2024-12-11 13:49:15,861 - app.app_main - INFO - Application is shutting down
-2024-12-11 13:49:18,323 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 13:49:18,333 - app.app_main - INFO - Application is starting up
-2024-12-11 13:56:52,372 - app.app_main - INFO - Application is shutting down
-2024-12-11 13:56:58,198 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 13:56:58,206 - app.app_main - INFO - Application is starting up
-2024-12-11 14:27:24,904 - app.app_main - INFO - Application is shutting down
-2024-12-11 14:27:30,790 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 14:27:30,815 - app.app_main - INFO - Application is starting up
-2024-12-11 14:28:53,412 - app.app_main - INFO - Application is shutting down
-2024-12-11 14:28:55,844 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 14:28:55,856 - app.app_main - INFO - Application is starting up
-2024-12-11 15:16:46,812 - app.app_main - INFO - Application is shutting down
-2024-12-11 15:17:03,161 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 15:17:03,185 - app.app_main - INFO - Application is starting up
-2024-12-11 15:30:21,848 - app.app_main - INFO - Application is shutting down
-2024-12-11 15:30:31,341 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 15:30:31,352 - app.app_main - INFO - Application is starting up
-2024-12-11 15:39:51,987 - app.app_main - INFO - Application is shutting down
-2024-12-11 15:39:54,331 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 15:39:54,342 - app.app_main - INFO - Application is starting up
-2024-12-11 15:40:02,904 - app.routes - DEBUG - Root Path: /peanut
-2024-12-11 15:40:16,104 - app.routes - INFO - Received request to run pipeline
-2024-12-11 15:40:16,105 - app.routes - INFO - Files: ['GSE5281EC_KEGG_ALZHEIMERS_DISEASE.xlsx'], Test Name: multiple, Species: H_sapiens, Alpha: 0.1, Network: Anat, Pathway File: kegg, Min Genes per Pathway: 15, Max Genes per Pathway: 500, FDR Threshold: 0.05, Run GSEA: True, Network Restriction: False
-2024-12-11 15:40:16,106 - app.utils - INFO - Validating uploaded Excel file
-2024-12-11 15:40:17,971 - app.utils - INFO - Excel file preprocessed successfully
-2024-12-11 15:40:17,978 - app.utils - INFO - Excel file validated successfully
-2024-12-11 15:40:21,741 - pipeline.pipeline_main - ERROR - An error occurred in pipeline_main: Invalid file path or buffer object type: <class 'tuple'>
+2024-12-15 14:34:35,239 - app.routes - DEBUG - Root Path: /peanut
+2024-12-15 14:35:13,572 - app.routes - INFO - Received request to run pipeline
+2024-12-15 14:35:13,573 - app.routes - INFO - Files: ['GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk'], Test Name: test, Species: H_sapiens, Alpha: 0.1, Network: custom, Pathway File: kegg, Min Genes per Pathway: 15, Max Genes per Pathway: 500, FDR Threshold: 0.05, Run GSEA: False, Network Restriction: False
+2024-12-15 14:35:13,593 - app.utils - INFO - RNK file validated successfully
+2024-12-15 14:35:13,596 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/custom
+2024-12-15 14:35:13,597 - pipeline.utils - ERROR - An error occurred while reading network: [Errno 21] Is a directory: '/home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/custom'
+2024-12-15 14:35:13,598 - pipeline.pipeline_main - ERROR - An error occurred in pipeline_main: [Errno 21] Is a directory: '/home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/custom'
 Traceback (most recent call last):
-  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 84, in pipeline_main
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 54, in pipeline_main
+    network = read_network(run_settings.network_file_path)
+  File "/home/yair/projects/Yair_propagation/pipeline/utils.py", line 208, in read_network
+    network = pd.read_table(
+  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/parsers/readers.py", line 1405, in read_table
+    return _read(filepath_or_buffer, kwds)
+  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/parsers/readers.py", line 620, in _read
+    parser = TextFileReader(filepath_or_buffer, **kwds)
+  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/parsers/readers.py", line 1620, in __init__
+    self._engine = self._make_engine(f, self.engine)
+  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/parsers/readers.py", line 1880, in _make_engine
+    self.handles = get_handle(
+  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/common.py", line 873, in get_handle
+    handle = open(
+IsADirectoryError: [Errno 21] Is a directory: '/home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/custom'
+2024-12-15 14:35:13,599 - app.pipeline_runner - ERROR - Error in pipeline execution for job_code 8e84d706: [Errno 21] Is a directory: '/home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/custom'
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/app/pipeline_runner.py", line 36, in run_pipeline
+    output_file_path = await pipeline_main(conditions_data, settings)
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 54, in pipeline_main
+    network = read_network(run_settings.network_file_path)
+  File "/home/yair/projects/Yair_propagation/pipeline/utils.py", line 208, in read_network
+    network = pd.read_table(
+  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/parsers/readers.py", line 1405, in read_table
+    return _read(filepath_or_buffer, kwds)
+  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/parsers/readers.py", line 620, in _read
+    parser = TextFileReader(filepath_or_buffer, **kwds)
+  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/parsers/readers.py", line 1620, in __init__
+    self._engine = self._make_engine(f, self.engine)
+  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/parsers/readers.py", line 1880, in _make_engine
+    self.handles = get_handle(
+  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/common.py", line 873, in get_handle
+    handle = open(
+IsADirectoryError: [Errno 21] Is a directory: '/home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/custom'
+2024-12-15 14:35:13,601 - app.routes - DEBUG - Checking status for job_code: 8e84d706
+2024-12-15 14:35:13,601 - app.routes - DEBUG - Job data: {'status': 'Failed', 'expiry': datetime.datetime(2024, 12, 22, 14, 35, 13, 594402), 'error': "[Errno 21] Is a directory: '/home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/custom'"}
+2024-12-15 14:54:37,708 - app.routes - DEBUG - Root Path: /peanut
+2024-12-15 14:58:22,793 - app.routes - DEBUG - Root Path: /peanut
+2024-12-15 14:58:30,818 - app.routes - DEBUG - Root Path: /peanut
+2024-12-15 15:01:45,509 - app.routes - DEBUG - Root Path: /peanut
+2024-12-15 15:04:37,312 - app.routes - DEBUG - Root Path: /peanut
+2024-12-15 15:04:39,104 - app.routes - DEBUG - Root Path: /peanut
+2024-12-15 15:08:33,714 - app.routes - DEBUG - Root Path: /peanut
+2024-12-15 15:11:00,991 - app.routes - DEBUG - Root Path: /peanut
+2024-12-15 15:11:02,521 - app.routes - DEBUG - Root Path: /peanut
+2024-12-15 15:13:18,160 - app.app_main - INFO - Application is shutting down
+2024-12-15 15:13:23,565 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 15:13:23,576 - app.app_main - INFO - Application is starting up
+2024-12-15 15:17:15,439 - app.routes - DEBUG - Root Path: /peanut
+2024-12-15 15:17:16,224 - app.routes - DEBUG - Root Path: /peanut
+2024-12-15 15:17:36,083 - app.app_main - INFO - Application is shutting down
+2024-12-15 15:17:38,692 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 15:17:38,703 - app.app_main - INFO - Application is starting up
+2024-12-15 15:20:16,376 - app.routes - DEBUG - Root Path: /peanut
+2024-12-15 15:20:28,369 - app.routes - DEBUG - Root Path: /peanut
+2024-12-15 15:20:30,066 - app.routes - DEBUG - Root Path: /peanut
+2024-12-15 15:20:39,220 - app.routes - DEBUG - Root Path: /peanut
+2024-12-15 15:20:40,310 - app.routes - DEBUG - Root Path: /peanut
+2024-12-15 15:20:55,216 - app.routes - DEBUG - Root Path: /peanut
+2024-12-15 15:21:02,938 - app.routes - INFO - Received request to run pipeline
+2024-12-15 15:21:02,939 - app.routes - INFO - Files: ['GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk'], Test Name: multiple, Species: H_sapiens, Alpha: 0.1, Network: Anat, Pathway File: kegg, Min Genes per Pathway: 15, Max Genes per Pathway: 500, FDR Threshold: 0.05, Run GSEA: False, Network Restriction: False
+2024-12-15 15:21:02,953 - app.utils - INFO - RNK file validated successfully
+2024-12-15 15:21:02,955 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-15 15:21:05,523 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-15 15:22:53,548 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 396 pathways.
+2024-12-15 15:22:57,338 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/multiple_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE_Propagation_15_12_2024__15_21_05.xlsx.
+2024-12-15 15:22:57,455 - pipeline.visualization_tools - INFO - No significant pathways to plot. Exiting function.
+2024-12-15 15:22:57,457 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
+2024-12-15 15:22:57,459 - app.pipeline_runner - DEBUG - Pipeline main returned output_file_path: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
+2024-12-15 15:22:57,460 - app.pipeline_runner - INFO - Job 7c3dbf7a finished successfully.
+2024-12-15 15:22:57,472 - app.routes - DEBUG - Checking status for job_code: 7c3dbf7a
+2024-12-15 15:22:57,472 - app.routes - DEBUG - Job data: {'status': 'Finished', 'expiry': datetime.datetime(2024, 12, 22, 15, 21, 2, 953896), 'output_file': 'pipeline/Outputs/Archives/multiple_results.zip'}
+2024-12-15 15:22:57,472 - app.routes - DEBUG - Download URL for job 7c3dbf7a: /peanut/download-file/pipeline/Outputs/Archives/multiple_results.zip
+2024-12-15 15:32:46,798 - app.routes - DEBUG - Root Path: /peanut
+2024-12-15 15:33:00,578 - app.routes - INFO - Received request to run pipeline
+2024-12-15 15:33:00,578 - app.routes - INFO - Files: ['GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk'], Test Name: multiple, Species: H_sapiens, Alpha: 0.1, Network: Anat, Pathway File: kegg, Min Genes per Pathway: 15, Max Genes per Pathway: 500, FDR Threshold: 0.05, Run GSEA: True, Network Restriction: False
+2024-12-15 15:33:00,602 - app.utils - INFO - RNK file validated successfully
+2024-12-15 15:33:00,604 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-15 15:33:03,314 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-15 15:34:50,231 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 396 pathways.
+2024-12-15 15:34:51,705 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/multiple_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE_Propagation_15_12_2024__15_33_03.xlsx.
+2024-12-15 15:34:52,202 - pipeline.propagation_routines - INFO - Running GSEA without propagation
+2024-12-15 15:34:52,204 - pipeline.propagation_routines - INFO - Processing all genes without network restriction.
+2024-12-15 15:35:41,776 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
+2024-12-15 15:35:41,788 - app.pipeline_runner - DEBUG - Pipeline main returned output_file_path: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
+2024-12-15 15:35:41,789 - app.pipeline_runner - INFO - Job 5d2cce4d finished successfully.
+2024-12-15 15:35:41,805 - app.routes - DEBUG - Checking status for job_code: 5d2cce4d
+2024-12-15 15:35:41,805 - app.routes - DEBUG - Job data: {'status': 'Finished', 'expiry': datetime.datetime(2024, 12, 22, 15, 33, 0, 602902), 'output_file': 'pipeline/Outputs/Archives/multiple_results.zip'}
+2024-12-15 15:35:41,805 - app.routes - DEBUG - Download URL for job 5d2cce4d: /peanut/download-file/pipeline/Outputs/Archives/multiple_results.zip
+2024-12-15 15:45:24,880 - app.app_main - INFO - Application is shutting down
+2024-12-15 15:45:30,543 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 15:45:30,555 - app.app_main - INFO - Application is starting up
+2024-12-15 15:53:52,735 - app.app_main - INFO - Application is shutting down
+2024-12-15 15:53:54,733 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 15:53:54,752 - app.app_main - INFO - Application is starting up
+2024-12-15 15:54:21,967 - app.app_main - INFO - Application is shutting down
+2024-12-15 15:54:23,870 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 15:54:23,887 - app.app_main - INFO - Application is starting up
+2024-12-15 15:54:50,091 - app.app_main - INFO - Application is shutting down
+2024-12-15 15:54:52,155 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 15:54:52,164 - app.app_main - INFO - Application is starting up
+2024-12-15 16:03:44,291 - app.routes - DEBUG - Root Path: /peanut
+2024-12-15 16:04:04,296 - app.routes - INFO - Received request to run pipeline
+2024-12-15 16:04:04,296 - app.routes - INFO - Files: ['GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk'], Test Name: test, Species: H_sapiens, Alpha: 0.1, Network: Anat, Pathway File: kegg, Min Genes per Pathway: 15, Max Genes per Pathway: 500, FDR Threshold: 0.05, Run GSEA: False, Network Restriction: False
+2024-12-15 16:04:04,331 - app.utils - INFO - RNK file validated successfully
+2024-12-15 16:04:04,333 - pipeline.settings - INFO - Using default matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.1.npz
+2024-12-15 16:04:04,333 - pipeline.settings - INFO - Using default network file: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-15 16:04:04,333 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-15 16:04:07,755 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-15 16:04:49,093 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 396 pathways.
+2024-12-15 16:04:51,766 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE_Propagation_15_12_2024__16_04_07.xlsx.
+2024-12-15 16:04:51,830 - pipeline.visualization_tools - INFO - No significant pathways to plot. Exiting function.
+2024-12-15 16:04:51,832 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-15 16:04:51,833 - app.pipeline_runner - DEBUG - Pipeline main returned output_file_path: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-15 16:04:51,833 - app.pipeline_runner - INFO - Job 93a1b7ac finished successfully.
+2024-12-15 16:04:51,835 - app.routes - DEBUG - Checking status for job_code: 93a1b7ac
+2024-12-15 16:04:51,836 - app.routes - DEBUG - Job data: {'status': 'Finished', 'expiry': datetime.datetime(2024, 12, 22, 16, 4, 4, 332182), 'output_file': 'pipeline/Outputs/Archives/test_results.zip'}
+2024-12-15 16:04:51,836 - app.routes - DEBUG - Download URL for job 93a1b7ac: /peanut/download-file/pipeline/Outputs/Archives/test_results.zip
+2024-12-15 16:07:12,183 - app.routes - DEBUG - Root Path: /peanut
+2024-12-15 16:16:16,896 - app.app_main - INFO - Application is shutting down
+2024-12-15 16:16:24,787 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 16:16:24,797 - app.app_main - INFO - Application is starting up
+2024-12-15 16:17:29,865 - app.app_main - INFO - Application is shutting down
+2024-12-15 16:17:33,122 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 16:17:33,141 - app.app_main - INFO - Application is starting up
+2024-12-15 16:18:19,433 - app.app_main - INFO - Application is shutting down
+2024-12-15 16:25:03,178 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 16:25:03,185 - app.app_main - INFO - Application is starting up
+2024-12-15 16:25:59,624 - app.app_main - INFO - Application is shutting down
+2024-12-15 16:26:03,050 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 16:26:03,069 - app.app_main - INFO - Application is starting up
+2024-12-15 16:27:16,710 - app.app_main - INFO - Application is shutting down
+2024-12-15 16:27:24,044 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 16:27:24,091 - app.app_main - INFO - Application is starting up
+2024-12-15 16:27:36,446 - app.app_main - INFO - Application is shutting down
+2024-12-15 16:27:39,067 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 16:27:39,076 - app.app_main - INFO - Application is starting up
+2024-12-15 16:28:02,799 - app.routes - INFO - New job request received. Job code: eefc056d-3bab-45ef-a87e-a5e157f7ea14
+2024-12-15 16:28:02,810 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 16:28:02,812 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 16:28:02,813 - app.pipeline_runner - INFO - Starting pipeline for job eefc056d-3bab-45ef-a87e-a5e157f7ea14
+2024-12-15 16:28:02,813 - app.pipeline_runner - ERROR - Pipeline failed for job eefc056d-3bab-45ef-a87e-a5e157f7ea14: Settings.__init__() got an unexpected keyword argument 'test_name'
+2024-12-15 16:28:02,813 - app.routes - ERROR - Pipeline execution failed for job eefc056d-3bab-45ef-a87e-a5e157f7ea14: Settings.__init__() got an unexpected keyword argument 'test_name'
+2024-12-15 16:29:41,434 - app.app_main - INFO - Application is shutting down
+2024-12-15 16:29:44,084 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 16:29:44,103 - app.app_main - INFO - Application is starting up
+2024-12-15 16:29:48,421 - app.app_main - INFO - Application is shutting down
+2024-12-15 16:29:50,753 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 16:29:50,762 - app.app_main - INFO - Application is starting up
+2024-12-15 16:30:27,586 - app.routes - INFO - New job request received. Job code: dba93d0f-4cb3-43a3-add7-05c626c70c5e
+2024-12-15 16:30:27,594 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 16:30:27,595 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 16:30:27,596 - app.pipeline_runner - INFO - Starting pipeline for job dba93d0f-4cb3-43a3-add7-05c626c70c5e
+2024-12-15 16:30:27,597 - pipeline.settings - INFO - Using default matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.1.npz
+2024-12-15 16:30:27,597 - pipeline.settings - INFO - Using default network file: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-15 16:30:27,597 - pipeline.pipeline_main - ERROR - An error occurred in pipeline_main: 'Settings' object has no attribute 'test_name'
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 44, in pipeline_main
+    experiment_name=settings.test_name,
+AttributeError: 'Settings' object has no attribute 'test_name'
+2024-12-15 16:30:27,599 - app.pipeline_runner - ERROR - Pipeline failed for job dba93d0f-4cb3-43a3-add7-05c626c70c5e: 'Settings' object has no attribute 'test_name'
+2024-12-15 16:30:27,600 - app.routes - ERROR - Pipeline execution failed for job dba93d0f-4cb3-43a3-add7-05c626c70c5e: 'Settings' object has no attribute 'test_name'
+2024-12-15 16:31:22,236 - app.app_main - INFO - Application is shutting down
+2024-12-15 16:31:25,313 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 16:31:25,331 - app.app_main - INFO - Application is starting up
+2024-12-15 16:31:53,745 - app.app_main - INFO - Application is shutting down
+2024-12-15 16:32:05,029 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 16:32:05,044 - app.app_main - INFO - Application is starting up
+2024-12-15 16:32:34,468 - app.app_main - INFO - Application is shutting down
+2024-12-15 16:32:41,719 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 16:32:41,745 - app.app_main - INFO - Application is starting up
+2024-12-15 16:33:44,011 - app.app_main - INFO - Application is shutting down
+2024-12-15 16:33:47,755 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 16:33:47,772 - app.app_main - INFO - Application is starting up
+2024-12-15 16:34:33,668 - app.app_main - INFO - Application is shutting down
+2024-12-15 16:34:35,754 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 16:34:35,761 - app.app_main - INFO - Application is starting up
+2024-12-15 16:35:44,046 - app.routes - INFO - New job request received. Job code: dedfa9eb-d682-40dd-9e12-80008529e59e
+2024-12-15 16:35:44,054 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 16:35:44,056 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 16:35:44,058 - app.pipeline_runner - INFO - Starting pipeline for job dedfa9eb-d682-40dd-9e12-80008529e59e
+2024-12-15 16:35:44,059 - pipeline.settings - INFO - Using default matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.1.npz
+2024-12-15 16:35:44,059 - pipeline.settings - INFO - Using default network file: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-15 16:35:44,060 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-15 16:35:46,397 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-15 16:37:07,443 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 396 pathways.
+2024-12-15 16:37:09,999 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_Propagation_15_12_2024__16_35_46.xlsx.
+2024-12-15 16:37:12,507 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-15 16:37:12,510 - app.pipeline_runner - INFO - Pipeline completed successfully for job dedfa9eb-d682-40dd-9e12-80008529e59e
+2024-12-15 18:32:49,244 - app.app_main - INFO - Application is shutting down
+2024-12-15 18:32:53,948 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 18:32:53,965 - app.app_main - INFO - Application is starting up
+2024-12-15 18:38:50,264 - app.app_main - INFO - Application is shutting down
+2024-12-15 18:38:54,087 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 18:38:54,095 - app.app_main - INFO - Application is starting up
+2024-12-15 18:40:50,505 - app.app_main - INFO - Application is shutting down
+2024-12-15 18:40:52,626 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 18:40:52,632 - app.app_main - INFO - Application is starting up
+2024-12-15 18:41:22,055 - app.app_main - INFO - Application is shutting down
+2024-12-15 18:41:24,003 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 18:41:24,010 - app.app_main - INFO - Application is starting up
+2024-12-15 18:42:11,194 - app.app_main - INFO - Application is shutting down
+2024-12-15 20:11:37,144 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 20:11:37,154 - app.app_main - INFO - Application is starting up
+2024-12-15 20:18:26,511 - app.routes - INFO - New job request received. Job code: eafaed7a-fce8-4aed-a16b-468a8b8cb7fb
+2024-12-15 20:18:26,521 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:18:26,522 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:18:26,526 - app.pipeline_runner - INFO - Starting pipeline for job eafaed7a-fce8-4aed-a16b-468a8b8cb7fb
+2024-12-15 20:18:26,527 - app.temp_manager - INFO - Created temporary directory: /tmp/peanut__aw7bozt
+2024-12-15 20:18:26,528 - app.temp_manager - DEBUG - Temporary network path: /tmp/peanut__aw7bozt/H_sapiens.txt
+2024-12-15 20:18:26,528 - app.temp_manager - DEBUG - Temporary matrix path: /tmp/peanut__aw7bozt/H_sapiens_matrix.npz
+2024-12-15 20:18:26,528 - app.temp_manager - ERROR - Error creating temporary files: read of closed file
+2024-12-15 20:18:26,529 - app.temp_manager - INFO - Temporary files cleaned up successfully
+2024-12-15 20:18:26,529 - app.pipeline_runner - ERROR - Pipeline failed for job eafaed7a-fce8-4aed-a16b-468a8b8cb7fb: read of closed file
+2024-12-15 20:18:26,529 - app.routes - ERROR - Pipeline execution failed for job eafaed7a-fce8-4aed-a16b-468a8b8cb7fb: read of closed file
+2024-12-15 20:24:42,987 - app.app_main - INFO - Application is shutting down
+2024-12-15 20:24:45,334 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 20:24:45,343 - app.app_main - INFO - Application is starting up
+2024-12-15 20:25:57,634 - app.app_main - INFO - Application is shutting down
+2024-12-15 20:26:00,080 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 20:26:00,088 - app.app_main - INFO - Application is starting up
+2024-12-15 20:27:52,939 - app.routes - INFO - New job request received. Job code: f7aba5b9-d0c4-45f4-a286-f655aae03795
+2024-12-15 20:27:52,953 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:27:52,954 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:27:52,961 - app.pipeline_runner - INFO - Starting pipeline for job f7aba5b9-d0c4-45f4-a286-f655aae03795
+2024-12-15 20:27:52,962 - app.temp_manager - INFO - Created temporary directory: /tmp/peanut_4fe_3f5l
+2024-12-15 20:27:52,962 - app.temp_manager - DEBUG - Temporary network path: /tmp/peanut_4fe_3f5l/H_sapiens.txt
+2024-12-15 20:27:52,963 - app.temp_manager - DEBUG - Temporary matrix path: /tmp/peanut_4fe_3f5l/H_sapiens_matrix.npz
+2024-12-15 20:27:52,964 - app.temp_manager - ERROR - Error creating temporary files: read of closed file
+2024-12-15 20:27:52,965 - app.temp_manager - INFO - Temporary files cleaned up successfully
+2024-12-15 20:27:52,965 - app.pipeline_runner - ERROR - Pipeline failed for job f7aba5b9-d0c4-45f4-a286-f655aae03795: read of closed file
+2024-12-15 20:27:52,966 - app.routes - ERROR - Pipeline execution failed for job f7aba5b9-d0c4-45f4-a286-f655aae03795: read of closed file
+2024-12-15 20:32:44,088 - app.app_main - INFO - Application is shutting down
+2024-12-15 20:32:48,371 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 20:32:48,408 - app.app_main - INFO - Application is starting up
+2024-12-15 20:32:53,398 - app.routes - INFO - New job request received. Job code: b2cfcfb5-8261-42a7-b0c4-0389b283803b
+2024-12-15 20:32:53,416 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:32:53,417 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:32:53,427 - app.pipeline_runner - INFO - Starting pipeline for job b2cfcfb5-8261-42a7-b0c4-0389b283803b
+2024-12-15 20:32:53,428 - app.pipeline_runner - ERROR - Pipeline failed for job b2cfcfb5-8261-42a7-b0c4-0389b283803b: read of closed file
+2024-12-15 20:32:53,428 - app.routes - ERROR - Pipeline execution failed for job b2cfcfb5-8261-42a7-b0c4-0389b283803b: read of closed file
+2024-12-15 20:33:17,790 - app.routes - INFO - New job request received. Job code: 7a0310a0-6430-49f8-a737-a179b7a68ea8
+2024-12-15 20:33:17,798 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:33:17,798 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:33:17,803 - app.pipeline_runner - INFO - Starting pipeline for job 7a0310a0-6430-49f8-a737-a179b7a68ea8
+2024-12-15 20:33:17,804 - app.pipeline_runner - ERROR - Pipeline failed for job 7a0310a0-6430-49f8-a737-a179b7a68ea8: read of closed file
+2024-12-15 20:33:17,804 - app.routes - ERROR - Pipeline execution failed for job 7a0310a0-6430-49f8-a737-a179b7a68ea8: read of closed file
+2024-12-15 20:34:47,315 - app.app_main - INFO - Application is shutting down
+2024-12-15 20:34:51,307 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 20:34:51,354 - app.app_main - INFO - Application is starting up
+2024-12-15 20:35:01,438 - app.routes - INFO - New job request received. Job code: de543a4c-b7f1-4dfc-bf87-09104aff5c47
+2024-12-15 20:35:01,449 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:35:01,451 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:35:01,457 - app.pipeline_runner - INFO - Starting pipeline for job de543a4c-b7f1-4dfc-bf87-09104aff5c47
+2024-12-15 20:35:01,458 - app.pipeline_runner - ERROR - Pipeline failed for job de543a4c-b7f1-4dfc-bf87-09104aff5c47: read of closed file
+2024-12-15 20:35:01,458 - app.routes - ERROR - Pipeline execution failed for job de543a4c-b7f1-4dfc-bf87-09104aff5c47: read of closed file
+2024-12-15 20:36:23,593 - app.app_main - INFO - Application is shutting down
+2024-12-15 20:36:27,766 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 20:36:27,790 - app.app_main - INFO - Application is starting up
+2024-12-15 20:36:45,158 - app.app_main - INFO - Application is shutting down
+2024-12-15 20:36:48,053 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 20:36:48,065 - app.app_main - INFO - Application is starting up
+2024-12-15 20:36:50,941 - app.routes - INFO - New job request received. Job code: d71caa77-8195-4046-86f9-eec2907fa7d5
+2024-12-15 20:36:50,953 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:36:50,955 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:36:50,955 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-15 20:36:50,961 - app.pipeline_runner - INFO - Starting pipeline for job d71caa77-8195-4046-86f9-eec2907fa7d5
+2024-12-15 20:36:50,961 - app.pipeline_runner - DEBUG - Custom network detected, preparing to handle file
+2024-12-15 20:36:50,961 - app.pipeline_runner - DEBUG - Reading network file content
+2024-12-15 20:36:50,962 - app.pipeline_runner - ERROR - Pipeline failed for job d71caa77-8195-4046-86f9-eec2907fa7d5: read of closed file
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/app/pipeline_runner.py", line 43, in run
+    network_content = await settings_input.network_file.read()
+  File "/home/yair/.local/lib/python3.10/site-packages/starlette/datastructures.py", line 463, in read
+    return await run_in_threadpool(self.file.read, size)
+  File "/home/yair/.local/lib/python3.10/site-packages/starlette/concurrency.py", line 42, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func, *args)
+  File "/home/yair/.local/lib/python3.10/site-packages/anyio/to_thread.py", line 56, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+  File "/home/yair/.local/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 2177, in run_sync_in_worker_thread
+    return await future
+  File "/home/yair/.local/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 859, in run
+    result = context.run(func, *args)
+  File "/usr/lib/python3.10/tempfile.py", line 925, in read
+    return self._file.read(*args)
+ValueError: read of closed file
+2024-12-15 20:36:50,979 - app.routes - ERROR - Pipeline execution failed for job d71caa77-8195-4046-86f9-eec2907fa7d5: read of closed file
+2024-12-15 20:38:17,241 - app.app_main - INFO - Application is shutting down
+2024-12-15 20:38:17,313 - app.temp_manager - DEBUG - TempFileManager destructor called
+2024-12-15 20:38:17,313 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-15 20:38:17,313 - app.temp_manager - DEBUG - No temp directory to clean up
+2024-12-15 20:38:17,313 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-15 20:38:19,224 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 20:38:19,232 - app.app_main - INFO - Application is starting up
+2024-12-15 20:38:43,493 - app.routes - INFO - New job request received. Job code: 533c5d2e-dc58-428d-ba46-da0fec152d71
+2024-12-15 20:38:43,493 - app.routes - DEBUG - Reading custom network file
+2024-12-15 20:38:43,512 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:38:43,513 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:38:43,513 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-15 20:38:43,517 - app.pipeline_runner - INFO - Starting pipeline for job 533c5d2e-dc58-428d-ba46-da0fec152d71
+2024-12-15 20:38:43,517 - app.pipeline_runner - DEBUG - Custom network detected, preparing to handle file
+2024-12-15 20:38:43,518 - app.pipeline_runner - DEBUG - Reading network file content
+2024-12-15 20:38:43,518 - app.pipeline_runner - DEBUG - Successfully read network file content, size: 29451412 bytes
+2024-12-15 20:38:43,519 - app.pipeline_runner - DEBUG - Creating temporary files
+2024-12-15 20:38:43,519 - app.temp_manager - DEBUG - Starting create_temp_files for H_sapiens.txt
+2024-12-15 20:38:43,520 - app.temp_manager - INFO - Created temporary directory: /tmp/peanut_mtnmbo8w
+2024-12-15 20:38:43,521 - app.temp_manager - DEBUG - Temporary network path: /tmp/peanut_mtnmbo8w/H_sapiens.txt
+2024-12-15 20:38:43,521 - app.temp_manager - DEBUG - Temporary matrix path: /tmp/peanut_mtnmbo8w/H_sapiens_matrix.npz
+2024-12-15 20:38:43,521 - app.temp_manager - DEBUG - About to yield TempFileManager instance
+2024-12-15 20:38:43,521 - app.pipeline_runner - DEBUG - Temporary files created at: /tmp/peanut_mtnmbo8w/H_sapiens.txt
+2024-12-15 20:38:43,521 - app.pipeline_runner - DEBUG - Writing network content to temporary file
+2024-12-15 20:38:43,540 - app.pipeline_runner - INFO - Saved custom network to /tmp/peanut_mtnmbo8w/H_sapiens.txt
+2024-12-15 20:38:43,541 - app.pipeline_runner - DEBUG - Updated network path in settings: custom/H_sapiens.txt
+2024-12-15 20:38:43,541 - app.pipeline_runner - DEBUG - Starting pipeline execution with custom network
+2024-12-15 20:38:43,541 - pipeline.settings - INFO - Using custom matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/custom/H_sapiens_0.1.npz
+2024-12-15 20:38:43,541 - pipeline.settings - INFO - Using custom network file: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/custom/H_sapiens.txt
+2024-12-15 20:38:43,541 - pipeline.settings - ERROR - Network file not found: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/custom/H_sapiens.txt
+2024-12-15 20:38:43,542 - pipeline.pipeline_main - ERROR - An error occurred in pipeline_main: Network file not found: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/custom/H_sapiens.txt
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 65, in pipeline_main
+    run_settings = Settings(
+  File "<string>", line 15, in __init__
+  File "/home/yair/projects/Yair_propagation/pipeline/settings.py", line 75, in __post_init__
+    raise FileNotFoundError(f"Network file not found: {self.network_file_path}")
+FileNotFoundError: Network file not found: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/custom/H_sapiens.txt
+2024-12-15 20:38:43,542 - app.temp_manager - ERROR - Error in create_temp_files: Network file not found: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/custom/H_sapiens.txt
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/app/temp_manager.py", line 43, in create_temp_files
+    yield self
+  File "/home/yair/projects/Yair_propagation/app/pipeline_runner.py", line 77, in run
+    results = await execute_pipeline(
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 65, in pipeline_main
+    run_settings = Settings(
+  File "<string>", line 15, in __init__
+  File "/home/yair/projects/Yair_propagation/pipeline/settings.py", line 75, in __post_init__
+    raise FileNotFoundError(f"Network file not found: {self.network_file_path}")
+FileNotFoundError: Network file not found: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/custom/H_sapiens.txt
+2024-12-15 20:38:43,542 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-15 20:38:43,542 - app.temp_manager - DEBUG - Temp directory exists: /tmp/peanut_mtnmbo8w
+2024-12-15 20:38:43,543 - app.temp_manager - DEBUG - About to remove directory: /tmp/peanut_mtnmbo8w
+2024-12-15 20:38:43,549 - app.temp_manager - INFO - Temporary files cleaned up successfully
+2024-12-15 20:38:43,549 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-15 20:38:43,549 - app.temp_manager - DEBUG - Exiting create_temp_files context
+2024-12-15 20:38:43,549 - app.pipeline_runner - ERROR - Pipeline failed for job 533c5d2e-dc58-428d-ba46-da0fec152d71: Network file not found: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/custom/H_sapiens.txt
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/app/pipeline_runner.py", line 77, in run
+    results = await execute_pipeline(
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 65, in pipeline_main
+    run_settings = Settings(
+  File "<string>", line 15, in __init__
+  File "/home/yair/projects/Yair_propagation/pipeline/settings.py", line 75, in __post_init__
+    raise FileNotFoundError(f"Network file not found: {self.network_file_path}")
+FileNotFoundError: Network file not found: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/custom/H_sapiens.txt
+2024-12-15 20:38:43,550 - app.routes - ERROR - Pipeline execution failed for job 533c5d2e-dc58-428d-ba46-da0fec152d71: Network file not found: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/custom/H_sapiens.txt
+2024-12-15 20:38:43,550 - app.temp_manager - DEBUG - TempFileManager destructor called
+2024-12-15 20:38:43,550 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-15 20:38:43,550 - app.temp_manager - DEBUG - No temp directory to clean up
+2024-12-15 20:38:43,550 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-15 20:40:23,064 - app.app_main - INFO - Application is shutting down
+2024-12-15 20:40:30,713 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 20:40:30,733 - app.app_main - INFO - Application is starting up
+2024-12-15 20:48:31,147 - app.app_main - INFO - Application is shutting down
+2024-12-15 20:48:33,754 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 20:48:33,766 - app.app_main - INFO - Application is starting up
+2024-12-15 20:48:37,955 - app.routes - INFO - New job request received. Job code: 576c71a1-c94f-415d-990a-200d217210a7
+2024-12-15 20:48:37,955 - app.routes - DEBUG - Reading custom network file
+2024-12-15 20:48:37,978 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:48:37,979 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:48:37,979 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-15 20:48:37,983 - app.pipeline_runner - INFO - Starting pipeline for job 576c71a1-c94f-415d-990a-200d217210a7
+2024-12-15 20:48:37,983 - app.pipeline_runner - DEBUG - Custom network detected, preparing to handle file
+2024-12-15 20:48:37,983 - app.pipeline_runner - DEBUG - Reading network file content
+2024-12-15 20:48:37,984 - app.pipeline_runner - DEBUG - Successfully read network file content, size: 29451412 bytes
+2024-12-15 20:48:37,984 - app.pipeline_runner - DEBUG - Creating temporary files
+2024-12-15 20:48:37,984 - app.temp_manager - DEBUG - Starting create_temp_files for H_sapiens.txt
+2024-12-15 20:48:37,985 - app.temp_manager - INFO - Created temporary directory: /tmp/peanut_k6h_tbv1
+2024-12-15 20:48:37,985 - app.temp_manager - DEBUG - Temporary network path: /tmp/peanut_k6h_tbv1/H_sapiens.txt
+2024-12-15 20:48:37,985 - app.temp_manager - DEBUG - Temporary matrix path: /tmp/peanut_k6h_tbv1/H_sapiens_matrix.npz
+2024-12-15 20:48:37,986 - app.temp_manager - DEBUG - About to yield TempFileManager instance
+2024-12-15 20:48:37,986 - app.pipeline_runner - DEBUG - Temporary files created at: /tmp/peanut_k6h_tbv1/H_sapiens.txt
+2024-12-15 20:48:37,986 - app.pipeline_runner - DEBUG - Writing network content to temporary file
+2024-12-15 20:48:38,005 - app.pipeline_runner - INFO - Saved custom network to /tmp/peanut_k6h_tbv1/H_sapiens.txt
+2024-12-15 20:48:38,006 - app.pipeline_runner - DEBUG - Updated network path in settings: custom/H_sapiens.txt
+2024-12-15 20:48:38,006 - app.pipeline_runner - DEBUG - Starting pipeline execution with custom network
+2024-12-15 20:48:38,006 - pipeline.settings - INFO - Using custom matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/custom/H_sapiens_0.1.npz
+2024-12-15 20:48:38,006 - pipeline.settings - INFO - Using custom network file: custom/H_sapiens.txt
+2024-12-15 20:48:38,006 - pipeline.settings - ERROR - Network file not found: custom/H_sapiens.txt
+2024-12-15 20:48:38,006 - pipeline.pipeline_main - ERROR - An error occurred in pipeline_main: Network file not found: custom/H_sapiens.txt
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 65, in pipeline_main
+    run_settings = Settings(
+  File "<string>", line 15, in __init__
+  File "/home/yair/projects/Yair_propagation/pipeline/settings.py", line 75, in __post_init__
+    raise FileNotFoundError(f"Network file not found: {self.network_file_path}")
+FileNotFoundError: Network file not found: custom/H_sapiens.txt
+2024-12-15 20:48:38,007 - app.temp_manager - ERROR - Error in create_temp_files: Network file not found: custom/H_sapiens.txt
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/app/temp_manager.py", line 43, in create_temp_files
+    yield self
+  File "/home/yair/projects/Yair_propagation/app/pipeline_runner.py", line 77, in run
+    results = await execute_pipeline(
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 65, in pipeline_main
+    run_settings = Settings(
+  File "<string>", line 15, in __init__
+  File "/home/yair/projects/Yair_propagation/pipeline/settings.py", line 75, in __post_init__
+    raise FileNotFoundError(f"Network file not found: {self.network_file_path}")
+FileNotFoundError: Network file not found: custom/H_sapiens.txt
+2024-12-15 20:48:38,007 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-15 20:48:38,007 - app.temp_manager - DEBUG - Temp directory exists: /tmp/peanut_k6h_tbv1
+2024-12-15 20:48:38,007 - app.temp_manager - DEBUG - About to remove directory: /tmp/peanut_k6h_tbv1
+2024-12-15 20:48:38,011 - app.temp_manager - INFO - Temporary files cleaned up successfully
+2024-12-15 20:48:38,011 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-15 20:48:38,011 - app.temp_manager - DEBUG - Exiting create_temp_files context
+2024-12-15 20:48:38,012 - app.pipeline_runner - ERROR - Pipeline failed for job 576c71a1-c94f-415d-990a-200d217210a7: Network file not found: custom/H_sapiens.txt
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/app/pipeline_runner.py", line 77, in run
+    results = await execute_pipeline(
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 65, in pipeline_main
+    run_settings = Settings(
+  File "<string>", line 15, in __init__
+  File "/home/yair/projects/Yair_propagation/pipeline/settings.py", line 75, in __post_init__
+    raise FileNotFoundError(f"Network file not found: {self.network_file_path}")
+FileNotFoundError: Network file not found: custom/H_sapiens.txt
+2024-12-15 20:48:38,012 - app.routes - ERROR - Pipeline execution failed for job 576c71a1-c94f-415d-990a-200d217210a7: Network file not found: custom/H_sapiens.txt
+2024-12-15 20:48:38,012 - app.temp_manager - DEBUG - TempFileManager destructor called
+2024-12-15 20:48:38,012 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-15 20:48:38,012 - app.temp_manager - DEBUG - No temp directory to clean up
+2024-12-15 20:48:38,012 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-15 20:50:49,362 - app.app_main - INFO - Application is shutting down
+2024-12-15 20:50:52,282 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 20:50:52,295 - app.app_main - INFO - Application is starting up
+2024-12-15 20:51:01,249 - app.routes - INFO - New job request received. Job code: b47efb94-4ff8-443c-8120-b1eb79ce8af8
+2024-12-15 20:51:01,249 - app.routes - DEBUG - Reading custom network file
+2024-12-15 20:51:01,268 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:51:01,269 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:51:01,269 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-15 20:51:01,273 - app.pipeline_runner - INFO - Starting pipeline for job b47efb94-4ff8-443c-8120-b1eb79ce8af8
+2024-12-15 20:51:01,273 - app.pipeline_runner - DEBUG - Custom network detected, preparing to handle file
+2024-12-15 20:51:01,273 - app.pipeline_runner - DEBUG - Reading network file content
+2024-12-15 20:51:01,274 - app.pipeline_runner - DEBUG - Successfully read network file content, size: 29451412 bytes
+2024-12-15 20:51:01,274 - app.pipeline_runner - DEBUG - Creating temporary files
+2024-12-15 20:51:01,274 - app.temp_manager - DEBUG - Starting create_temp_files for H_sapiens.txt
+2024-12-15 20:51:01,275 - app.temp_manager - INFO - Created temporary directory: /tmp/peanut_8bf496hz
+2024-12-15 20:51:01,275 - app.temp_manager - DEBUG - Temporary network path: /tmp/peanut_8bf496hz/H_sapiens.txt
+2024-12-15 20:51:01,275 - app.temp_manager - DEBUG - Temporary matrix path: /tmp/peanut_8bf496hz/H_sapiens_matrix.npz
+2024-12-15 20:51:01,276 - app.temp_manager - DEBUG - About to yield TempFileManager instance
+2024-12-15 20:51:01,276 - app.pipeline_runner - DEBUG - Temporary files created at: /tmp/peanut_8bf496hz/H_sapiens.txt
+2024-12-15 20:51:01,276 - app.pipeline_runner - DEBUG - Writing network content to temporary file
+2024-12-15 20:51:01,301 - app.pipeline_runner - INFO - Saved custom network to /tmp/peanut_8bf496hz/H_sapiens.txt
+2024-12-15 20:51:01,301 - app.pipeline_runner - DEBUG - Updated network path in settings: /tmp/peanut_8bf496hz/H_sapiens.txt
+2024-12-15 20:51:01,301 - app.pipeline_runner - DEBUG - Starting pipeline execution with custom network
+2024-12-15 20:51:01,301 - pipeline.settings - INFO - Using default matrix path: /tmp/peanut_8bf496hz/H_sapiens.txt_0.1.npz
+2024-12-15 20:51:01,302 - pipeline.settings - INFO - Using default network file: /tmp/peanut_8bf496hz/H_sapiens.txt
+2024-12-15 20:51:01,302 - pipeline.utils - INFO - Reading network from: /tmp/peanut_8bf496hz/H_sapiens.txt
+2024-12-15 20:51:03,697 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-15 20:51:03,701 - pipeline.pipeline_main - ERROR - An error occurred in pipeline_main: Invalid file path or buffer object type: <class 'tuple'>
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 109, in pipeline_main
     condition_data_df = pd.read_excel(condition_path)
   File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 495, in read_excel
     io = ExcelFile(
@@ -64,11 +476,13 @@ Traceback (most recent call last):
   File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/common.py", line 472, in _get_filepath_or_buffer
     raise ValueError(msg)
 ValueError: Invalid file path or buffer object type: <class 'tuple'>
-2024-12-11 15:40:21,756 - app.pipeline_runner - ERROR - Error in pipeline execution for job_code 5f967c2f: Invalid file path or buffer object type: <class 'tuple'>
+2024-12-15 20:51:03,704 - app.temp_manager - ERROR - Error in create_temp_files: Invalid file path or buffer object type: <class 'tuple'>
 Traceback (most recent call last):
-  File "/home/yair/projects/Yair_propagation/app/pipeline_runner.py", line 36, in run_pipeline
-    output_file_path = await pipeline_main(conditions_data, settings)
-  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 84, in pipeline_main
+  File "/home/yair/projects/Yair_propagation/app/temp_manager.py", line 43, in create_temp_files
+    yield self
+  File "/home/yair/projects/Yair_propagation/app/pipeline_runner.py", line 77, in run
+    results = await execute_pipeline(
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 109, in pipeline_main
     condition_data_df = pd.read_excel(condition_path)
   File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 495, in read_excel
     io = ExcelFile(
@@ -81,45 +495,18 @@ Traceback (most recent call last):
   File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/common.py", line 472, in _get_filepath_or_buffer
     raise ValueError(msg)
 ValueError: Invalid file path or buffer object type: <class 'tuple'>
-2024-12-11 15:40:21,758 - app.routes - DEBUG - Checking status for job_code: 5f967c2f
-2024-12-11 15:40:21,758 - app.routes - DEBUG - Job data: {'status': 'Failed', 'output_file': None, 'expiry': datetime.datetime(2024, 12, 18, 15, 40, 16, 105844), 'error': "Invalid file path or buffer object type: <class 'tuple'>"}
-2024-12-11 15:41:40,094 - app.app_main - INFO - Application is shutting down
-2024-12-11 15:41:42,308 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 15:41:42,315 - app.app_main - INFO - Application is starting up
-2024-12-11 15:41:43,059 - app.routes - DEBUG - Root Path: /peanut
-2024-12-11 15:41:51,767 - app.routes - INFO - Received request to run pipeline
-2024-12-11 15:41:51,767 - app.routes - INFO - Files: ['GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.xlsx'], Test Name: multiple, Species: H_sapiens, Alpha: 0.1, Network: Anat, Pathway File: kegg, Min Genes per Pathway: 15, Max Genes per Pathway: 500, FDR Threshold: 0.05, Run GSEA: True, Network Restriction: False
-2024-12-11 15:41:51,767 - app.utils - INFO - Validating uploaded Excel file
-2024-12-11 15:41:52,353 - app.utils - INFO - Excel file preprocessed successfully
-2024-12-11 15:41:52,359 - app.utils - INFO - Excel file validated successfully
-2024-12-11 15:42:29,203 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 396 pathways.
-2024-12-11 15:42:29,388 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/multiple_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE_Propagation_11_12_2024__15_41_54.xlsx.
-2024-12-11 15:42:29,448 - pipeline.propagation_routines - INFO - Running GSEA without propagation
-2024-12-11 15:42:29,449 - pipeline.propagation_routines - INFO - Processing all genes without network restriction.
-2024-12-11 15:42:56,985 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 15:42:58,339 - app.pipeline_runner - DEBUG - Pipeline main returned output_file_path: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 15:42:58,339 - app.pipeline_runner - INFO - Job d98d5dd7 finished successfully.
-2024-12-11 15:42:58,343 - app.routes - DEBUG - Checking status for job_code: d98d5dd7
-2024-12-11 15:42:58,344 - app.routes - DEBUG - Job data: {'status': 'Finished', 'output_file': 'pipeline/Outputs/Archives/multiple_results.zip', 'expiry': datetime.datetime(2024, 12, 18, 15, 41, 51, 767521)}
-2024-12-11 15:42:58,344 - app.routes - DEBUG - Download URL for job d98d5dd7: /peanut/download-file/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 15:43:19,129 - app.routes - INFO - User requested file: pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 15:43:19,129 - app.routes - INFO - Serving file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 15:44:37,142 - app.app_main - INFO - Application is shutting down
-2024-12-11 15:44:41,156 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 15:44:41,177 - app.app_main - INFO - Application is starting up
-2024-12-11 16:04:06,881 - app.app_main - INFO - Application is shutting down
-2024-12-11 16:04:23,564 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 16:04:23,599 - app.app_main - INFO - Application is starting up
-2024-12-11 20:50:50,361 - app.routes - DEBUG - Root Path: /peanut
-2024-12-11 20:51:04,513 - app.routes - INFO - Received request to run pipeline
-2024-12-11 20:51:04,517 - app.routes - INFO - Files: ['GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.xlsx'], Test Name: multiple, Species: H_sapiens, Alpha: 0.1, Network: Anat, Pathway File: kegg, Min Genes per Pathway: 15, Max Genes per Pathway: 500, FDR Threshold: 0.05, Run GSEA: True, Network Restriction: False
-2024-12-11 20:51:04,535 - app.utils - INFO - Validating uploaded Excel file
-2024-12-11 20:51:09,467 - app.utils - INFO - Excel file preprocessed successfully
-2024-12-11 20:51:09,474 - app.utils - INFO - Excel file validated successfully
-2024-12-11 20:51:13,404 - pipeline.pipeline_main - ERROR - An error occurred in pipeline_main: Invalid file path or buffer object type: <class 'tuple'>
+2024-12-15 20:51:03,704 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-15 20:51:03,704 - app.temp_manager - DEBUG - Temp directory exists: /tmp/peanut_8bf496hz
+2024-12-15 20:51:03,705 - app.temp_manager - DEBUG - About to remove directory: /tmp/peanut_8bf496hz
+2024-12-15 20:51:03,708 - app.temp_manager - INFO - Temporary files cleaned up successfully
+2024-12-15 20:51:03,708 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-15 20:51:03,708 - app.temp_manager - DEBUG - Exiting create_temp_files context
+2024-12-15 20:51:03,708 - app.pipeline_runner - ERROR - Pipeline failed for job b47efb94-4ff8-443c-8120-b1eb79ce8af8: Invalid file path or buffer object type: <class 'tuple'>
 Traceback (most recent call last):
-  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 84, in pipeline_main
-    #     condition_data_df = pd.read_excel(condition_path)
+  File "/home/yair/projects/Yair_propagation/app/pipeline_runner.py", line 77, in run
+    results = await execute_pipeline(
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 109, in pipeline_main
+    condition_data_df = pd.read_excel(condition_path)
   File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 495, in read_excel
     io = ExcelFile(
   File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 1550, in __init__
@@ -131,12 +518,56 @@ Traceback (most recent call last):
   File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/common.py", line 472, in _get_filepath_or_buffer
     raise ValueError(msg)
 ValueError: Invalid file path or buffer object type: <class 'tuple'>
-2024-12-11 20:51:13,417 - app.pipeline_runner - ERROR - Error in pipeline execution for job_code 96ab3dca: Invalid file path or buffer object type: <class 'tuple'>
+2024-12-15 20:51:03,708 - app.routes - ERROR - Pipeline execution failed for job b47efb94-4ff8-443c-8120-b1eb79ce8af8: Invalid file path or buffer object type: <class 'tuple'>
+2024-12-15 20:51:03,709 - app.temp_manager - DEBUG - TempFileManager destructor called
+2024-12-15 20:51:03,709 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-15 20:51:03,709 - app.temp_manager - DEBUG - No temp directory to clean up
+2024-12-15 20:51:03,709 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-15 20:52:19,041 - app.app_main - INFO - Application is shutting down
+2024-12-15 20:52:21,661 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 20:52:21,672 - app.app_main - INFO - Application is starting up
+2024-12-15 20:53:25,913 - app.routes - INFO - New job request received. Job code: bf80874b-d363-4de3-9fa8-02376931142a
+2024-12-15 20:53:25,913 - app.routes - DEBUG - Reading custom network file
+2024-12-15 20:53:25,937 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:53:25,938 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:53:25,939 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-15 20:53:25,945 - app.pipeline_runner - INFO - Starting pipeline for job bf80874b-d363-4de3-9fa8-02376931142a
+2024-12-15 20:53:25,945 - app.pipeline_runner - DEBUG - Custom network detected, preparing to handle file
+2024-12-15 20:53:25,946 - app.pipeline_runner - DEBUG - Reading network file content
+2024-12-15 20:53:25,947 - app.pipeline_runner - DEBUG - Successfully read network file content, size: 29451412 bytes
+2024-12-15 20:53:25,948 - app.pipeline_runner - DEBUG - Creating temporary files
+2024-12-15 20:53:25,948 - app.temp_manager - DEBUG - Starting create_temp_files for H_sapiens.txt
+2024-12-15 20:53:25,949 - app.temp_manager - INFO - Created temporary directory: /tmp/peanut_gnus4vxw
+2024-12-15 20:53:25,949 - app.temp_manager - DEBUG - Temporary network path: /tmp/peanut_gnus4vxw/H_sapiens.txt
+2024-12-15 20:53:25,950 - app.temp_manager - DEBUG - Temporary matrix path: /tmp/peanut_gnus4vxw/H_sapiens_matrix.npz
+2024-12-15 20:53:25,950 - app.temp_manager - DEBUG - About to yield TempFileManager instance
+2024-12-15 20:53:25,950 - app.pipeline_runner - DEBUG - Temporary files created at: /tmp/peanut_gnus4vxw/H_sapiens.txt
+2024-12-15 20:53:25,950 - app.pipeline_runner - DEBUG - Writing network content to temporary file
+2024-12-15 20:53:25,979 - app.pipeline_runner - INFO - Saved custom network to /tmp/peanut_gnus4vxw/H_sapiens.txt
+2024-12-15 20:53:25,980 - app.pipeline_runner - DEBUG - Updated network path in settings: /tmp/peanut_gnus4vxw/H_sapiens.txt
+2024-12-15 20:53:25,980 - app.pipeline_runner - DEBUG - Starting pipeline execution with custom network
+2024-12-15 20:53:25,980 - pipeline.settings - INFO - Using default matrix path: /tmp/peanut_gnus4vxw/H_sapiens.txt_0.1.npz
+2024-12-15 20:53:25,980 - pipeline.settings - INFO - Using default network file: /tmp/peanut_gnus4vxw/H_sapiens.txt
+2024-12-15 20:53:25,981 - pipeline.utils - INFO - Reading network from: /tmp/peanut_gnus4vxw/H_sapiens.txt
+2024-12-15 20:53:38,399 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-15 20:53:38,427 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, file:           GeneID     Score
+0           3360  0.317096
+1           1393 -0.092459
+2           3362  0.379495
+3           3363  0.122374
+4         286343 -0.780245
+...          ...       ...
+20643     113791  0.084842
+20644  100506457  0.150522
+20645     282679 -0.570184
+20646        581  0.045622
+20647       6059 -0.222887
+
+[20648 rows x 2 columns]
+2024-12-15 20:53:38,437 - pipeline.pipeline_main - ERROR - An error occurred in pipeline_main: Invalid file path or buffer object type: <class 'pandas.core.frame.DataFrame'>
 Traceback (most recent call last):
-  File "/home/yair/projects/Yair_propagation/app/pipeline_runner.py", line 36, in run_pipeline
-    output_file_path = await pipeline_main(conditions_data, settings)
-  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 84, in pipeline_main
-    #     condition_data_df = pd.read_excel(condition_path)
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 110, in pipeline_main
+    condition_data_df = pd.read_excel(condition_path)
   File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 495, in read_excel
     io = ExcelFile(
   File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 1550, in __init__
@@ -147,18 +578,15 @@ Traceback (most recent call last):
     ioargs = _get_filepath_or_buffer(
   File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/common.py", line 472, in _get_filepath_or_buffer
     raise ValueError(msg)
-ValueError: Invalid file path or buffer object type: <class 'tuple'>
-2024-12-11 20:51:13,419 - app.routes - DEBUG - Checking status for job_code: 96ab3dca
-2024-12-11 20:51:13,419 - app.routes - DEBUG - Job data: {'status': 'Failed', 'output_file': None, 'expiry': datetime.datetime(2024, 12, 18, 20, 51, 4, 533263), 'error': "Invalid file path or buffer object type: <class 'tuple'>"}
-2024-12-11 20:52:17,924 - app.routes - INFO - Received request to run pipeline
-2024-12-11 20:52:17,924 - app.routes - INFO - Files: ['GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.xlsx'], Test Name: multiple, Species: H_sapiens, Alpha: 0.1, Network: Anat, Pathway File: kegg, Min Genes per Pathway: 15, Max Genes per Pathway: 500, FDR Threshold: 0.05, Run GSEA: False, Network Restriction: False
-2024-12-11 20:52:17,925 - app.utils - INFO - Validating uploaded Excel file
-2024-12-11 20:52:18,793 - app.utils - INFO - Excel file preprocessed successfully
-2024-12-11 20:52:18,796 - app.utils - INFO - Excel file validated successfully
-2024-12-11 20:52:21,060 - pipeline.pipeline_main - ERROR - An error occurred in pipeline_main: Invalid file path or buffer object type: <class 'tuple'>
+ValueError: Invalid file path or buffer object type: <class 'pandas.core.frame.DataFrame'>
+2024-12-15 20:53:38,440 - app.temp_manager - ERROR - Error in create_temp_files: Invalid file path or buffer object type: <class 'pandas.core.frame.DataFrame'>
 Traceback (most recent call last):
-  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 84, in pipeline_main
-    #     condition_data_df = pd.read_excel(condition_path)
+  File "/home/yair/projects/Yair_propagation/app/temp_manager.py", line 43, in create_temp_files
+    yield self
+  File "/home/yair/projects/Yair_propagation/app/pipeline_runner.py", line 77, in run
+    results = await execute_pipeline(
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 110, in pipeline_main
+    condition_data_df = pd.read_excel(condition_path)
   File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 495, in read_excel
     io = ExcelFile(
   File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 1550, in __init__
@@ -169,13 +597,19 @@ Traceback (most recent call last):
     ioargs = _get_filepath_or_buffer(
   File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/common.py", line 472, in _get_filepath_or_buffer
     raise ValueError(msg)
-ValueError: Invalid file path or buffer object type: <class 'tuple'>
-2024-12-11 20:52:21,060 - app.pipeline_runner - ERROR - Error in pipeline execution for job_code e7047bce: Invalid file path or buffer object type: <class 'tuple'>
+ValueError: Invalid file path or buffer object type: <class 'pandas.core.frame.DataFrame'>
+2024-12-15 20:53:38,442 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-15 20:53:38,442 - app.temp_manager - DEBUG - Temp directory exists: /tmp/peanut_gnus4vxw
+2024-12-15 20:53:38,443 - app.temp_manager - DEBUG - About to remove directory: /tmp/peanut_gnus4vxw
+2024-12-15 20:53:38,456 - app.temp_manager - INFO - Temporary files cleaned up successfully
+2024-12-15 20:53:38,456 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-15 20:53:38,457 - app.temp_manager - DEBUG - Exiting create_temp_files context
+2024-12-15 20:53:38,458 - app.pipeline_runner - ERROR - Pipeline failed for job bf80874b-d363-4de3-9fa8-02376931142a: Invalid file path or buffer object type: <class 'pandas.core.frame.DataFrame'>
 Traceback (most recent call last):
-  File "/home/yair/projects/Yair_propagation/app/pipeline_runner.py", line 36, in run_pipeline
-    output_file_path = await pipeline_main(conditions_data, settings)
-  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 84, in pipeline_main
-    #     condition_data_df = pd.read_excel(condition_path)
+  File "/home/yair/projects/Yair_propagation/app/pipeline_runner.py", line 77, in run
+    results = await execute_pipeline(
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 110, in pipeline_main
+    condition_data_df = pd.read_excel(condition_path)
   File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 495, in read_excel
     io = ExcelFile(
   File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 1550, in __init__
@@ -186,101 +620,419 @@ Traceback (most recent call last):
     ioargs = _get_filepath_or_buffer(
   File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/common.py", line 472, in _get_filepath_or_buffer
     raise ValueError(msg)
-ValueError: Invalid file path or buffer object type: <class 'tuple'>
-2024-12-11 20:52:21,062 - app.routes - DEBUG - Checking status for job_code: e7047bce
-2024-12-11 20:52:21,062 - app.routes - DEBUG - Job data: {'status': 'Failed', 'output_file': None, 'expiry': datetime.datetime(2024, 12, 18, 20, 52, 17, 925109), 'error': "Invalid file path or buffer object type: <class 'tuple'>"}
-2024-12-11 20:52:55,115 - app.app_main - INFO - Application is shutting down
-2024-12-11 20:53:03,416 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 20:53:03,424 - app.app_main - INFO - Application is starting up
-2024-12-11 20:53:08,412 - app.routes - DEBUG - Root Path: /peanut
-2024-12-11 20:53:16,410 - app.routes - INFO - Received request to run pipeline
-2024-12-11 20:53:16,411 - app.routes - INFO - Files: ['GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.xlsx'], Test Name: multiple, Species: H_sapiens, Alpha: 0.1, Network: Anat, Pathway File: kegg, Min Genes per Pathway: 15, Max Genes per Pathway: 500, FDR Threshold: 0.05, Run GSEA: True, Network Restriction: False
-2024-12-11 20:53:16,412 - app.utils - INFO - Validating uploaded Excel file
-2024-12-11 20:53:18,945 - app.utils - INFO - Excel file preprocessed successfully
-2024-12-11 20:53:18,960 - app.utils - INFO - Excel file validated successfully
-2024-12-11 20:54:44,733 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 396 pathways.
-2024-12-11 20:54:45,257 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/multiple_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE_Propagation_11_12_2024__20_53_27.xlsx.
-2024-12-11 20:54:45,472 - pipeline.propagation_routines - INFO - Running GSEA without propagation
-2024-12-11 20:54:45,473 - pipeline.propagation_routines - INFO - Processing all genes without network restriction.
-2024-12-11 20:55:24,281 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 20:55:25,557 - app.pipeline_runner - DEBUG - Pipeline main returned output_file_path: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 20:55:25,558 - app.pipeline_runner - INFO - Job 3ad47ab3 finished successfully.
-2024-12-11 20:55:25,560 - app.routes - DEBUG - Checking status for job_code: 3ad47ab3
-2024-12-11 20:55:25,560 - app.routes - DEBUG - Job data: {'status': 'Finished', 'output_file': 'pipeline/Outputs/Archives/multiple_results.zip', 'expiry': datetime.datetime(2024, 12, 18, 20, 53, 16, 411726)}
-2024-12-11 20:55:25,561 - app.routes - DEBUG - Download URL for job 3ad47ab3: /peanut/download-file/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 20:55:43,381 - app.routes - INFO - User requested file: pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 20:55:43,382 - app.routes - INFO - Serving file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 20:56:09,428 - app.routes - INFO - Received request to run pipeline
-2024-12-11 20:56:09,428 - app.routes - INFO - Files: ['GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk'], Test Name: multiple, Species: H_sapiens, Alpha: 0.1, Network: Anat, Pathway File: kegg, Min Genes per Pathway: 15, Max Genes per Pathway: 500, FDR Threshold: 0.05, Run GSEA: True, Network Restriction: False
-2024-12-11 20:56:09,439 - app.utils - INFO - RNK file validated successfully
-2024-12-11 20:57:29,565 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 396 pathways.
-2024-12-11 20:57:30,066 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/multiple_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE_Propagation_11_12_2024__20_56_12.xlsx.
-2024-12-11 20:57:30,262 - pipeline.propagation_routines - INFO - Running GSEA without propagation
-2024-12-11 20:57:30,263 - pipeline.propagation_routines - INFO - Processing all genes without network restriction.
-2024-12-11 20:58:15,781 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 20:58:16,371 - app.pipeline_runner - DEBUG - Pipeline main returned output_file_path: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 20:58:16,372 - app.pipeline_runner - INFO - Job ff80745e finished successfully.
-2024-12-11 20:58:16,384 - app.routes - DEBUG - Checking status for job_code: ff80745e
-2024-12-11 20:58:16,384 - app.routes - DEBUG - Job data: {'status': 'Finished', 'output_file': 'pipeline/Outputs/Archives/multiple_results.zip', 'expiry': datetime.datetime(2024, 12, 18, 20, 56, 9, 429011)}
-2024-12-11 20:58:16,384 - app.routes - DEBUG - Download URL for job ff80745e: /peanut/download-file/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 20:58:47,188 - app.routes - INFO - User requested file: pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 20:58:47,188 - app.routes - INFO - Serving file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 21:00:01,705 - app.app_main - INFO - Application is shutting down
-2024-12-11 21:00:08,811 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 21:00:08,835 - app.app_main - INFO - Application is starting up
-2024-12-12 14:15:14,181 - app.app_main - INFO - Application is shutting down
-2024-12-12 15:47:26,123 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 15:47:26,135 - app.app_main - INFO - Application is starting up
-2024-12-12 15:47:31,860 - app.routes - DEBUG - Root Path: /peanut
-2024-12-12 16:32:44,591 - app.app_main - INFO - Application is shutting down
-2024-12-12 16:32:48,904 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 16:32:48,911 - app.app_main - INFO - Application is starting up
-2024-12-12 16:33:06,382 - app.app_main - INFO - Application is shutting down
-2024-12-12 16:41:51,889 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 16:41:51,898 - app.app_main - INFO - Application is starting up
-2024-12-12 16:43:21,561 - app.routes - DEBUG - Root Path: /peanut
-2024-12-12 16:43:30,021 - app.routes - DEBUG - Root Path: /peanut
-2024-12-12 16:44:58,884 - app.routes - DEBUG - Root Path: /peanut
-2024-12-12 16:48:41,999 - app.routes - DEBUG - Root Path: /peanut
-2024-12-12 16:49:07,396 - app.routes - DEBUG - Root Path: /peanut
-2024-12-12 16:50:18,898 - app.routes - DEBUG - Root Path: /peanut
-2024-12-12 16:50:40,679 - app.routes - DEBUG - Root Path: /peanut
-2024-12-12 17:00:23,357 - app.app_main - INFO - Application is shutting down
-2024-12-12 17:00:25,791 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 17:00:25,800 - app.app_main - INFO - Application is starting up
-2024-12-12 17:14:44,012 - app.app_main - INFO - Application is shutting down
-2024-12-12 17:14:49,408 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 17:14:49,433 - app.app_main - INFO - Application is starting up
-2024-12-12 17:19:51,233 - app.app_main - INFO - Application is shutting down
-2024-12-12 17:19:54,525 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 17:19:54,573 - app.app_main - INFO - Application is starting up
-2024-12-12 17:26:49,401 - app.app_main - INFO - Application is shutting down
-2024-12-12 17:27:00,549 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 17:27:00,594 - app.app_main - INFO - Application is starting up
-2024-12-12 17:29:56,125 - app.app_main - INFO - Application is shutting down
-2024-12-12 17:30:08,506 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 17:30:08,542 - app.app_main - INFO - Application is starting up
-2024-12-12 17:31:12,360 - app.app_main - INFO - Application is shutting down
-2024-12-12 17:31:20,282 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 17:31:20,313 - app.app_main - INFO - Application is starting up
-2024-12-12 17:32:53,624 - app.app_main - INFO - Application is shutting down
-2024-12-12 17:32:57,591 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 17:32:57,643 - app.app_main - INFO - Application is starting up
-2024-12-12 17:34:30,134 - app.app_main - INFO - Application is shutting down
-2024-12-12 17:34:46,025 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 17:34:46,083 - app.app_main - INFO - Application is starting up
-2024-12-12 17:41:44,004 - app.app_main - INFO - Application is shutting down
-2024-12-12 17:41:47,395 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 17:41:47,412 - app.app_main - INFO - Application is starting up
-2024-12-12 17:44:15,510 - app.app_main - INFO - Application is shutting down
-2024-12-12 17:44:21,029 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 17:44:21,049 - app.app_main - INFO - Application is starting up
-2024-12-12 17:57:42,176 - app.app_main - INFO - Application is shutting down
-2024-12-12 17:57:44,926 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 17:57:44,943 - app.app_main - INFO - Application is starting up
-2024-12-12 18:08:45,795 - app.app_main - INFO - Application is shutting down
-2024-12-12 18:08:55,266 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 18:08:55,315 - app.app_main - INFO - Application is starting up
-2024-12-12 18:17:37,669 - app.app_main - INFO - Application is shutting down
-2024-12-12 18:17:39,795 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 18:17:39,802 - app.app_main - INFO - Application is starting up
+ValueError: Invalid file path or buffer object type: <class 'pandas.core.frame.DataFrame'>
+2024-12-15 20:53:38,462 - app.routes - ERROR - Pipeline execution failed for job bf80874b-d363-4de3-9fa8-02376931142a: Invalid file path or buffer object type: <class 'pandas.core.frame.DataFrame'>
+2024-12-15 20:53:38,463 - app.temp_manager - DEBUG - TempFileManager destructor called
+2024-12-15 20:53:38,463 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-15 20:53:38,464 - app.temp_manager - DEBUG - No temp directory to clean up
+2024-12-15 20:53:38,464 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-15 20:54:21,354 - app.app_main - INFO - Application is shutting down
+2024-12-15 20:54:25,569 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 20:54:25,593 - app.app_main - INFO - Application is starting up
+2024-12-15 20:54:31,764 - app.routes - INFO - New job request received. Job code: b27abb2f-065c-43cc-b545-e5948a0988b4
+2024-12-15 20:54:31,764 - app.routes - DEBUG - Reading custom network file
+2024-12-15 20:54:31,800 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:54:31,802 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:54:31,802 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-15 20:54:31,811 - app.pipeline_runner - INFO - Starting pipeline for job b27abb2f-065c-43cc-b545-e5948a0988b4
+2024-12-15 20:54:31,812 - app.pipeline_runner - DEBUG - Custom network detected, preparing to handle file
+2024-12-15 20:54:31,812 - app.pipeline_runner - DEBUG - Reading network file content
+2024-12-15 20:54:31,813 - app.pipeline_runner - DEBUG - Successfully read network file content, size: 29451412 bytes
+2024-12-15 20:54:31,813 - app.pipeline_runner - DEBUG - Creating temporary files
+2024-12-15 20:54:31,813 - app.temp_manager - DEBUG - Starting create_temp_files for H_sapiens.txt
+2024-12-15 20:54:31,814 - app.temp_manager - INFO - Created temporary directory: /tmp/peanut_5qcabgh3
+2024-12-15 20:54:31,814 - app.temp_manager - DEBUG - Temporary network path: /tmp/peanut_5qcabgh3/H_sapiens.txt
+2024-12-15 20:54:31,815 - app.temp_manager - DEBUG - Temporary matrix path: /tmp/peanut_5qcabgh3/H_sapiens_matrix.npz
+2024-12-15 20:54:31,815 - app.temp_manager - DEBUG - About to yield TempFileManager instance
+2024-12-15 20:54:31,815 - app.pipeline_runner - DEBUG - Temporary files created at: /tmp/peanut_5qcabgh3/H_sapiens.txt
+2024-12-15 20:54:31,816 - app.pipeline_runner - DEBUG - Writing network content to temporary file
+2024-12-15 20:54:31,857 - app.pipeline_runner - INFO - Saved custom network to /tmp/peanut_5qcabgh3/H_sapiens.txt
+2024-12-15 20:54:31,857 - app.pipeline_runner - DEBUG - Updated network path in settings: /tmp/peanut_5qcabgh3/H_sapiens.txt
+2024-12-15 20:54:31,858 - app.pipeline_runner - DEBUG - Starting pipeline execution with custom network
+2024-12-15 20:54:31,858 - pipeline.settings - INFO - Using default matrix path: /tmp/peanut_5qcabgh3/H_sapiens.txt_0.1.npz
+2024-12-15 20:54:31,858 - pipeline.settings - INFO - Using default network file: /tmp/peanut_5qcabgh3/H_sapiens.txt
+2024-12-15 20:54:31,859 - pipeline.utils - INFO - Reading network from: /tmp/peanut_5qcabgh3/H_sapiens.txt
+2024-12-15 20:54:35,755 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-15 20:54:35,762 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, file:           GeneID     Score
+0           3360  0.317096
+1           1393 -0.092459
+2           3362  0.379495
+3           3363  0.122374
+4         286343 -0.780245
+...          ...       ...
+20643     113791  0.084842
+20644  100506457  0.150522
+20645     282679 -0.570184
+20646        581  0.045622
+20647       6059 -0.222887
+
+[20648 rows x 2 columns]
+2024-12-15 20:54:35,774 - pipeline.propagation_routines - ERROR - An error occurred in read_sparse_matrix: File /tmp/peanut_5qcabgh3/H_sapiens.txt_0.1.npz does not exist.
+2024-12-15 20:54:35,793 - pipeline.propagation_routines - ERROR - An error occurred in matrix_prop: 3360
+2024-12-15 20:54:35,801 - pipeline.propagation_routines - ERROR - An error occurred in matrix_prop: 3360
+2024-12-15 20:54:35,814 - pipeline.pathway_enrichment - ERROR - An error occurred during KS test: float division by zero
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/pipeline/pathway_enrichment.py", line 59, in perform_statist_ks
+    adjusted_p_values = multipletests(ks_p_values, method="fdr_bh")[1]
+  File "/home/yair/.local/lib/python3.10/site-packages/statsmodels/stats/multitest.py", line 156, in multipletests
+    alphacSidak = 1 - np.power((1. - alphaf), 1./ntests)
+ZeroDivisionError: float division by zero
+2024-12-15 20:54:35,817 - pipeline.pathway_enrichment - ERROR - An error occurred during enrichment analysis: float division by zero
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/pipeline/pathway_enrichment.py", line 232, in perform_enrichment
+    perform_statist_ks(settings, condition_settings, genes_by_pathway, scores)
+  File "/home/yair/projects/Yair_propagation/pipeline/pathway_enrichment.py", line 59, in perform_statist_ks
+    adjusted_p_values = multipletests(ks_p_values, method="fdr_bh")[1]
+  File "/home/yair/.local/lib/python3.10/site-packages/statsmodels/stats/multitest.py", line 156, in multipletests
+    alphacSidak = 1 - np.power((1. - alphaf), 1./ntests)
+ZeroDivisionError: float division by zero
+2024-12-15 20:54:35,817 - pipeline.propagation_routines - ERROR - An error occurred in perform_propagation: float division by zero
+2024-12-15 20:54:35,879 - pipeline.visualization_tools - INFO - No significant pathways to plot. Exiting function.
+2024-12-15 20:54:35,881 - pipeline.pipeline_main - ERROR - An error occurred in pipeline_main: [Errno 2] No such file or directory: '/home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_15_12_2024__20_54_35.xlsx'
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 170, in pipeline_main
+    zipf.write(file_path, arcname=file_path.name)
+  File "/usr/lib/python3.10/zipfile.py", line 1754, in write
+    zinfo = ZipInfo.from_file(filename, arcname,
+  File "/usr/lib/python3.10/zipfile.py", line 507, in from_file
+    st = os.stat(filename)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_15_12_2024__20_54_35.xlsx'
+2024-12-15 20:54:35,884 - app.temp_manager - ERROR - Error in create_temp_files: [Errno 2] No such file or directory: '/home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_15_12_2024__20_54_35.xlsx'
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/app/temp_manager.py", line 43, in create_temp_files
+    yield self
+  File "/home/yair/projects/Yair_propagation/app/pipeline_runner.py", line 77, in run
+    results = await execute_pipeline(
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 170, in pipeline_main
+    zipf.write(file_path, arcname=file_path.name)
+  File "/usr/lib/python3.10/zipfile.py", line 1754, in write
+    zinfo = ZipInfo.from_file(filename, arcname,
+  File "/usr/lib/python3.10/zipfile.py", line 507, in from_file
+    st = os.stat(filename)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_15_12_2024__20_54_35.xlsx'
+2024-12-15 20:54:35,885 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-15 20:54:35,885 - app.temp_manager - DEBUG - Temp directory exists: /tmp/peanut_5qcabgh3
+2024-12-15 20:54:35,885 - app.temp_manager - DEBUG - About to remove directory: /tmp/peanut_5qcabgh3
+2024-12-15 20:54:35,891 - app.temp_manager - INFO - Temporary files cleaned up successfully
+2024-12-15 20:54:35,892 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-15 20:54:35,892 - app.temp_manager - DEBUG - Exiting create_temp_files context
+2024-12-15 20:54:35,892 - app.pipeline_runner - ERROR - Pipeline failed for job b27abb2f-065c-43cc-b545-e5948a0988b4: [Errno 2] No such file or directory: '/home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_15_12_2024__20_54_35.xlsx'
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/app/pipeline_runner.py", line 77, in run
+    results = await execute_pipeline(
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 170, in pipeline_main
+    zipf.write(file_path, arcname=file_path.name)
+  File "/usr/lib/python3.10/zipfile.py", line 1754, in write
+    zinfo = ZipInfo.from_file(filename, arcname,
+  File "/usr/lib/python3.10/zipfile.py", line 507, in from_file
+    st = os.stat(filename)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_15_12_2024__20_54_35.xlsx'
+2024-12-15 20:54:35,893 - app.routes - ERROR - Pipeline execution failed for job b27abb2f-065c-43cc-b545-e5948a0988b4: [Errno 2] No such file or directory: '/home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_15_12_2024__20_54_35.xlsx'
+2024-12-15 20:54:35,893 - app.temp_manager - DEBUG - TempFileManager destructor called
+2024-12-15 20:54:35,894 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-15 20:54:35,894 - app.temp_manager - DEBUG - No temp directory to clean up
+2024-12-15 20:54:35,894 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-15 20:56:06,998 - app.app_main - INFO - Application is shutting down
+2024-12-15 20:56:09,898 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 20:56:09,906 - app.app_main - INFO - Application is starting up
+2024-12-15 20:56:15,714 - app.routes - INFO - New job request received. Job code: 3041e251-9e34-4145-a6e8-55338af3677c
+2024-12-15 20:56:15,714 - app.routes - DEBUG - Reading custom network file
+2024-12-15 20:56:15,734 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:56:15,735 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:56:15,736 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-15 20:56:15,739 - app.pipeline_runner - INFO - Starting pipeline for job 3041e251-9e34-4145-a6e8-55338af3677c
+2024-12-15 20:56:15,740 - app.pipeline_runner - DEBUG - Custom network detected, preparing to handle file
+2024-12-15 20:56:15,740 - app.pipeline_runner - DEBUG - Reading network file content
+2024-12-15 20:56:15,740 - app.pipeline_runner - DEBUG - Successfully read network file content, size: 29451412 bytes
+2024-12-15 20:56:15,740 - app.pipeline_runner - DEBUG - Creating temporary files
+2024-12-15 20:56:15,740 - app.temp_manager - DEBUG - Starting create_temp_files for H_sapiens.txt
+2024-12-15 20:56:15,751 - app.temp_manager - INFO - Created temporary directory: /tmp/peanut_9l5r5qwq
+2024-12-15 20:56:15,751 - app.temp_manager - DEBUG - Temporary network path: /tmp/peanut_9l5r5qwq/H_sapiens.txt
+2024-12-15 20:56:15,751 - app.temp_manager - DEBUG - Temporary matrix path: /tmp/peanut_9l5r5qwq/H_sapiens_matrix.npz
+2024-12-15 20:56:15,752 - app.temp_manager - DEBUG - About to yield TempFileManager instance
+2024-12-15 20:56:15,752 - app.pipeline_runner - DEBUG - Temporary files created at: /tmp/peanut_9l5r5qwq/H_sapiens.txt
+2024-12-15 20:56:15,752 - app.pipeline_runner - DEBUG - Writing network content to temporary file
+2024-12-15 20:56:15,772 - app.pipeline_runner - INFO - Saved custom network to /tmp/peanut_9l5r5qwq/H_sapiens.txt
+2024-12-15 20:56:15,772 - app.pipeline_runner - DEBUG - Updated network path in settings: /tmp/peanut_9l5r5qwq/H_sapiens.txt
+2024-12-15 20:56:15,772 - app.pipeline_runner - DEBUG - Starting pipeline execution with custom network
+2024-12-15 20:56:15,772 - pipeline.settings - INFO - Using default matrix path: /tmp/peanut_9l5r5qwq/H_sapiens.txt_0.1.npz
+2024-12-15 20:56:15,773 - pipeline.settings - INFO - Using default network file: /tmp/peanut_9l5r5qwq/H_sapiens.txt
+2024-12-15 20:56:15,773 - pipeline.utils - INFO - Reading network from: /tmp/peanut_9l5r5qwq/H_sapiens.txt
+2024-12-15 20:56:18,520 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-15 20:56:18,525 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, file:           GeneID     Score
+0           3360  0.317096
+1           1393 -0.092459
+2           3362  0.379495
+3           3363  0.122374
+4         286343 -0.780245
+...          ...       ...
+20643     113791  0.084842
+20644  100506457  0.150522
+20645     282679 -0.570184
+20646        581  0.045622
+20647       6059 -0.222887
+
+[20648 rows x 2 columns]
+2024-12-15 20:56:18,532 - pipeline.propagation_routines - ERROR - An error occurred in read_sparse_matrix: File /tmp/peanut_9l5r5qwq/H_sapiens.txt_0.1.npz does not exist.
+2024-12-15 20:56:18,542 - pipeline.propagation_routines - ERROR - An error occurred in matrix_prop: 3360
+2024-12-15 20:56:18,546 - pipeline.propagation_routines - ERROR - An error occurred in matrix_prop: 3360
+2024-12-15 20:56:18,555 - pipeline.pathway_enrichment - ERROR - An error occurred during KS test: float division by zero
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/pipeline/pathway_enrichment.py", line 59, in perform_statist_ks
+    adjusted_p_values = multipletests(ks_p_values, method="fdr_bh")[1]
+  File "/home/yair/.local/lib/python3.10/site-packages/statsmodels/stats/multitest.py", line 156, in multipletests
+    alphacSidak = 1 - np.power((1. - alphaf), 1./ntests)
+ZeroDivisionError: float division by zero
+2024-12-15 20:56:18,555 - pipeline.pathway_enrichment - ERROR - An error occurred during enrichment analysis: float division by zero
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/pipeline/pathway_enrichment.py", line 232, in perform_enrichment
+    perform_statist_ks(settings, condition_settings, genes_by_pathway, scores)
+  File "/home/yair/projects/Yair_propagation/pipeline/pathway_enrichment.py", line 59, in perform_statist_ks
+    adjusted_p_values = multipletests(ks_p_values, method="fdr_bh")[1]
+  File "/home/yair/.local/lib/python3.10/site-packages/statsmodels/stats/multitest.py", line 156, in multipletests
+    alphacSidak = 1 - np.power((1. - alphaf), 1./ntests)
+ZeroDivisionError: float division by zero
+2024-12-15 20:56:18,556 - pipeline.propagation_routines - ERROR - An error occurred in perform_propagation: float division by zero
+2024-12-15 20:56:18,583 - pipeline.visualization_tools - INFO - No significant pathways to plot. Exiting function.
+2024-12-15 20:56:18,584 - pipeline.pipeline_main - ERROR - An error occurred in pipeline_main: [Errno 2] No such file or directory: '/home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_15_12_2024__20_56_18.xlsx'
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 174, in pipeline_main
+    zipf.write(file_path, arcname=file_path.name)
+  File "/usr/lib/python3.10/zipfile.py", line 1754, in write
+    zinfo = ZipInfo.from_file(filename, arcname,
+  File "/usr/lib/python3.10/zipfile.py", line 507, in from_file
+    st = os.stat(filename)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_15_12_2024__20_56_18.xlsx'
+2024-12-15 20:56:18,585 - app.temp_manager - ERROR - Error in create_temp_files: [Errno 2] No such file or directory: '/home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_15_12_2024__20_56_18.xlsx'
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/app/temp_manager.py", line 43, in create_temp_files
+    yield self
+  File "/home/yair/projects/Yair_propagation/app/pipeline_runner.py", line 77, in run
+    results = await execute_pipeline(
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 174, in pipeline_main
+    zipf.write(file_path, arcname=file_path.name)
+  File "/usr/lib/python3.10/zipfile.py", line 1754, in write
+    zinfo = ZipInfo.from_file(filename, arcname,
+  File "/usr/lib/python3.10/zipfile.py", line 507, in from_file
+    st = os.stat(filename)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_15_12_2024__20_56_18.xlsx'
+2024-12-15 20:56:18,585 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-15 20:56:18,585 - app.temp_manager - DEBUG - Temp directory exists: /tmp/peanut_9l5r5qwq
+2024-12-15 20:56:18,585 - app.temp_manager - DEBUG - About to remove directory: /tmp/peanut_9l5r5qwq
+2024-12-15 20:56:18,589 - app.temp_manager - INFO - Temporary files cleaned up successfully
+2024-12-15 20:56:18,589 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-15 20:56:18,589 - app.temp_manager - DEBUG - Exiting create_temp_files context
+2024-12-15 20:56:18,589 - app.pipeline_runner - ERROR - Pipeline failed for job 3041e251-9e34-4145-a6e8-55338af3677c: [Errno 2] No such file or directory: '/home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_15_12_2024__20_56_18.xlsx'
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/app/pipeline_runner.py", line 77, in run
+    results = await execute_pipeline(
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 174, in pipeline_main
+    zipf.write(file_path, arcname=file_path.name)
+  File "/usr/lib/python3.10/zipfile.py", line 1754, in write
+    zinfo = ZipInfo.from_file(filename, arcname,
+  File "/usr/lib/python3.10/zipfile.py", line 507, in from_file
+    st = os.stat(filename)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_15_12_2024__20_56_18.xlsx'
+2024-12-15 20:56:18,589 - app.routes - ERROR - Pipeline execution failed for job 3041e251-9e34-4145-a6e8-55338af3677c: [Errno 2] No such file or directory: '/home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_15_12_2024__20_56_18.xlsx'
+2024-12-15 20:56:18,589 - app.temp_manager - DEBUG - TempFileManager destructor called
+2024-12-15 20:56:18,589 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-15 20:56:18,589 - app.temp_manager - DEBUG - No temp directory to clean up
+2024-12-15 20:56:18,590 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-15 20:57:16,533 - app.app_main - INFO - Application is shutting down
+2024-12-15 20:57:19,026 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 20:57:19,035 - app.app_main - INFO - Application is starting up
+2024-12-15 20:57:22,164 - app.routes - INFO - New job request received. Job code: d08d4461-a456-427c-a8e3-0dacedc49084
+2024-12-15 20:57:22,165 - app.routes - DEBUG - Reading custom network file
+2024-12-15 20:57:22,192 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:57:22,194 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 20:57:22,195 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-15 20:57:22,201 - app.pipeline_runner - INFO - Starting pipeline for job d08d4461-a456-427c-a8e3-0dacedc49084
+2024-12-15 20:57:22,201 - app.pipeline_runner - DEBUG - Custom network detected, preparing to handle file
+2024-12-15 20:57:22,201 - app.pipeline_runner - DEBUG - Reading network file content
+2024-12-15 20:57:22,202 - app.pipeline_runner - DEBUG - Successfully read network file content, size: 29451412 bytes
+2024-12-15 20:57:22,202 - app.pipeline_runner - DEBUG - Creating temporary files
+2024-12-15 20:57:22,202 - app.temp_manager - DEBUG - Starting create_temp_files for H_sapiens.txt
+2024-12-15 20:57:22,203 - app.temp_manager - INFO - Created temporary directory: /tmp/peanut_eumweaf9
+2024-12-15 20:57:22,203 - app.temp_manager - DEBUG - Temporary network path: /tmp/peanut_eumweaf9/H_sapiens.txt
+2024-12-15 20:57:22,203 - app.temp_manager - DEBUG - Temporary matrix path: /tmp/peanut_eumweaf9/H_sapiens_matrix.npz
+2024-12-15 20:57:22,204 - app.temp_manager - DEBUG - About to yield TempFileManager instance
+2024-12-15 20:57:22,204 - app.pipeline_runner - DEBUG - Temporary files created at: /tmp/peanut_eumweaf9/H_sapiens.txt
+2024-12-15 20:57:22,204 - app.pipeline_runner - DEBUG - Writing network content to temporary file
+2024-12-15 20:57:22,225 - app.pipeline_runner - INFO - Saved custom network to /tmp/peanut_eumweaf9/H_sapiens.txt
+2024-12-15 20:57:22,225 - app.pipeline_runner - DEBUG - Updated network path in settings: /tmp/peanut_eumweaf9/H_sapiens.txt
+2024-12-15 20:57:22,225 - app.pipeline_runner - DEBUG - Starting pipeline execution with custom network
+2024-12-15 20:57:22,226 - pipeline.settings - INFO - Using default matrix path: /tmp/peanut_eumweaf9/H_sapiens.txt_0.1.npz
+2024-12-15 20:57:22,227 - pipeline.settings - INFO - Using default network file: /tmp/peanut_eumweaf9/H_sapiens.txt
+2024-12-15 20:57:22,227 - pipeline.utils - INFO - Reading network from: /tmp/peanut_eumweaf9/H_sapiens.txt
+2024-12-15 20:57:29,225 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-15 20:57:29,238 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, file:           GeneID     Score
+0           3360  0.317096
+1           1393 -0.092459
+2           3362  0.379495
+3           3363  0.122374
+4         286343 -0.780245
+...          ...       ...
+20643     113791  0.084842
+20644  100506457  0.150522
+20645     282679 -0.570184
+20646        581  0.045622
+20647       6059 -0.222887
+
+[20648 rows x 2 columns]
+2024-12-15 20:57:29,260 - pipeline.propagation_routines - ERROR - An error occurred in read_sparse_matrix: File /tmp/peanut_eumweaf9/H_sapiens.txt_0.1.npz does not exist.
+2024-12-15 20:57:29,287 - pipeline.propagation_routines - ERROR - An error occurred in matrix_prop: 3360
+2024-12-15 20:57:29,300 - pipeline.propagation_routines - ERROR - An error occurred in matrix_prop: 3360
+2024-12-15 20:57:29,324 - pipeline.pathway_enrichment - ERROR - An error occurred during KS test: float division by zero
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/pipeline/pathway_enrichment.py", line 59, in perform_statist_ks
+    adjusted_p_values = multipletests(ks_p_values, method="fdr_bh")[1]
+  File "/home/yair/.local/lib/python3.10/site-packages/statsmodels/stats/multitest.py", line 156, in multipletests
+    alphacSidak = 1 - np.power((1. - alphaf), 1./ntests)
+ZeroDivisionError: float division by zero
+2024-12-15 20:57:29,325 - pipeline.pathway_enrichment - ERROR - An error occurred during enrichment analysis: float division by zero
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/pipeline/pathway_enrichment.py", line 232, in perform_enrichment
+    perform_statist_ks(settings, condition_settings, genes_by_pathway, scores)
+  File "/home/yair/projects/Yair_propagation/pipeline/pathway_enrichment.py", line 59, in perform_statist_ks
+    adjusted_p_values = multipletests(ks_p_values, method="fdr_bh")[1]
+  File "/home/yair/.local/lib/python3.10/site-packages/statsmodels/stats/multitest.py", line 156, in multipletests
+    alphacSidak = 1 - np.power((1. - alphaf), 1./ntests)
+ZeroDivisionError: float division by zero
+2024-12-15 20:57:29,326 - pipeline.propagation_routines - ERROR - An error occurred in perform_propagation: float division by zero
+2024-12-15 20:57:29,327 - pipeline.pipeline_main - DEBUG - Ensured output directory exists: /home/yair/projects/Yair_propagation/pipeline/Outputs
+2024-12-15 20:57:29,409 - pipeline.pipeline_main - DEBUG - Processed condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, output path: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_15_12_2024__20_57_29.xlsx
+2024-12-15 20:57:29,414 - pipeline.visualization_tools - INFO - No significant pathways to plot. Exiting function.
+2024-12-15 20:57:29,414 - pipeline.pipeline_main - DEBUG - Generated propagation plot at: None
+2024-12-15 20:57:29,415 - pipeline.pipeline_main - DEBUG - Output file to be archived: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_15_12_2024__20_57_29.xlsx
+2024-12-15 20:57:29,415 - pipeline.pipeline_main - ERROR - File not found, skipping: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_15_12_2024__20_57_29.xlsx
+2024-12-15 20:57:29,416 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-15 20:57:29,416 - app.pipeline_runner - DEBUG - Pipeline execution completed
+2024-12-15 20:57:29,417 - app.temp_manager - DEBUG - After yield in create_temp_files
+2024-12-15 20:57:29,417 - app.temp_manager - DEBUG - Exiting create_temp_files context
+2024-12-15 20:57:29,417 - app.pipeline_runner - INFO - Pipeline completed successfully for job d08d4461-a456-427c-a8e3-0dacedc49084
+2024-12-15 20:57:29,417 - app.temp_manager - DEBUG - TempFileManager destructor called
+2024-12-15 20:57:29,418 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-15 20:57:29,418 - app.temp_manager - DEBUG - Temp directory exists: /tmp/peanut_eumweaf9
+2024-12-15 20:57:29,418 - app.temp_manager - DEBUG - About to remove directory: /tmp/peanut_eumweaf9
+2024-12-15 20:57:29,427 - app.temp_manager - INFO - Temporary files cleaned up successfully
+2024-12-15 20:57:29,428 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-15 21:00:17,466 - app.app_main - INFO - Application is shutting down
+2024-12-15 21:00:20,344 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 21:00:20,351 - app.app_main - INFO - Application is starting up
+2024-12-15 21:00:27,531 - app.routes - INFO - New job request received. Job code: fa2cc859-fcfb-4cf4-b19f-f9857a70f216
+2024-12-15 21:00:27,531 - app.routes - DEBUG - Reading custom network file
+2024-12-15 21:00:27,552 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 21:00:27,554 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 21:00:27,554 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-15 21:00:27,560 - app.pipeline_runner - INFO - Starting pipeline for job fa2cc859-fcfb-4cf4-b19f-f9857a70f216
+2024-12-15 21:00:27,560 - app.pipeline_runner - DEBUG - Custom network detected, preparing to handle file
+2024-12-15 21:00:27,560 - app.pipeline_runner - DEBUG - Reading network file content
+2024-12-15 21:00:27,561 - app.pipeline_runner - DEBUG - Successfully read network file content, size: 29451412 bytes
+2024-12-15 21:00:27,561 - app.pipeline_runner - DEBUG - Creating temporary files
+2024-12-15 21:00:27,561 - app.temp_manager - DEBUG - Starting create_temp_files for H_sapiens.txt
+2024-12-15 21:00:27,562 - app.temp_manager - INFO - Created temporary directory: /tmp/peanut_m6ymawex
+2024-12-15 21:00:27,562 - app.temp_manager - DEBUG - Temporary network path: /tmp/peanut_m6ymawex/H_sapiens.txt
+2024-12-15 21:00:27,562 - app.temp_manager - DEBUG - Temporary matrix path: /tmp/peanut_m6ymawex/H_sapiens_matrix.npz
+2024-12-15 21:00:27,563 - app.temp_manager - DEBUG - About to yield TempFileManager instance
+2024-12-15 21:00:27,563 - app.pipeline_runner - DEBUG - Temporary files created at: /tmp/peanut_m6ymawex/H_sapiens.txt
+2024-12-15 21:00:27,563 - app.pipeline_runner - DEBUG - Writing network content to temporary file
+2024-12-15 21:00:27,594 - app.pipeline_runner - INFO - Saved custom network to /tmp/peanut_m6ymawex/H_sapiens.txt
+2024-12-15 21:00:27,594 - app.pipeline_runner - DEBUG - Updated network path in settings: /tmp/peanut_m6ymawex/H_sapiens.txt
+2024-12-15 21:00:27,594 - app.pipeline_runner - DEBUG - Starting pipeline execution with custom network
+2024-12-15 21:00:27,595 - pipeline.settings - INFO - Using default matrix path: /tmp/peanut_m6ymawex/H_sapiens.txt_0.1.npz
+2024-12-15 21:00:27,595 - pipeline.settings - INFO - Using default network file: /tmp/peanut_m6ymawex/H_sapiens.txt
+2024-12-15 21:00:27,595 - pipeline.utils - INFO - Reading network from: /tmp/peanut_m6ymawex/H_sapiens.txt
+2024-12-15 21:00:30,031 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-15 21:00:30,037 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, file:           GeneID     Score
+0           3360  0.317096
+1           1393 -0.092459
+2           3362  0.379495
+3           3363  0.122374
+4         286343 -0.780245
+...          ...       ...
+20643     113791  0.084842
+20644  100506457  0.150522
+20645     282679 -0.570184
+20646        581  0.045622
+20647       6059 -0.222887
+
+[20648 rows x 2 columns]
+2024-12-15 21:00:30,045 - pipeline.propagation_routines - ERROR - An error occurred in read_sparse_matrix: File /tmp/peanut_m6ymawex/H_sapiens.txt_0.1.npz does not exist.
+2024-12-15 21:00:30,055 - pipeline.propagation_routines - ERROR - An error occurred in matrix_prop: 3360
+2024-12-15 21:00:30,059 - pipeline.propagation_routines - ERROR - An error occurred in matrix_prop: 3360
+2024-12-15 21:00:30,068 - pipeline.pathway_enrichment - ERROR - An error occurred during KS test: float division by zero
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/pipeline/pathway_enrichment.py", line 59, in perform_statist_ks
+    adjusted_p_values = multipletests(ks_p_values, method="fdr_bh")[1]
+  File "/home/yair/.local/lib/python3.10/site-packages/statsmodels/stats/multitest.py", line 156, in multipletests
+    alphacSidak = 1 - np.power((1. - alphaf), 1./ntests)
+ZeroDivisionError: float division by zero
+2024-12-15 21:00:30,069 - pipeline.pathway_enrichment - ERROR - An error occurred during enrichment analysis: float division by zero
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/pipeline/pathway_enrichment.py", line 232, in perform_enrichment
+    perform_statist_ks(settings, condition_settings, genes_by_pathway, scores)
+  File "/home/yair/projects/Yair_propagation/pipeline/pathway_enrichment.py", line 59, in perform_statist_ks
+    adjusted_p_values = multipletests(ks_p_values, method="fdr_bh")[1]
+  File "/home/yair/.local/lib/python3.10/site-packages/statsmodels/stats/multitest.py", line 156, in multipletests
+    alphacSidak = 1 - np.power((1. - alphaf), 1./ntests)
+ZeroDivisionError: float division by zero
+2024-12-15 21:00:30,069 - pipeline.propagation_routines - ERROR - An error occurred in perform_propagation: float division by zero
+2024-12-15 21:00:30,069 - pipeline.pipeline_main - DEBUG - Ensured output directory exists: /home/yair/projects/Yair_propagation/pipeline/Outputs
+2024-12-15 21:00:30,097 - pipeline.pipeline_main - DEBUG - Processed condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, output path: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_15_12_2024__21_00_30.xlsx
+2024-12-15 21:00:30,099 - pipeline.visualization_tools - INFO - No significant pathways to plot. Exiting function.
+2024-12-15 21:00:30,100 - pipeline.pipeline_main - DEBUG - Generated propagation plot at: None
+2024-12-15 21:00:30,100 - pipeline.pipeline_main - DEBUG - Output file to be archived: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_15_12_2024__21_00_30.xlsx
+2024-12-15 21:00:30,100 - pipeline.pipeline_main - ERROR - File not found, skipping: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_15_12_2024__21_00_30.xlsx
+2024-12-15 21:00:30,100 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-15 21:00:30,100 - app.pipeline_runner - DEBUG - Pipeline execution completed
+2024-12-15 21:00:30,100 - app.temp_manager - DEBUG - After yield in create_temp_files
+2024-12-15 21:00:30,101 - app.temp_manager - DEBUG - Exiting create_temp_files context
+2024-12-15 21:00:30,101 - app.pipeline_runner - INFO - Pipeline completed successfully for job fa2cc859-fcfb-4cf4-b19f-f9857a70f216
+2024-12-15 21:00:30,101 - app.temp_manager - DEBUG - TempFileManager destructor called
+2024-12-15 21:00:30,101 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-15 21:00:30,101 - app.temp_manager - DEBUG - Temp directory exists: /tmp/peanut_m6ymawex
+2024-12-15 21:00:30,101 - app.temp_manager - DEBUG - About to remove directory: /tmp/peanut_m6ymawex
+2024-12-15 21:00:30,104 - app.temp_manager - INFO - Temporary files cleaned up successfully
+2024-12-15 21:00:30,104 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-15 21:14:36,932 - app.app_main - INFO - Application is shutting down
+2024-12-15 21:14:40,537 - app.app_main - DEBUG - Logging has been configured with basicConfig
+2024-12-15 21:14:40,550 - app.app_main - INFO - Application is starting up
+2024-12-15 21:14:49,024 - app.routes - INFO - New job request received. Job code: f9cecf26-389c-4d8e-a74f-257327cb88c6
+2024-12-15 21:14:49,025 - app.routes - DEBUG - Reading custom network file
+2024-12-15 21:14:49,048 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 21:14:49,049 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-15 21:14:49,049 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-15 21:14:49,054 - app.pipeline_runner - INFO - Starting pipeline for job f9cecf26-389c-4d8e-a74f-257327cb88c6
+2024-12-15 21:14:49,055 - app.pipeline_runner - DEBUG - Custom network detected, preparing to handle file
+2024-12-15 21:14:49,056 - app.pipeline_runner - DEBUG - Reading network file content
+2024-12-15 21:14:49,058 - app.pipeline_runner - DEBUG - Successfully read network file content, size: 29451412 bytes
+2024-12-15 21:14:49,058 - app.pipeline_runner - DEBUG - Creating temporary files
+2024-12-15 21:14:49,058 - app.temp_manager - DEBUG - Starting create_temp_files for H_sapiens.txt
+2024-12-15 21:14:49,059 - app.temp_manager - INFO - Created temporary directory: /tmp/peanut_atd95vt8
+2024-12-15 21:14:49,059 - app.temp_manager - DEBUG - Temporary network path: /tmp/peanut_atd95vt8/H_sapiens.txt
+2024-12-15 21:14:49,059 - app.temp_manager - DEBUG - Temporary matrix path: /tmp/peanut_atd95vt8/H_sapiens_matrix.npz
+2024-12-15 21:14:49,059 - app.temp_manager - DEBUG - About to yield TempFileManager instance
+2024-12-15 21:14:49,060 - app.pipeline_runner - DEBUG - Temporary files created at: /tmp/peanut_atd95vt8/H_sapiens.txt
+2024-12-15 21:14:49,060 - app.pipeline_runner - DEBUG - Writing network content to temporary file
+2024-12-15 21:14:49,084 - app.pipeline_runner - INFO - Saved custom network to /tmp/peanut_atd95vt8/H_sapiens.txt
+2024-12-15 21:14:49,085 - app.pipeline_runner - DEBUG - Updated network path in settings: /tmp/peanut_atd95vt8/H_sapiens.txt
+2024-12-15 21:14:49,085 - app.pipeline_runner - DEBUG - Starting pipeline execution with custom network
+2024-12-15 21:14:49,087 - pipeline.settings - INFO - Using default matrix path: /tmp/peanut_atd95vt8/H_sapiens.txt_0.1.npz
+2024-12-15 21:14:49,087 - pipeline.settings - INFO - Using default network file: /tmp/peanut_atd95vt8/H_sapiens.txt
+2024-12-15 21:14:49,087 - pipeline.utils - INFO - Reading network from: /tmp/peanut_atd95vt8/H_sapiens.txt
+2024-12-15 21:14:51,438 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-15 21:14:51,451 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, file:           GeneID     Score
+0           3360  0.317096
+1           1393 -0.092459
+2           3362  0.379495
+3           3363  0.122374
+4         286343 -0.780245
+...          ...       ...
+20643     113791  0.084842
+20644  100506457  0.150522
+20645     282679 -0.570184
+20646        581  0.045622
+20647       6059 -0.222887
+
+[20648 rows x 2 columns]
+2024-12-15 21:14:55,614 - pipeline.propagation_routines - INFO - Inverting the matrix using Conjugate Gradient method

@@ -258,6 +258,7 @@ async def perform_propagation(settings: Settings, condition_settings, network: n
 
         # Take absolute value of scores
         propagation_input_df = condition_data.copy()
+        propagation_input_df.columns = ["GeneID", "Score"]
         propagation_input_df["Score"] = propagation_input_df["Score"].abs()
 
         # Filter genes in the network
