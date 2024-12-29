@@ -1,5 +1,5 @@
-!/pipeline/Data/H_sapiens/matrix/Anat_0.2.npz.txt
 /pipeline/Data/H_sapiens/matrix/
+/!pipeline/Data/H_sapiens/matrix/Anat_0.2.npz
 pyproject.toml
 .idea
 __pycache__/
