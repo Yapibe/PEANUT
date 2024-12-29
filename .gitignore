@@ -1,4 +1,5 @@
 /pipeline/Data/H_sapiens/matrix/
+!/pipeline/Data/H_sapiens/matrix/Anat_0.2.npz.txt
 pyproject.toml
 .idea
 __pycache__/
@@ -9,9 +10,7 @@ pyproject.toml
 pipeline/scripts/
 pipeline/__pycache__/
 app/__pycache__/
-pipeline/Inputs/
 .idea/
-/home/yair/projects/Yair_propagation/pipeline/Inputs/
 app/static/
 peanut.tar
 .vscode/
