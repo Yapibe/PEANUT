@@ -285,3 +285,5 @@ ValueError: Invalid file path or buffer object type: <class 'tuple'>
 2024-12-12 18:17:39,795 - app.app_main - DEBUG - Logging has been configured with basicConfig
 2024-12-12 18:17:39,802 - app.app_main - INFO - Application is starting up
 2024-12-18 16:04:37,997 - app.app_main - INFO - Application is starting up
+2024-12-29 12:27:26,251 - app.app_main - INFO - Application is starting up
+2024-12-29 12:52:56,388 - app.app_main - INFO - Application is shutting down

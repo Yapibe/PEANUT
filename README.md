@@ -2,13 +2,13 @@
 
 ## Overview
 
-PEANUT is a web-based tool designed to perform pathway enrichment analysis on RNA-seq data using network propagation techniques. By leveraging protein-protein interaction (PPI) networks, PEANUT helps identify significant biological pathways associated with a given experiment. The web interface allows easy customization of parameters and processing of multiple conditions, while providing downloadable results and visualizations.
+PEANUT is a web-based tool designed to perform pathway enrichment analysis on RNA-seq data using network propagation techniques. By leveraging protein-protein interaction (PPI) networks, PEANUT helps identify significant biological pathways associated with a given experiment. The tool integrates network propagation with a robust statistical framework, including permutation tests and multiple comparison corrections, to enhance the detection of relevant pathways.
 
 ## Features
 - **Web Interface for Ease of Use**: Upload gene sets and customize parameters directly through a web interface.
 - **Multiple Condition Support**: Analyze multiple gene sets in one run and compare the results across different conditions.
 - **Network Propagation**: Propagate gene scores through a PPI network to enhance biological data analysis.
-- **Statistical Enrichment**: Perform statistical tests (Kolmogorov-Smirnov, Mann-Whitney) for pathway enrichment, with False Discovery Rate (FDR) correction.
+- **Statistical Enrichment**: Perform statistical tests (Kolmogorov-Smirnov, Mann-Whitney, permutation tests) for pathway enrichment, with False Discovery Rate (FDR) correction using the Benjamini-Hochberg method.
 - **Downloadable Results**: Results and visualizations are packaged and downloadable as a zip file.
 - **Pathway Comparison**: View and compare pathway trends across conditions in generated plots.
 
@@ -58,9 +58,8 @@ PEANUT is a web-based tool designed to perform pathway enrichment analysis on RN
 ### Web Pipeline
 - **Gene Set Upload**: Upload multiple preranked tables for analysis.
 - **Network Propagation**: Propagate gene scores through the PPI network to identify enriched pathways.
-- **Pathway Enrichment**: Perform statistical tests (Kolmogorov-Smirnov, Mann-Whitney) to assess significance.
+- **Pathway Enrichment**: Perform statistical tests (Kolmogorov-Smirnov, Mann-Whitney, permutation tests) to assess significance.
 - **Visualization**: Generate plots comparing pathway significance across conditions.
-
 
 ### Backend Pipeline (Detailed)
 For users preferring command-line execution, the pipeline consists of:
@@ -69,10 +68,9 @@ For users preferring command-line execution, the pipeline consists of:
 3. **Statistical Enrichment**: Perform statistical tests to identify significant pathways.
 4. **Result Compilation**: Compile and save results and plots for each condition.
 
-
 ### Constants and parameters
 - **Thresholds:**
-  - `Alpha`: Hyper parameter for the network propagation. Default Alpha = 1 means no propagation.
+  - `Alpha`: Hyper parameter for the network propagation. Default Alpha = 0.2.
   - `MIN_GENE_PER_PATHWAY`: Minimum number of genes per pathway to consider.
   - `MAX_GENE_PER_PATHWAY`: Maximum number of genes per pathway to consider.
   - `FDR_THRESHOLD`: FDR threshold for significance.
@@ -100,7 +98,7 @@ For users preferring command-line execution, the pipeline consists of:
     - `visualization_tools.py`: Generates plots for pathway comparison.
     - `utils.py`: Utility functions for data processing and file handling.
     - `statistical_methods.py`: Contains statistical analysis methods.
-    
+
 ### Statistical Methods
 - **Kolmogorov-Smirnov Test:** <br>
     Used to score each pathway by assessing if the expression changes of its genes deviate significantly from all other genes.
@@ -108,11 +106,14 @@ For users preferring command-line execution, the pipeline consists of:
 - **Mann-Whitney Test:** <br>
     Non-parametric test to compare differences between two independent groups.
 
+- **Permutation Test:** <br>
+    Empirically evaluates the significance of observed pathway scores by generating a null distribution.
+
 - **FDR Correction:** <br>
     Adjusts p-values to account for multiple testing, controlling the false discovery rate.
 
 ## Plot Explanation
 The output plots display pathway trends across conditions:
 - **Colored Bars**: Show the mean score for each pathway in a given condition.
-- **Solid Bars**:  Indicate significant pathways based on the FDR threshold.
+- **Solid Bars**: Indicate significant pathways based on the FDR threshold.
 - **Text File**: Includes full details on p-values, trends, and significant genes.

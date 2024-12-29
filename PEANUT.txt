@@ -1,0 +1,158 @@
+\documentclass{article}
+\usepackage{graphicx} % For including figures
+\usepackage{amsmath}  % For math symbols and formatting
+\usepackage{hyperref} % For hyperlinking references and sections
+\sloppy % To allow more flexible line-breaking
+
+\title{PEANUT: pathway enrichment analysis through network utilization}
+\author{
+    Yair Pickholz Berliner\thanks{School of Computer Science, Tel Aviv University, Tel Aviv 69978, Israel. Email: roded@tauex.tau.ac.il.} \and 
+    Roded Sharan$^*$
+}
+
+\date{}
+
+
+\begin{document}
+\maketitle
+\begin{abstract}
+Pathway enrichment analysis is a fundamental technique in bioinformatics for interpreting gene expression data to pinpoint biological pathways associated with specific conditions or diseases. We introduce \textbf{PEANUT} (Pathway Enrichment Analysis through Network UTilization), a web-based tool for pathway enrichment analysis that enhances traditional pipelines by integrating network propagation computations within a network of protein--protein interactions (PPIs). By diffusing gene expression scores through the PPI network, PEANUT amplifies the signals of connected sets of genes, thereby improving the detection of relevant pathways.
+The tool is accessible as an open-source web application at \url{http://bnet.cs.tau.ac.il/peanut/}, 
+designed to assist researchers in interpreting complex biological data.
+\end{abstract}
+
+
+\section{Introduction}
+The analysis of gene expression data is a critical step in the elucidation of molecular phenotypes associated with diseases, developmental stages, or responses to treatments. High-throughput technologies such as DNA microarrays and RNA sequencing have generated vast amounts of gene expression profiles, which are publicly available through repositories like the Gene Expression Omnibus (GEO)~\cite{Barrett2013}. To extract meaningful biological insights from these data, researchers often employ pathway enrichment analysis, which identifies biological pathways significantly associated with the observed gene expression changes.
+
+Traditional pathway enrichment methods can be broadly categorized into two types: over-representation analysis and aggregate score approaches~\cite{Irizarry2009}. Over-representation analysis involves selecting a list of differentially expressed genes (DEGs) and then assessing the over-representation of annotated gene sets among these DEGs. While straightforward, this approach has limitations, including sensitivity to the choice of DEG cutoff and disregard for the relative expression levels of genes just below the threshold.
+
+Aggregate score approaches, such as Gene Set Enrichment Analysis (GSEA)~\cite{Subramanian2005}, address some of these limitations by considering all genes in the dataset and evaluating the enrichment of gene sets based on the distribution of their members versus that of other genes. GSEA uses a modified Kolmogorov--Smirnov statistic to detect coordinated expression within gene sets. However, GSEA assumes that genes within a gene set are either all up-regulated or all down-regulated, potentially missing gene sets with mixed expression patterns~\cite{Saxena2006}. Moreover, GSEA does not account for the functional interactions between genes, treating them as independent entities.
+
+Network-based analyses have emerged as powerful tools to incorporate the complex interplay between proteins in biological systems~\cite{Cowen2017}. By leveraging protein--protein interaction (PPI) networks, these approaches consider the connectivity and relationships between genes, offering a more holistic view of cellular processes. Previous studies have shown that functional genes tend to be proximal to each other in PPI networks and that integrating network information can enhance the identification of disease-associated genes and pathways~\cite{Nitsch2009, Jiang2015}. This observation motivated the development of
+the NGSEA network pathway enrichment method~\cite{Han2019}, which utilizes PPI networks by calculating the absolute average value of the neighbors and adding it to the absolute score of each gene. 
+
+Here we introduce \textbf{PEANUT}, a web-based tool that employs network propagation~\cite{Cowen2017} to diffuse gene expression scores through a PPI network. This process amplifies the signals of individual genes by considering the expression levels of their network neighbors, thereby capturing the effects of local sub-networks on the biological phenotype. This approach enables the identification of relevant pathways that might be overlooked by methods that consider genes in isolation. In comprehensive evaluations, PEANUT demonstrated improved performance over extant methods in retrieving pathways associated with specific gene expression phenotypes. Furthermore, PEANUT offers an intuitive web interface for uploading gene expression data, customizing analysis parameters, and visualizing results, making it widely accessible.
+
+\section{Materials and Methods}
+\subsection{Gene Expression Profiles and Annotated Gene Sets}
+To assess the performance of PEANUT in pathway enrichment analysis, we utilized a curated set of gene expression datasets from the `KEGGdzPathwaysGEO` package. This resource compiles expression data from GEO~\cite{Barrett2013} and maps them to specific disease pathways in the 
+KEGG database~\cite{Kanehisa2017}. 
+ In total, we included 24 datasets, each representing a distinct disease and its associated pathway, following established benchmarking practices for pathway enrichment analysis \cite{Tarca2013}. 
+ %Using this collection ensured consistency in associating gene expression data with relevant disease pathways, similar to prior evaluations of network-based methods \cite{Han2019}.
+Of the 24 pathways analyzed, 17 were classified as upregulated and 7 as downregulated, based on the mean of the differential expression scores for genes within each pathway. 
+
+To define the pathway gene sets used for this study, we utilized the C2 curated gene sets from the Molecular Signatures Database (MSigDB)~\cite{Subramanian2005,Liberzon2011,Liberzon2015}. KEGG pathways containing between 15 and 500 genes were retained, resulting in a final set of 427 KEGG pathways for enrichment analysis.
+
+\subsection{Network propagation}
+For the network-based analysis, we employed a protein network constructed using the ANAT tool~\cite{Signorini2021}. 
+%PEANUT performs network propagation on this PPI network using the Random Walk with Restart (RWR) algorithm, which simulates a random walker starting from a set of seed nodes (genes with expression data) and iteratively moving to neighboring nodes with a certain probability. At each step, with a fixed probability (controlled by the restart parameter $\alpha$), the walker returns to its original source node instead of continuing to propagate. This restart mechanism acts as a damping factor, ensuring that the diffusion remains localized to the immediate neighborhood of the seed nodes. Over time, the process converges to a steady state, where the propagated values reflect the influence of nearby nodes while gradually diminishing for nodes farther from the source.
+%Network propagation amplifies biological signals based on the assumption that genes contributing to similar phenotypes are likely to interact within the network \cite{Cowen2017}. Prior information associating genes with a biological condition or phenotype (e.g., expression data) is initially assigned to specific nodes in the network. This information is then propagated through the edges, where each node’s value is influenced by its direct neighbors, which are in turn affected by their own neighbors, and so on. The resulting steady-state values represent a combination of the initial signal and the network topology, allowing the identification of genes closely associated with the original seed nodes.
+To account for both up-regulation and down-regulation of genes, we used the absolute values of the differential gene expression scores as input to the propagation process. The propagation process can be described using the following equation from the Random Walk with Restart (RWR) method (using a default value of $\alpha=0.2$):
+
+\[
+p_k = \alpha p_0 + (1-\alpha) W p_{k-1}
+\]
+
+where $p_k$ is the vector of propagated scores at iteration $k$, $p_0$ is the initial score vector derived from the absolute gene expression values, $W$ is the normalized adjacency matrix of the network, and $\alpha$ is the restart probability that balances between the initial scores and propagated information. This iterative process continues until $p_k$ converges, yielding the steady-state distribution of propagated scores.
+
+
+
+%The steady-state distribution, which gives the final propagated values, is given by:
+%
+%\[
+%p = \alpha (I - (1-\alpha) W)^{-1} p_0
+%\]
+%
+% The propagated values are computed as:
+%
+%\[
+%p = S p_0
+%\]
+%
+%where each entry of $S$ represents the influence propagated from one gene to another in the network.
+
+\subsection{Previous methods}
+To evaluate the effectiveness of PEANUT, we compared its performance with traditional Gene Set Enrichment Analysis (GSEA) \cite{Subramanian2005}, a replicated version of Network-based Gene Set Enrichment Analysis (NGSEA) \cite{Han2019}, and a modified method using absolute scores (ABS SCORE). All methods were implemented using the GSEApy library, ensuring a consistent and reproducible analysis pipeline. 
+
+Since PEANUT and NGSEA rely on gene scores derived from the intersection of genes present in both the dataset and the network, we ensured a fair comparison by restricting GSEA and ABS SCORE to use only the genes from this intersection. This adjustment standardizes the input across all methods, allowing for a more direct evaluation of their relative performances.
+
+\paragraph{GSEA.}
+We used the original gene expression scores directly from the datasets without any modification. These scores were ranked and fed into the GSEA PreRank tool, implemented via the GSEApy library, to assess pathway enrichment using KEGG pathways as the gene sets. Only genes that were present in both the dataset and the network were used, ensuring consistency with the other methods.
+
+\paragraph{ABS SCORE.}
+As an additional control method, we replaced the original gene expression scores with their absolute values before ranking them. These ranked absolute scores were then input into the GSEA PreRank tool for pathway enrichment analysis using the GSEApy library. 
+
+\paragraph{NGSEA.}
+Since we were unable to replicate the exact results from the original NGSEA paper \cite{Han2019}, and since no source code was available, we developed our own NGSEA pipeline. In our implementation, all genes in the network were initially assigned a score of zero. For genes that were present in both the network and the expression dataset, we assigned their absolute expression values from the experiment. Next, we calculated the average score of each gene's neighbors in the network and added this value to the gene's original score. Only genes that were present in both the experiment and the network were retained for further analysis. Finally, the resulting scores were ranked and input into the GSEA PreRank tool for pathway enrichment analysis using the GSEApy library.
+
+
+\subsection{PEANUT}
+We developed a novel pathway enrichment analysis method that combines network propagation with a series of advanced statistical tests to identify biologically relevant pathways associated with the propagated gene expression scores.
+
+After network propagation, we first applied the Kolmogorov--Smirnov (K--S) test to compare the distribution of propagated scores within each pathway to the background distribution of scores outside the pathway. For pathways that were significant in the K--S test, we conducted the Mann--Whitney U test as an additional validation step, comparing the ranks of pathway gene scores with those of background genes. Finally, we performed a permutation test with 1,000 iterations to empirically evaluate the significance of the observed pathway scores. This test generated a null distribution by randomly sampling genes, allowing us to compute empirical $p$-values based on the rank of the observed pathway scores within this distribution.
+
+To adjust for multiple comparisons across all tests, we applied the Benjamini-Hochberg (BH) correction \cite{Benjamini1995} after each stage (K--S, Mann--Whitney U, and permutation tests), controlling the false discovery rate (FDR) and identifying pathways with an adjusted $p$-value threshold of 0.05 as significant.
+
+To further refine the list of enriched pathways and reduce redundancy, we calculated the Jaccard index to assess overlap between gene sets, applying a threshold of 0.2. Pathways with a Jaccard index above this threshold were filtered to retain only the most statistically significant and biologically distinct results.
+
+We selected $\alpha = 0.2$ as the propagation coefficient to strike a balance between preserving the initial signal and incorporating information from neighboring nodes. This choice aligns with prior findings that optimal spreading parameters minimize the bias-variance trade-off, enhancing the biological signal while avoiding over-smoothing that could obscure meaningful pathway-specific signals \cite{Charmpi2021}.
+
+
+\section{Results}
+
+\subsection{PEANUT Outperforms Alternative Methods in Identifying KEGG Pathways}
+The performance of PEANUT was evaluated against GSEA, NGSEA, and ABS SCORE using 24 disease-associated gene expression datasets (Methods). The distributions of ranks assigned by each method to the true associated pathways were compared to assess the significance of differences between each pair of methods.
+
+As shown in Figure~\ref{fig:rank_comparison_alpha_0.2}A, PEANUT consistently achieved lower ranks for the associated pathways compared to GSEA across the datasets. PEANUT ranked better than GSEA in 16 of the 24 pathways, with an average rank difference of 38.7 in those pathways. Conversely, in the eight pathways where GSEA outperformed PEANUT, the average rank difference was only 6.2. This indicates that PEANUT not only performed better overall but also provided larger improvements in pathways where it outperformed GSEA. When directly compared to GSEA, PEANUT demonstrated a statistically significant improvement ($p<0.01$), with a mean rank difference of 21.7 in favor of PEANUT.
+
+Similarly, as visualized in Figure~\ref{fig:rank_comparison_alpha_0.2}B, PEANUT achieved significantly better ranks than NGSEA ($p<0.003$), with a mean rank difference of 32.2. These results emphasize the advantage of incorporating network propagation in pathway enrichment analysis, as implemented by PEANUT. To ensure that the observed improvement was not solely due to the use of absolute values, PEANUT was compared against ABS SCORE, a control method that uses absolute values within the GSEA framework. PEANUT again demonstrated significantly better performance ($p<0.002$), with a mean rank difference of 38.3.
+
+In addition to ranking accuracy, the significance level assigned by each method to the true pathways was assessed, as the ability to identify statistically significant pathways is also a critical measure of method performance. For PEANUT, a pathway was considered significant if it had both a significant Kolmogorov-Smirnov (KS) $p$-value and a Mann-Whitney U (MW) $p$-value. For the GSEAPy-based methods (GSEA, ABS SCORE, and NGSEA), significance was determined using the FDR-adjusted $q$-value calculated by GSEAPy. PEANUT identified 58\% of pathways as significant, compared to 41\% for GSEA, 4\% for ABS SCORE, and 2\% for NGSEA. These findings highlight the enhanced sensitivity of PEANUT in identifying biologically relevant pathways.
+
+Figure~\ref{fig:rank_comparison_alpha_0.2}B also provides a boxplot comparison of the rank distributions for all methods across the datasets, highlighting PEANUT's superior ability to prioritize the correct pathways. The consistently lower ranks achieved by PEANUT, coupled with its higher proportion of significant pathways, demonstrate its effectiveness in identifying disease-relevant pathways. The results further validate the integration of network-based propagation as a robust enhancement for pathway enrichment analysis.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{Rank_Comparison_Alpha_0.2.png}
+    \caption{(A) Scatter plot comparing the ranks of the associated pathways assigned by GSEA and PEANUT across 24 datasets. Each point represents a dataset, with PEANUT achieving consistently lower ranks. (B) Boxplot comparing rank distributions of all methods (PEANUT, ABS SCORE, GSEA, and NGSEA) across the datasets. Lower ranks indicate better performance. Statistical significance of differences in rank distributions was assessed using the Wilcoxon signed-rank test (*$p < 0.05$, **$p < 0.01$).}
+    \label{fig:rank_comparison_alpha_0.2}
+\end{figure}
+
+
+%\subsection{Impact of Using All Network Nodes on PEANUT Performance}
+%When incorporating all network nodes into PEANUT's pathway enrichment analysis, rather than limiting the analysis to the intersection of genes present in both the dataset and the network, we observed notable improvements in pathway significance. Specifically, the overall percentage of significant pathways identified by PEANUT increased from 0.58\% to 0.71\%, while the average rank remained. These results highlight the utility of network propagation for imputing plausible values for missing genes and amplifying relevant signals, as demonstrated in previous studies \cite{Charmpi2021}.
+
+%Despite this modification, PEANUT maintained its superior performance when compared to other methods. Specifically, PEANUT significantly outperformed NGSEA (Statistic = 65.0, $p$-value = 0.026, Mean Rank Difference = 32.75) and ABS SCORE (Statistic = 57.5, $p$-value = 0.007, Mean Rank Difference = -38.83). These results highlight the robustness of PEANUT's network propagation approach, which enhances both pathway significance and ranking outcomes without compromising its competitive edge against other enrichment methods.
+
+
+\subsection{PEANUT effectively identifies related pathways}
+To further evaluate the performance of PEANUT beyond direct identification of associated pathways, we analyzed its ability to rank related pathways higher compared to GSEA (which was the second best method). For each dataset, a list of related pathways (including the associated pathway) was obtained from the KEGG pathway 
+database~\cite{Kanehisa2017}. We then examined the highest rank achieved by any related pathway for each dataset. This approach accounts for cases where the associated pathway may not achieve the best rank, but related pathways are nonetheless prioritized.
+
+The analysis revealed that PEANUT consistently achieved better ranks for related pathways compared to GSEA. Using the Wilcoxon signed-rank test, we observed a statistically significant improvement in the ranks assigned by PEANUT ($p<0.04$). 
+These results demonstrate that PEANUT not only excels at identifying the associated pathways but also effectively prioritizes related pathways, which can be critical for interpreting datasets where the associated pathway is less prominent or part of a small, tightly related set of pathways.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Related_Pathway_Comparison.png}
+    \caption{Comparison of ranks for related pathways across 24 datasets using GSEA and PEANUT. Lower ranks indicate better performance. PEANUT consistently achieves lower ranks for related pathways, reflecting its superior ability to prioritize biologically meaningful results (*$p < 0.05$).}
+    \label{fig:related_pathways_comparison}
+\end{figure}
+
+
+\subsection{Development of the PEANUT Web Server}
+To facilitate access and ease of use, we developed PEANUT as a user-friendly web server available at \url{http://bnet.cs.tau.ac.il/peanut/}. The web interface allows researchers to perform network-based pathway enrichment analysis without requiring extensive computational expertise. Users can upload their gene expression data in commonly used formats, such as expression matrices (.txt or .csv) or pre-ranked gene lists (.rnk). The platform supports customizable parameters, including the propagation coefficient ($\alpha$), the choice of protein-protein interaction (PPI) network (e.g., ANAT), and the selection of pathway databases for analysis.
+
+PEANUT supports various pathway databases, including the Kyoto Encyclopedia of Genes and Genomes (KEGG), which provides a comprehensive collection of manually curated pathway maps. The server allows simultaneous execution of traditional GSEA and network-based PEANUT analyses, enabling direct comparisons between results. It generates comprehensive output that includes ranked lists of enriched pathways, statistical significance measures such as Enrichment Score, Normalized Enrichment Score, and False Discovery Rate, along with interactive enrichment plots for visual interpretation of results.
+
+\section{Conclusions}
+PEANUT represents a significant advancement in pathway enrichment analysis by integrating network propagation with a robust statistical framework. By leveraging network propagation, PEANUT amplifies biological signals, enabling the identification of disease-relevant pathways with higher accuracy and significance compared to traditional methods like GSEA and NGSEA. Our results demonstrate that PEANUT consistently outperforms these alternative methods in ranking associated pathways, with statistically significant improvements in performance metrics such as rank and significance. Furthermore, PEANUT’s ability to effectively prioritize related pathways underscores its utility in providing a more comprehensive understanding of biological processes, even in cases where the associated pathway is not prominently ranked.
+
+The development of the PEANUT web server further enhances its accessibility, allowing researchers to easily customize parameters, analyze diverse datasets, and compare results across methods. Overall, PEANUT’s combination of methodological innovation and user-friendly implementation positions it as a powerful tool for pathway enrichment studies, with the potential to drive deeper insights into complex biological systems.
+
+
+
+\bibliographystyle{unsrt}
+\bibliography{references}
+\end{document}
