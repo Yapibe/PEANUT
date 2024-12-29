@@ -93,16 +93,12 @@ def run_analysis(test_name, prior_data, network, network_name, alpha, method, ou
         pathway_file=pathway_file,
         method=method,
         alpha=alpha if method == 'PEANUT' else 1,
-        run_propagation= False,
-        JAC_THRESHOLD= config['analysis_settings']['JAC_THRESHOLD'],
+        run_propagation= True,
         input_type='abs_Score' if method in ['PEANUT', 'ABS GSEA'] else 'Score'
     )
     if method == 'NGSEA':
         general_args.run_NGSEA = True
-
-    if method == 'PEANUT':
-        general_args.run_gsea = False
-
+        general_args.run_gsea = True
 
     if general_args.run_propagation:
         perform_propagation(test_name, general_args, network, prior_data)

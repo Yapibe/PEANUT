@@ -91,57 +91,6 @@ def perform_permutation_test(filtered_pathways: dict, genes_by_pathway: dict, sc
     return filtered_pathways
 
 
-def remove_similar_pathways(filtered_pathways: dict, jac_threshold: float, genes_by_pathway: dict, associated_pathway_name: str) -> dict:
-    """
-    Identify pathways that are too similar based on the Jaccard index, adding a flag to indicate removal.
-    
-    Parameters:
-    - filtered_pathways (dict): Dictionary of pathways with their details.
-    - genes_by_pathway (dict): Mapping of pathway names to their gene sets.
-    - jac_threshold (float): Jaccard index threshold for considering pathways similar.
-    
-    Returns:
-    - dict: Updated filtered_pathways with Jaccard similarity flags.
-    """
-    logger.info(f"Removing similar pathways with Jaccard index threshold of {jac_threshold}")
-    # Initialize the Jaccard flag for all pathways
-    for pathway in filtered_pathways:
-        filtered_pathways[pathway]['jaccard_removed'] = False
-
-    # Sort pathways by FDR q-value (ascending)
-    sorted_pathways = sorted(filtered_pathways.keys(), key=lambda p: filtered_pathways[p]['FDR q-val'])
-
-    # Iterate over pathways based on FDR ranking
-    for pathway_i in sorted_pathways:
-        if filtered_pathways[pathway_i]['jaccard_removed']:
-            continue  # Skip pathways already flagged for removal
-
-        genes_i = genes_by_pathway[pathway_i]
-
-        for pathway_j in sorted_pathways:
-            if pathway_j == pathway_i:
-                continue  # Skip self-comparison
-            if filtered_pathways[pathway_j]['jaccard_removed']:
-                continue  # Skip already removed pathways
-
-            genes_j = genes_by_pathway[pathway_j]
-            ji = jaccard_index(genes_i, genes_j)
-
-            if ji > jac_threshold:
-                # Remove the pathway with higher FDR q-val
-                pval_i = filtered_pathways[pathway_i]['FDR q-val']
-                pval_j = filtered_pathways[pathway_j]['FDR q-val']
-
-                if pval_i <= pval_j:
-                    filtered_pathways[pathway_j]['jaccard_removed'] = True
-                else:
-                    filtered_pathways[pathway_i]['jaccard_removed'] = True
-                    break  # No need to compare pathway_i with others
-
-    return filtered_pathways
-
-
-
 def perform_ks_test(task: EnrichTask, genes_by_pathway: dict, scores: dict, test_name: str):
     """
     Perform statistical enrichment analysis on pathways using the Kolmogorov-Smirnov test.
@@ -271,15 +220,6 @@ def perform_mann_whitney_test(task: EnrichTask, args: GeneralArgs, scores: dict,
         scores
     )
     
-    # # Apply Jaccard similarity flagging
-    # task.filtered_pathways = remove_similar_pathways(
-    #     task.filtered_pathways,
-    #     args.JAC_THRESHOLD,
-    #     genes_by_pathway,
-    #     associated_pathway_name = task.name.split('_', 1)[1]
-    # )
-
-
 
 def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: str = None):
     """
@@ -323,24 +263,29 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: s
     
     if general_args.run_gsea:
         # Prepare data for GSEA
-        gene_ids = list(scores.keys())
-        logfc_scores = [score[0] for score in scores.values()]
-        # Count and log the number of genes with negative logFC scores
-        negative_genes_count = sum(1 for score in logfc_scores if score < 0)
-        gene_expression_data = pd.DataFrame({'gene': gene_ids, 'logFC': logfc_scores})
-        gene_expression_data['gene'] = gene_expression_data['gene'].astype(str)
-        gene_expression_data = gene_expression_data.sort_values(by='logFC', ascending=False)
-        gsea_results = gp.prerank(rnk=gene_expression_data, gene_sets=genes_by_pathway, outdir=general_args.gsea_out,
-                                  verbose=False, permutation_num=1000, no_plot=True)
+        gene_expression_data = pd.DataFrame({
+            "gene": list(scores.keys()),
+            "logFC": [score[0] for score in scores.values()],  # Extract scores for logFC
+        })
+
+        gene_expression_data["gene"] = gene_expression_data["gene"].astype(str)
+        gene_expression_data.sort_values(by="logFC", ascending=False, inplace=True)
+
+        # Run GSEA
+        gsea_results = gp.prerank(
+            rnk=gene_expression_data,
+            gene_sets=genes_by_pathway,
+            verbose=True,
+            no_plot=True,
+            min_size=general_args.minimum_gene_per_pathway,
+            max_size=general_args.maximum_gene_per_pathway,
+        )
         # Normalize the GSEA output
         res_df = gsea_results.res2d.copy()
         res_df.reset_index(inplace=True)
-        res_df.drop('Name', axis=1, errors='ignore', inplace=True)  # Remove Name column if it exists
-        res_df.rename(columns={
-            "index": "Rank",   # Assuming the rank is in the index; adjust if necessary
-            "Term": "Name"     # Rename Term to Name
-        }, inplace=True)
-        res_df['Rank'] = res_df['Rank'] + 1  # Add 1 to make ranks start at 1
+        res_df.drop('Name', axis=1, errors='ignore', inplace=True)
+        res_df.rename(columns={"index": "Rank", "Term": "Name"}, inplace=True)
+        res_df['Rank'] = res_df['Rank'] + 1
         res_df.to_excel(output_path)
     else:
         # Perform Kolmogorov-Smirnov test

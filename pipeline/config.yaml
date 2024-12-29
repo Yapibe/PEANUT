@@ -1,12 +1,12 @@
 directories:
   input: "pipeline/Inputs/experiments_data/GSE/XLSX"  # Directory containing input Excel files
-  output_base: "pipeline/Outputs/NGSEA"               # Base directory for output results
-  summary_base: "pipeline/Outputs/NGSEA/Summary"      # Directory for summary results
+  output_base: "pipeline/Outputs"               # Base directory for output results
+  summary_base: "pipeline/Outputs/Summary"      # Directory for summary results
   pathways: "pipeline/Data/H_sapiens/pathways"        # Directory containing pathway data
 
 analysis_settings:
   networks:
-    - "H_sapiens"                                    # List of networks to analyze
+    - "Anat"                                    # List of networks to analyze
   pathway_files:
     - "kegg"                                 # List of pathway files to process
   prop_methods:                                      # Propagation methods to use
@@ -15,7 +15,6 @@ analysis_settings:
   alphas:
     - 0.2                                            # Alpha values for analysis
   max_workers: 1                                    # Number of parallel workers
-  JAC_THRESHOLD: 0.9                                 # Jaccard index threshold for pathway filtering
   FDR_threshold: 0.05     
 logging:
   level: "DEBUG"                                       # Logging level (e.g., DEBUG, INFO, WARNING)
