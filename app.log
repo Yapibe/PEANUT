@@ -1,289 +1,265 @@
-2024-12-11 13:37:00,091 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 13:37:00,097 - app.app_main - INFO - Application is starting up
-2024-12-11 13:37:05,584 - app.routes - INFO - Received request to run pipeline
-2024-12-11 13:37:05,584 - app.routes - INFO - Files: ['GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.xlsx'], Test Name: multiple, Species: H_sapiens, Alpha: 0.1, Network: Anat, Pathway File: kegg, Min Genes per Pathway: 15, Max Genes per Pathway: 500, FDR Threshold: 0.05, Run GSEA: True, Network Restriction: False
-2024-12-11 13:37:05,585 - app.utils - INFO - Validating uploaded Excel file
-2024-12-11 13:37:06,232 - app.utils - INFO - Excel file preprocessed successfully
-2024-12-11 13:37:06,237 - app.utils - INFO - Excel file validated successfully
-2024-12-11 13:38:03,683 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 396 pathways.
-2024-12-11 13:38:04,113 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/multiple_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE_Propagation_11_12_2024__13_37_08.xlsx.
-2024-12-11 13:38:04,258 - pipeline.propagation_routines - INFO - Running GSEA without propagation
-2024-12-11 13:38:04,258 - pipeline.propagation_routines - INFO - Processing all genes without network restriction.
-2024-12-11 13:38:30,047 - pipeline.visualization_tools - INFO - No significant pathways to plot. Exiting function.
-2024-12-11 13:38:30,049 - pipeline.visualization_tools - INFO - No significant pathways to plot. Exiting function.
-2024-12-11 13:38:30,051 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 13:38:31,257 - app.pipeline_runner - DEBUG - Pipeline main returned output_file_path: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 13:38:31,258 - app.pipeline_runner - INFO - Job 0c3373f1 finished successfully.
-2024-12-11 13:38:31,275 - app.routes - DEBUG - Checking status for job_code: 0c3373f1
-2024-12-11 13:38:31,276 - app.routes - DEBUG - Job data: {'status': 'Finished', 'output_file': 'pipeline/Outputs/Archives/multiple_results.zip', 'expiry': datetime.datetime(2024, 12, 18, 13, 37, 5, 585186)}
-2024-12-11 13:38:31,276 - app.routes - DEBUG - Download URL for job 0c3373f1: /peanut/download-file/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 13:38:42,856 - app.routes - INFO - User requested file: pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 13:38:42,857 - app.routes - INFO - Serving file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 13:39:48,249 - app.app_main - INFO - Application is shutting down
-2024-12-11 13:39:51,425 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 13:39:51,433 - app.app_main - INFO - Application is starting up
-2024-12-11 13:49:15,861 - app.app_main - INFO - Application is shutting down
-2024-12-11 13:49:18,323 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 13:49:18,333 - app.app_main - INFO - Application is starting up
-2024-12-11 13:56:52,372 - app.app_main - INFO - Application is shutting down
-2024-12-11 13:56:58,198 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 13:56:58,206 - app.app_main - INFO - Application is starting up
-2024-12-11 14:27:24,904 - app.app_main - INFO - Application is shutting down
-2024-12-11 14:27:30,790 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 14:27:30,815 - app.app_main - INFO - Application is starting up
-2024-12-11 14:28:53,412 - app.app_main - INFO - Application is shutting down
-2024-12-11 14:28:55,844 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 14:28:55,856 - app.app_main - INFO - Application is starting up
-2024-12-11 15:16:46,812 - app.app_main - INFO - Application is shutting down
-2024-12-11 15:17:03,161 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 15:17:03,185 - app.app_main - INFO - Application is starting up
-2024-12-11 15:30:21,848 - app.app_main - INFO - Application is shutting down
-2024-12-11 15:30:31,341 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 15:30:31,352 - app.app_main - INFO - Application is starting up
-2024-12-11 15:39:51,987 - app.app_main - INFO - Application is shutting down
-2024-12-11 15:39:54,331 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 15:39:54,342 - app.app_main - INFO - Application is starting up
-2024-12-11 15:40:02,904 - app.routes - DEBUG - Root Path: /peanut
-2024-12-11 15:40:16,104 - app.routes - INFO - Received request to run pipeline
-2024-12-11 15:40:16,105 - app.routes - INFO - Files: ['GSE5281EC_KEGG_ALZHEIMERS_DISEASE.xlsx'], Test Name: multiple, Species: H_sapiens, Alpha: 0.1, Network: Anat, Pathway File: kegg, Min Genes per Pathway: 15, Max Genes per Pathway: 500, FDR Threshold: 0.05, Run GSEA: True, Network Restriction: False
-2024-12-11 15:40:16,106 - app.utils - INFO - Validating uploaded Excel file
-2024-12-11 15:40:17,971 - app.utils - INFO - Excel file preprocessed successfully
-2024-12-11 15:40:17,978 - app.utils - INFO - Excel file validated successfully
-2024-12-11 15:40:21,741 - pipeline.pipeline_main - ERROR - An error occurred in pipeline_main: Invalid file path or buffer object type: <class 'tuple'>
+2024-12-31 13:23:12,442 - app.app_main - INFO - Application is starting up
+2024-12-31 13:29:44,995 - app.app_main - INFO - Application is starting up
+2024-12-31 13:29:58,049 - app.routes - INFO - New job request received.
+2024-12-31 13:29:58,049 - app.routes - INFO - Pathway file: custom
+2024-12-31 13:29:58,049 - app.routes - INFO - Custom pathway uploaded: kegg.gmt
+2024-12-31 13:29:58,050 - app.routes - INFO - Job code: 8f35880e-90bf-4c87-b45e-a12452b22e14
+2024-12-31 13:29:58,050 - app.routes - DEBUG - Processing custom pathway file
+2024-12-31 13:29:58,050 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-31 13:29:58,050 - app.temp_manager - DEBUG - Starting create_temp_files for network: None, pathway: custom_pathway.gmt
+2024-12-31 13:29:58,050 - app.temp_manager - INFO - Created temporary directory: /tmp/peanut_4wnro6va
+2024-12-31 13:29:58,050 - app.temp_manager - DEBUG - Temporary pathway file path: /tmp/peanut_4wnro6va/custom_pathway.gmt
+2024-12-31 13:29:58,050 - app.routes - DEBUG - Writing custom pathway file to temp location
+2024-12-31 13:29:58,051 - app.routes - INFO - Saved custom pathway to /tmp/peanut_4wnro6va/custom_pathway.gmt
+2024-12-31 13:29:58,098 - app.utils - INFO - Successfully converted GMT file to pathway format: pipeline/Data/H_sapiens/pathways/custom/custom_test.tsv
+2024-12-31 13:29:58,099 - app.routes - DEBUG - Custom pathway file converted: custom/custom_test.tsv
+2024-12-31 13:29:58,099 - app.temp_manager - DEBUG - Exiting create_temp_files context
+2024-12-31 13:29:58,099 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-31 13:29:58,100 - app.temp_manager - DEBUG - Removing temporary directory: /tmp/peanut_4wnro6va
+2024-12-31 13:29:58,100 - app.temp_manager - INFO - Temporary files cleaned up successfully
+2024-12-31 13:29:58,100 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-31 13:29:58,109 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-31 13:29:58,114 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-31 13:29:58,114 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-31 13:29:58,115 - app.pipeline_runner - INFO - Starting pipeline for job 8f35880e-90bf-4c87-b45e-a12452b22e14
+2024-12-31 13:29:58,115 - app.pipeline_runner - DEBUG - Executing pipeline with default files
+2024-12-31 13:29:58,115 - pipeline.settings - INFO - Using default matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.1.npz
+2024-12-31 13:29:58,116 - pipeline.settings - INFO - Using default network file: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-31 13:29:58,116 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-31 13:30:00,482 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-31 13:30:00,482 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-31 13:30:55,585 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 351 pathways.
+2024-12-31 13:30:56,756 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_31_12_2024__13_30_00.xlsx.
+2024-12-31 13:30:56,874 - pipeline.pipeline_main - DEBUG - Processed condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, output path: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_31_12_2024__13_30_00.xlsx
+2024-12-31 13:30:58,412 - pipeline.pipeline_main - DEBUG - Generated propagation plot at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_significant_pathways_plot.png
+2024-12-31 13:30:58,414 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_31_12_2024__13_30_00.xlsx
+2024-12-31 13:30:58,416 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_significant_pathways_plot.png
+2024-12-31 13:30:58,416 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-31 13:30:58,419 - app.pipeline_runner - INFO - Pipeline completed successfully for job 8f35880e-90bf-4c87-b45e-a12452b22e14
+2024-12-31 13:30:58,419 - app.pipeline_runner - DEBUG - Ensuring cleanup after pipeline execution
+2024-12-31 13:30:58,419 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-31 13:30:58,419 - app.temp_manager - DEBUG - Cleanup completed
+2024-12-31 13:44:55,100 - app.app_main - INFO - Application is shutting down
+2024-12-31 13:44:59,177 - app.app_main - INFO - Application is starting up
+2024-12-31 13:51:43,536 - app.app_main - INFO - Application is shutting down
+2024-12-31 13:51:45,787 - app.app_main - INFO - Application is starting up
+2024-12-31 13:51:54,056 - app.routes - INFO - New job request received.
+2024-12-31 13:51:54,056 - app.routes - INFO - Pathway file: custom
+2024-12-31 13:51:54,056 - app.routes - INFO - Custom pathway uploaded: kegg.gmt
+2024-12-31 13:51:54,056 - app.routes - INFO - Job code: cfba6cce-186d-41a4-a503-4dd0f2361889
+2024-12-31 13:51:54,066 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-31 13:51:54,067 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-31 13:51:54,067 - app.routes - DEBUG - Processing custom pathway file
+2024-12-31 13:51:54,068 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-31 13:51:54,069 - app.pipeline_runner - INFO - Starting pipeline for job cfba6cce-186d-41a4-a503-4dd0f2361889
+2024-12-31 13:51:54,069 - app.temp_manager - DEBUG - Creating temporary files
+2024-12-31 13:51:54,069 - app.temp_manager - DEBUG - Temporary pathway path: /tmp/peanut_jpuu3qwu/kegg.gmt
+2024-12-31 13:51:54,069 - app.pipeline_runner - DEBUG - Temporary files created successfully
+2024-12-31 13:51:54,069 - app.temp_manager - ERROR - Error creating temporary files: I/O operation on closed file.
+2024-12-31 13:51:54,070 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-31 13:51:54,070 - app.temp_manager - INFO - Temporary files cleaned up successfully
+2024-12-31 13:51:54,070 - app.pipeline_runner - ERROR - Pipeline failed for job cfba6cce-186d-41a4-a503-4dd0f2361889: I/O operation on closed file.
+2024-12-31 13:51:54,070 - app.pipeline_runner - DEBUG - Ensuring cleanup after pipeline execution
+2024-12-31 13:51:54,070 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-31 13:51:54,070 - app.routes - ERROR - Pipeline execution failed for job cfba6cce-186d-41a4-a503-4dd0f2361889: I/O operation on closed file.
+2024-12-31 13:52:23,055 - app.routes - INFO - New job request received.
+2024-12-31 13:52:23,055 - app.routes - INFO - Pathway file: custom
+2024-12-31 13:52:23,055 - app.routes - INFO - Custom pathway uploaded: kegg.gmt
+2024-12-31 13:52:23,055 - app.routes - INFO - Job code: 287d1995-352a-4026-b578-532f6771df4b
+2024-12-31 13:52:23,062 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-31 13:52:23,063 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-31 13:52:23,063 - app.routes - DEBUG - Processing custom pathway file
+2024-12-31 13:52:23,063 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-31 13:52:23,064 - app.pipeline_runner - INFO - Starting pipeline for job 287d1995-352a-4026-b578-532f6771df4b
+2024-12-31 13:52:23,064 - app.temp_manager - DEBUG - Creating temporary files
+2024-12-31 13:52:23,065 - app.temp_manager - DEBUG - Temporary pathway path: /tmp/peanut_64sxlob0/kegg.gmt
+2024-12-31 13:52:23,065 - app.pipeline_runner - DEBUG - Temporary files created successfully
+2024-12-31 13:52:23,066 - app.temp_manager - ERROR - Error creating temporary files: I/O operation on closed file.
+2024-12-31 13:52:23,066 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-31 13:52:23,066 - app.temp_manager - INFO - Temporary files cleaned up successfully
+2024-12-31 13:52:23,066 - app.pipeline_runner - ERROR - Pipeline failed for job 287d1995-352a-4026-b578-532f6771df4b: I/O operation on closed file.
+2024-12-31 13:52:23,066 - app.pipeline_runner - DEBUG - Ensuring cleanup after pipeline execution
+2024-12-31 13:52:23,066 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-31 13:52:23,066 - app.routes - ERROR - Pipeline execution failed for job 287d1995-352a-4026-b578-532f6771df4b: I/O operation on closed file.
+2024-12-31 13:55:05,672 - app.app_main - INFO - Application is shutting down
+2024-12-31 13:55:07,933 - app.app_main - INFO - Application is starting up
+2024-12-31 13:55:10,328 - app.routes - INFO - New job request received.
+2024-12-31 13:55:10,329 - app.routes - INFO - Pathway file: custom
+2024-12-31 13:55:10,329 - app.routes - INFO - Custom pathway uploaded: kegg.gmt
+2024-12-31 13:55:10,329 - app.routes - INFO - Job code: 5a7db36c-5ba6-4349-9aaf-6fe39b49c080
+2024-12-31 13:55:10,329 - app.routes - DEBUG - Processing custom pathway file
+2024-12-31 13:55:10,339 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-31 13:55:10,340 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-31 13:55:10,341 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-31 13:55:10,342 - app.pipeline_runner - INFO - Starting pipeline for job 5a7db36c-5ba6-4349-9aaf-6fe39b49c080
+2024-12-31 13:55:10,342 - app.temp_manager - DEBUG - Creating temporary files
+2024-12-31 13:55:10,344 - app.temp_manager - DEBUG - Temporary pathway path: /tmp/peanut_mupohm7n/kegg.gmt
+2024-12-31 13:55:10,344 - app.pipeline_runner - DEBUG - Temporary files created successfully
+2024-12-31 13:55:10,344 - app.pipeline_runner - DEBUG - Handling custom pathway file
+2024-12-31 13:55:10,347 - app.pipeline_runner - INFO - Custom pathway saved to /tmp/peanut_mupohm7n/kegg.gmt
+2024-12-31 13:55:10,348 - app.pipeline_runner - DEBUG - Executing pipeline with temporary files
+2024-12-31 13:55:10,348 - pipeline.settings - INFO - Using default matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.1.npz
+2024-12-31 13:55:10,348 - pipeline.settings - INFO - Using default network file: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-31 13:55:10,349 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-31 13:55:12,644 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-31 13:55:12,644 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-31 13:55:52,950 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 388 pathways.
+2024-12-31 13:55:56,898 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_31_12_2024__13_55_12.xlsx.
+2024-12-31 13:55:56,959 - pipeline.pipeline_main - DEBUG - Processed condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, output path: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_31_12_2024__13_55_12.xlsx
+2024-12-31 13:55:58,584 - pipeline.pipeline_main - DEBUG - Generated propagation plot at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_significant_pathways_plot.png
+2024-12-31 13:55:58,597 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_31_12_2024__13_55_12.xlsx
+2024-12-31 13:55:58,599 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_significant_pathways_plot.png
+2024-12-31 13:55:58,600 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-31 13:55:58,602 - app.pipeline_runner - DEBUG - Pipeline execution completed
+2024-12-31 13:55:58,602 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-31 13:55:58,603 - app.temp_manager - INFO - Temporary files cleaned up successfully
+2024-12-31 13:55:58,603 - app.pipeline_runner - INFO - Pipeline completed successfully for job 5a7db36c-5ba6-4349-9aaf-6fe39b49c080
+2024-12-31 13:55:58,603 - app.pipeline_runner - DEBUG - Ensuring cleanup after pipeline execution
+2024-12-31 13:55:58,603 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-31 13:55:58,604 - app.routes - ERROR - Pipeline execution failed for job 5a7db36c-5ba6-4349-9aaf-6fe39b49c080: '5a7db36c-5ba6-4349-9aaf-6fe39b49c080'
+2024-12-31 13:58:01,001 - app.routes - INFO - New job request received.
+2024-12-31 13:58:01,001 - app.routes - INFO - Pathway file: custom
+2024-12-31 13:58:01,001 - app.routes - INFO - Custom pathway uploaded: kegg.gmt
+2024-12-31 13:58:01,001 - app.routes - INFO - Job code: a77cbb3b-1733-4ad1-a9c5-ee4acc5ad42b
+2024-12-31 13:58:01,001 - app.routes - DEBUG - Processing custom pathway file
+2024-12-31 13:58:01,014 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-31 13:58:01,016 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-31 13:58:01,016 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-31 13:58:01,019 - app.pipeline_runner - INFO - Starting pipeline for job a77cbb3b-1733-4ad1-a9c5-ee4acc5ad42b
+2024-12-31 13:58:01,020 - app.temp_manager - DEBUG - Creating temporary files
+2024-12-31 13:58:01,020 - app.temp_manager - DEBUG - Temporary pathway path: /tmp/peanut_fexr3kff/kegg.gmt
+2024-12-31 13:58:01,020 - app.pipeline_runner - DEBUG - Temporary files created successfully
+2024-12-31 13:58:01,020 - app.pipeline_runner - DEBUG - Handling custom pathway file
+2024-12-31 13:58:01,024 - app.pipeline_runner - INFO - Custom pathway saved to /tmp/peanut_fexr3kff/kegg.gmt
+2024-12-31 13:58:01,025 - app.pipeline_runner - DEBUG - Executing pipeline with temporary files
+2024-12-31 13:58:01,025 - pipeline.settings - INFO - Using default matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.1.npz
+2024-12-31 13:58:01,025 - pipeline.settings - INFO - Using default network file: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-31 13:58:01,026 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-31 13:58:03,228 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-31 13:58:03,228 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-31 13:58:45,624 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 388 pathways.
+2024-12-31 13:58:45,920 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_31_12_2024__13_58_03.xlsx.
+2024-12-31 13:59:00,763 - pipeline.pipeline_main - DEBUG - Processed condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, output path: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_31_12_2024__13_58_03.xlsx
+2024-12-31 13:59:02,308 - pipeline.pipeline_main - DEBUG - Generated propagation plot at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_significant_pathways_plot.png
+2024-12-31 13:59:02,309 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_31_12_2024__13_58_03.xlsx
+2024-12-31 13:59:02,311 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_significant_pathways_plot.png
+2024-12-31 13:59:02,311 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-31 13:59:02,313 - app.pipeline_runner - DEBUG - Pipeline execution completed
+2024-12-31 13:59:02,313 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-31 13:59:02,315 - app.temp_manager - INFO - Temporary files cleaned up successfully
+2024-12-31 13:59:02,316 - app.pipeline_runner - INFO - Pipeline completed successfully for job a77cbb3b-1733-4ad1-a9c5-ee4acc5ad42b
+2024-12-31 13:59:02,316 - app.pipeline_runner - DEBUG - Ensuring cleanup after pipeline execution
+2024-12-31 13:59:02,316 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-31 13:59:02,316 - app.routes - ERROR - Pipeline execution failed for job a77cbb3b-1733-4ad1-a9c5-ee4acc5ad42b: 'a77cbb3b-1733-4ad1-a9c5-ee4acc5ad42b'
+2024-12-31 14:23:52,939 - app.app_main - INFO - Application is shutting down
+2024-12-31 14:24:02,285 - app.app_main - INFO - Application is starting up
+2024-12-31 14:24:12,382 - app.routes - INFO - New job request received.
+2024-12-31 14:24:12,382 - app.routes - INFO - Pathway file: custom
+2024-12-31 14:24:12,382 - app.routes - INFO - Custom pathway uploaded: kegg.gmt
+2024-12-31 14:24:12,382 - app.routes - INFO - Job code: 7e45a404-1646-405e-885c-003f82da80f2
+2024-12-31 14:24:12,382 - app.routes - DEBUG - Processing custom pathway file
+2024-12-31 14:24:12,395 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-31 14:24:12,397 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-31 14:24:12,397 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-31 14:24:12,398 - app.pipeline_runner - INFO - Starting pipeline for job 7e45a404-1646-405e-885c-003f82da80f2
+2024-12-31 14:24:12,398 - app.temp_manager - DEBUG - Creating temporary files
+2024-12-31 14:24:12,399 - app.temp_manager - DEBUG - Temporary pathway path: /tmp/peanut_kc0ylgcb/kegg.gmt
+2024-12-31 14:24:12,400 - app.pipeline_runner - DEBUG - Temporary files created successfully
+2024-12-31 14:24:12,400 - app.pipeline_runner - DEBUG - Handling custom pathway file
+2024-12-31 14:24:12,402 - app.pipeline_runner - INFO - Custom pathway saved to /tmp/peanut_kc0ylgcb/kegg.gmt
+2024-12-31 14:24:12,402 - app.pipeline_runner - DEBUG - Executing pipeline with temporary files
+2024-12-31 14:24:12,403 - pipeline.settings - INFO - Using default matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.1.npz
+2024-12-31 14:24:12,403 - pipeline.settings - INFO - Using default network file: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-31 14:24:12,403 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-31 14:24:14,789 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-31 14:24:14,790 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-31 14:24:59,798 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 388 pathways.
+2024-12-31 14:25:04,756 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_31_12_2024__14_24_14.xlsx.
+2024-12-31 14:25:04,868 - pipeline.pipeline_main - DEBUG - Processed condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, output path: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_31_12_2024__14_24_14.xlsx
+2024-12-31 14:25:07,608 - pipeline.pipeline_main - DEBUG - Generated propagation plot at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_significant_pathways_plot.png
+2024-12-31 14:25:07,610 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_31_12_2024__14_24_14.xlsx
+2024-12-31 14:25:07,613 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_significant_pathways_plot.png
+2024-12-31 14:25:07,613 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-31 14:25:07,616 - app.pipeline_runner - DEBUG - Pipeline execution completed
+2024-12-31 14:25:07,616 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-31 14:25:07,617 - app.temp_manager - INFO - Temporary files cleaned up successfully
+2024-12-31 14:25:07,618 - app.pipeline_runner - INFO - Pipeline completed successfully for job 7e45a404-1646-405e-885c-003f82da80f2
+2024-12-31 14:25:07,618 - app.pipeline_runner - DEBUG - Ensuring cleanup after pipeline execution
+2024-12-31 14:25:07,618 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-31 14:25:07,618 - app.routes - ERROR - Pipeline execution failed for job 7e45a404-1646-405e-885c-003f82da80f2: 'PosixPath' object has no attribute 'get'
 Traceback (most recent call last):
-  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 84, in pipeline_main
-    condition_data_df = pd.read_excel(condition_path)
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 495, in read_excel
-    io = ExcelFile(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 1550, in __init__
-    ext = inspect_excel_format(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 1402, in inspect_excel_format
-    with get_handle(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/common.py", line 728, in get_handle
-    ioargs = _get_filepath_or_buffer(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/common.py", line 472, in _get_filepath_or_buffer
-    raise ValueError(msg)
-ValueError: Invalid file path or buffer object type: <class 'tuple'>
-2024-12-11 15:40:21,756 - app.pipeline_runner - ERROR - Error in pipeline execution for job_code 5f967c2f: Invalid file path or buffer object type: <class 'tuple'>
-Traceback (most recent call last):
-  File "/home/yair/projects/Yair_propagation/app/pipeline_runner.py", line 36, in run_pipeline
-    output_file_path = await pipeline_main(conditions_data, settings)
-  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 84, in pipeline_main
-    condition_data_df = pd.read_excel(condition_path)
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 495, in read_excel
-    io = ExcelFile(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 1550, in __init__
-    ext = inspect_excel_format(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 1402, in inspect_excel_format
-    with get_handle(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/common.py", line 728, in get_handle
-    ioargs = _get_filepath_or_buffer(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/common.py", line 472, in _get_filepath_or_buffer
-    raise ValueError(msg)
-ValueError: Invalid file path or buffer object type: <class 'tuple'>
-2024-12-11 15:40:21,758 - app.routes - DEBUG - Checking status for job_code: 5f967c2f
-2024-12-11 15:40:21,758 - app.routes - DEBUG - Job data: {'status': 'Failed', 'output_file': None, 'expiry': datetime.datetime(2024, 12, 18, 15, 40, 16, 105844), 'error': "Invalid file path or buffer object type: <class 'tuple'>"}
-2024-12-11 15:41:40,094 - app.app_main - INFO - Application is shutting down
-2024-12-11 15:41:42,308 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 15:41:42,315 - app.app_main - INFO - Application is starting up
-2024-12-11 15:41:43,059 - app.routes - DEBUG - Root Path: /peanut
-2024-12-11 15:41:51,767 - app.routes - INFO - Received request to run pipeline
-2024-12-11 15:41:51,767 - app.routes - INFO - Files: ['GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.xlsx'], Test Name: multiple, Species: H_sapiens, Alpha: 0.1, Network: Anat, Pathway File: kegg, Min Genes per Pathway: 15, Max Genes per Pathway: 500, FDR Threshold: 0.05, Run GSEA: True, Network Restriction: False
-2024-12-11 15:41:51,767 - app.utils - INFO - Validating uploaded Excel file
-2024-12-11 15:41:52,353 - app.utils - INFO - Excel file preprocessed successfully
-2024-12-11 15:41:52,359 - app.utils - INFO - Excel file validated successfully
-2024-12-11 15:42:29,203 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 396 pathways.
-2024-12-11 15:42:29,388 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/multiple_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE_Propagation_11_12_2024__15_41_54.xlsx.
-2024-12-11 15:42:29,448 - pipeline.propagation_routines - INFO - Running GSEA without propagation
-2024-12-11 15:42:29,449 - pipeline.propagation_routines - INFO - Processing all genes without network restriction.
-2024-12-11 15:42:56,985 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 15:42:58,339 - app.pipeline_runner - DEBUG - Pipeline main returned output_file_path: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 15:42:58,339 - app.pipeline_runner - INFO - Job d98d5dd7 finished successfully.
-2024-12-11 15:42:58,343 - app.routes - DEBUG - Checking status for job_code: d98d5dd7
-2024-12-11 15:42:58,344 - app.routes - DEBUG - Job data: {'status': 'Finished', 'output_file': 'pipeline/Outputs/Archives/multiple_results.zip', 'expiry': datetime.datetime(2024, 12, 18, 15, 41, 51, 767521)}
-2024-12-11 15:42:58,344 - app.routes - DEBUG - Download URL for job d98d5dd7: /peanut/download-file/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 15:43:19,129 - app.routes - INFO - User requested file: pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 15:43:19,129 - app.routes - INFO - Serving file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 15:44:37,142 - app.app_main - INFO - Application is shutting down
-2024-12-11 15:44:41,156 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 15:44:41,177 - app.app_main - INFO - Application is starting up
-2024-12-11 16:04:06,881 - app.app_main - INFO - Application is shutting down
-2024-12-11 16:04:23,564 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 16:04:23,599 - app.app_main - INFO - Application is starting up
-2024-12-11 20:50:50,361 - app.routes - DEBUG - Root Path: /peanut
-2024-12-11 20:51:04,513 - app.routes - INFO - Received request to run pipeline
-2024-12-11 20:51:04,517 - app.routes - INFO - Files: ['GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.xlsx'], Test Name: multiple, Species: H_sapiens, Alpha: 0.1, Network: Anat, Pathway File: kegg, Min Genes per Pathway: 15, Max Genes per Pathway: 500, FDR Threshold: 0.05, Run GSEA: True, Network Restriction: False
-2024-12-11 20:51:04,535 - app.utils - INFO - Validating uploaded Excel file
-2024-12-11 20:51:09,467 - app.utils - INFO - Excel file preprocessed successfully
-2024-12-11 20:51:09,474 - app.utils - INFO - Excel file validated successfully
-2024-12-11 20:51:13,404 - pipeline.pipeline_main - ERROR - An error occurred in pipeline_main: Invalid file path or buffer object type: <class 'tuple'>
-Traceback (most recent call last):
-  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 84, in pipeline_main
-    #     condition_data_df = pd.read_excel(condition_path)
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 495, in read_excel
-    io = ExcelFile(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 1550, in __init__
-    ext = inspect_excel_format(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 1402, in inspect_excel_format
-    with get_handle(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/common.py", line 728, in get_handle
-    ioargs = _get_filepath_or_buffer(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/common.py", line 472, in _get_filepath_or_buffer
-    raise ValueError(msg)
-ValueError: Invalid file path or buffer object type: <class 'tuple'>
-2024-12-11 20:51:13,417 - app.pipeline_runner - ERROR - Error in pipeline execution for job_code 96ab3dca: Invalid file path or buffer object type: <class 'tuple'>
-Traceback (most recent call last):
-  File "/home/yair/projects/Yair_propagation/app/pipeline_runner.py", line 36, in run_pipeline
-    output_file_path = await pipeline_main(conditions_data, settings)
-  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 84, in pipeline_main
-    #     condition_data_df = pd.read_excel(condition_path)
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 495, in read_excel
-    io = ExcelFile(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 1550, in __init__
-    ext = inspect_excel_format(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 1402, in inspect_excel_format
-    with get_handle(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/common.py", line 728, in get_handle
-    ioargs = _get_filepath_or_buffer(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/common.py", line 472, in _get_filepath_or_buffer
-    raise ValueError(msg)
-ValueError: Invalid file path or buffer object type: <class 'tuple'>
-2024-12-11 20:51:13,419 - app.routes - DEBUG - Checking status for job_code: 96ab3dca
-2024-12-11 20:51:13,419 - app.routes - DEBUG - Job data: {'status': 'Failed', 'output_file': None, 'expiry': datetime.datetime(2024, 12, 18, 20, 51, 4, 533263), 'error': "Invalid file path or buffer object type: <class 'tuple'>"}
-2024-12-11 20:52:17,924 - app.routes - INFO - Received request to run pipeline
-2024-12-11 20:52:17,924 - app.routes - INFO - Files: ['GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.xlsx'], Test Name: multiple, Species: H_sapiens, Alpha: 0.1, Network: Anat, Pathway File: kegg, Min Genes per Pathway: 15, Max Genes per Pathway: 500, FDR Threshold: 0.05, Run GSEA: False, Network Restriction: False
-2024-12-11 20:52:17,925 - app.utils - INFO - Validating uploaded Excel file
-2024-12-11 20:52:18,793 - app.utils - INFO - Excel file preprocessed successfully
-2024-12-11 20:52:18,796 - app.utils - INFO - Excel file validated successfully
-2024-12-11 20:52:21,060 - pipeline.pipeline_main - ERROR - An error occurred in pipeline_main: Invalid file path or buffer object type: <class 'tuple'>
-Traceback (most recent call last):
-  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 84, in pipeline_main
-    #     condition_data_df = pd.read_excel(condition_path)
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 495, in read_excel
-    io = ExcelFile(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 1550, in __init__
-    ext = inspect_excel_format(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 1402, in inspect_excel_format
-    with get_handle(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/common.py", line 728, in get_handle
-    ioargs = _get_filepath_or_buffer(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/common.py", line 472, in _get_filepath_or_buffer
-    raise ValueError(msg)
-ValueError: Invalid file path or buffer object type: <class 'tuple'>
-2024-12-11 20:52:21,060 - app.pipeline_runner - ERROR - Error in pipeline execution for job_code e7047bce: Invalid file path or buffer object type: <class 'tuple'>
-Traceback (most recent call last):
-  File "/home/yair/projects/Yair_propagation/app/pipeline_runner.py", line 36, in run_pipeline
-    output_file_path = await pipeline_main(conditions_data, settings)
-  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 84, in pipeline_main
-    #     condition_data_df = pd.read_excel(condition_path)
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 495, in read_excel
-    io = ExcelFile(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 1550, in __init__
-    ext = inspect_excel_format(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/excel/_base.py", line 1402, in inspect_excel_format
-    with get_handle(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/common.py", line 728, in get_handle
-    ioargs = _get_filepath_or_buffer(
-  File "/home/yair/.local/lib/python3.10/site-packages/pandas/io/common.py", line 472, in _get_filepath_or_buffer
-    raise ValueError(msg)
-ValueError: Invalid file path or buffer object type: <class 'tuple'>
-2024-12-11 20:52:21,062 - app.routes - DEBUG - Checking status for job_code: e7047bce
-2024-12-11 20:52:21,062 - app.routes - DEBUG - Job data: {'status': 'Failed', 'output_file': None, 'expiry': datetime.datetime(2024, 12, 18, 20, 52, 17, 925109), 'error': "Invalid file path or buffer object type: <class 'tuple'>"}
-2024-12-11 20:52:55,115 - app.app_main - INFO - Application is shutting down
-2024-12-11 20:53:03,416 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 20:53:03,424 - app.app_main - INFO - Application is starting up
-2024-12-11 20:53:08,412 - app.routes - DEBUG - Root Path: /peanut
-2024-12-11 20:53:16,410 - app.routes - INFO - Received request to run pipeline
-2024-12-11 20:53:16,411 - app.routes - INFO - Files: ['GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.xlsx'], Test Name: multiple, Species: H_sapiens, Alpha: 0.1, Network: Anat, Pathway File: kegg, Min Genes per Pathway: 15, Max Genes per Pathway: 500, FDR Threshold: 0.05, Run GSEA: True, Network Restriction: False
-2024-12-11 20:53:16,412 - app.utils - INFO - Validating uploaded Excel file
-2024-12-11 20:53:18,945 - app.utils - INFO - Excel file preprocessed successfully
-2024-12-11 20:53:18,960 - app.utils - INFO - Excel file validated successfully
-2024-12-11 20:54:44,733 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 396 pathways.
-2024-12-11 20:54:45,257 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/multiple_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE_Propagation_11_12_2024__20_53_27.xlsx.
-2024-12-11 20:54:45,472 - pipeline.propagation_routines - INFO - Running GSEA without propagation
-2024-12-11 20:54:45,473 - pipeline.propagation_routines - INFO - Processing all genes without network restriction.
-2024-12-11 20:55:24,281 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 20:55:25,557 - app.pipeline_runner - DEBUG - Pipeline main returned output_file_path: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 20:55:25,558 - app.pipeline_runner - INFO - Job 3ad47ab3 finished successfully.
-2024-12-11 20:55:25,560 - app.routes - DEBUG - Checking status for job_code: 3ad47ab3
-2024-12-11 20:55:25,560 - app.routes - DEBUG - Job data: {'status': 'Finished', 'output_file': 'pipeline/Outputs/Archives/multiple_results.zip', 'expiry': datetime.datetime(2024, 12, 18, 20, 53, 16, 411726)}
-2024-12-11 20:55:25,561 - app.routes - DEBUG - Download URL for job 3ad47ab3: /peanut/download-file/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 20:55:43,381 - app.routes - INFO - User requested file: pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 20:55:43,382 - app.routes - INFO - Serving file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 20:56:09,428 - app.routes - INFO - Received request to run pipeline
-2024-12-11 20:56:09,428 - app.routes - INFO - Files: ['GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk'], Test Name: multiple, Species: H_sapiens, Alpha: 0.1, Network: Anat, Pathway File: kegg, Min Genes per Pathway: 15, Max Genes per Pathway: 500, FDR Threshold: 0.05, Run GSEA: True, Network Restriction: False
-2024-12-11 20:56:09,439 - app.utils - INFO - RNK file validated successfully
-2024-12-11 20:57:29,565 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 396 pathways.
-2024-12-11 20:57:30,066 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/multiple_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE_Propagation_11_12_2024__20_56_12.xlsx.
-2024-12-11 20:57:30,262 - pipeline.propagation_routines - INFO - Running GSEA without propagation
-2024-12-11 20:57:30,263 - pipeline.propagation_routines - INFO - Processing all genes without network restriction.
-2024-12-11 20:58:15,781 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 20:58:16,371 - app.pipeline_runner - DEBUG - Pipeline main returned output_file_path: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 20:58:16,372 - app.pipeline_runner - INFO - Job ff80745e finished successfully.
-2024-12-11 20:58:16,384 - app.routes - DEBUG - Checking status for job_code: ff80745e
-2024-12-11 20:58:16,384 - app.routes - DEBUG - Job data: {'status': 'Finished', 'output_file': 'pipeline/Outputs/Archives/multiple_results.zip', 'expiry': datetime.datetime(2024, 12, 18, 20, 56, 9, 429011)}
-2024-12-11 20:58:16,384 - app.routes - DEBUG - Download URL for job ff80745e: /peanut/download-file/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 20:58:47,188 - app.routes - INFO - User requested file: pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 20:58:47,188 - app.routes - INFO - Serving file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/multiple_results.zip
-2024-12-11 21:00:01,705 - app.app_main - INFO - Application is shutting down
-2024-12-11 21:00:08,811 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-11 21:00:08,835 - app.app_main - INFO - Application is starting up
-2024-12-12 14:15:14,181 - app.app_main - INFO - Application is shutting down
-2024-12-12 15:47:26,123 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 15:47:26,135 - app.app_main - INFO - Application is starting up
-2024-12-12 15:47:31,860 - app.routes - DEBUG - Root Path: /peanut
-2024-12-12 16:32:44,591 - app.app_main - INFO - Application is shutting down
-2024-12-12 16:32:48,904 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 16:32:48,911 - app.app_main - INFO - Application is starting up
-2024-12-12 16:33:06,382 - app.app_main - INFO - Application is shutting down
-2024-12-12 16:41:51,889 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 16:41:51,898 - app.app_main - INFO - Application is starting up
-2024-12-12 16:43:21,561 - app.routes - DEBUG - Root Path: /peanut
-2024-12-12 16:43:30,021 - app.routes - DEBUG - Root Path: /peanut
-2024-12-12 16:44:58,884 - app.routes - DEBUG - Root Path: /peanut
-2024-12-12 16:48:41,999 - app.routes - DEBUG - Root Path: /peanut
-2024-12-12 16:49:07,396 - app.routes - DEBUG - Root Path: /peanut
-2024-12-12 16:50:18,898 - app.routes - DEBUG - Root Path: /peanut
-2024-12-12 16:50:40,679 - app.routes - DEBUG - Root Path: /peanut
-2024-12-12 17:00:23,357 - app.app_main - INFO - Application is shutting down
-2024-12-12 17:00:25,791 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 17:00:25,800 - app.app_main - INFO - Application is starting up
-2024-12-12 17:14:44,012 - app.app_main - INFO - Application is shutting down
-2024-12-12 17:14:49,408 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 17:14:49,433 - app.app_main - INFO - Application is starting up
-2024-12-12 17:19:51,233 - app.app_main - INFO - Application is shutting down
-2024-12-12 17:19:54,525 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 17:19:54,573 - app.app_main - INFO - Application is starting up
-2024-12-12 17:26:49,401 - app.app_main - INFO - Application is shutting down
-2024-12-12 17:27:00,549 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 17:27:00,594 - app.app_main - INFO - Application is starting up
-2024-12-12 17:29:56,125 - app.app_main - INFO - Application is shutting down
-2024-12-12 17:30:08,506 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 17:30:08,542 - app.app_main - INFO - Application is starting up
-2024-12-12 17:31:12,360 - app.app_main - INFO - Application is shutting down
-2024-12-12 17:31:20,282 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 17:31:20,313 - app.app_main - INFO - Application is starting up
-2024-12-12 17:32:53,624 - app.app_main - INFO - Application is shutting down
-2024-12-12 17:32:57,591 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 17:32:57,643 - app.app_main - INFO - Application is starting up
-2024-12-12 17:34:30,134 - app.app_main - INFO - Application is shutting down
-2024-12-12 17:34:46,025 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 17:34:46,083 - app.app_main - INFO - Application is starting up
-2024-12-12 17:41:44,004 - app.app_main - INFO - Application is shutting down
-2024-12-12 17:41:47,395 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 17:41:47,412 - app.app_main - INFO - Application is starting up
-2024-12-12 17:44:15,510 - app.app_main - INFO - Application is shutting down
-2024-12-12 17:44:21,029 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 17:44:21,049 - app.app_main - INFO - Application is starting up
-2024-12-12 17:57:42,176 - app.app_main - INFO - Application is shutting down
-2024-12-12 17:57:44,926 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 17:57:44,943 - app.app_main - INFO - Application is starting up
-2024-12-12 18:08:45,795 - app.app_main - INFO - Application is shutting down
-2024-12-12 18:08:55,266 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 18:08:55,315 - app.app_main - INFO - Application is starting up
-2024-12-12 18:17:37,669 - app.app_main - INFO - Application is shutting down
-2024-12-12 18:17:39,795 - app.app_main - DEBUG - Logging has been configured with basicConfig
-2024-12-12 18:17:39,802 - app.app_main - INFO - Application is starting up
-2024-12-18 16:04:37,997 - app.app_main - INFO - Application is starting up
-2024-12-29 12:27:26,251 - app.app_main - INFO - Application is starting up
-2024-12-29 12:52:56,388 - app.app_main - INFO - Application is shutting down
+  File "/home/yair/projects/Yair_propagation/app/routes.py", line 148, in _run_pipeline_task
+    "output_file": results.get("output_file", None),
+AttributeError: 'PosixPath' object has no attribute 'get'
+2024-12-31 14:28:52,183 - app.app_main - INFO - Application is shutting down
+2024-12-31 14:28:56,654 - app.app_main - INFO - Application is starting up
+2024-12-31 14:29:38,971 - app.routes - INFO - New job request received.
+2024-12-31 14:29:38,971 - app.routes - INFO - Pathway file: custom
+2024-12-31 14:29:38,971 - app.routes - INFO - Custom pathway uploaded: kegg.gmt
+2024-12-31 14:29:38,971 - app.routes - INFO - Job code: 661c6b64-0f86-4f7e-86d9-069b28ca72a4
+2024-12-31 14:29:38,971 - app.routes - DEBUG - Processing custom pathway file
+2024-12-31 14:29:38,981 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-31 14:29:38,982 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-31 14:29:38,983 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-31 14:29:38,984 - app.pipeline_runner - INFO - Starting pipeline for job 661c6b64-0f86-4f7e-86d9-069b28ca72a4
+2024-12-31 14:29:38,984 - app.temp_manager - DEBUG - Creating temporary files
+2024-12-31 14:29:38,985 - app.temp_manager - DEBUG - Temporary pathway path: /tmp/peanut_lvjx_rjx/kegg.gmt
+2024-12-31 14:29:38,985 - app.pipeline_runner - DEBUG - Temporary files created successfully
+2024-12-31 14:29:38,985 - app.pipeline_runner - DEBUG - Handling custom pathway file
+2024-12-31 14:29:38,987 - app.pipeline_runner - INFO - Custom pathway saved to /tmp/peanut_lvjx_rjx/kegg.gmt
+2024-12-31 14:29:38,987 - app.pipeline_runner - DEBUG - Executing pipeline with temporary files
+2024-12-31 14:29:38,988 - pipeline.settings - INFO - Using default matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.1.npz
+2024-12-31 14:29:38,988 - pipeline.settings - INFO - Using default network file: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-31 14:29:38,988 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-31 14:29:41,192 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-31 14:29:41,192 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-31 14:30:20,661 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 388 pathways.
+2024-12-31 14:30:28,557 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_31_12_2024__14_29_41.xlsx.
+2024-12-31 14:30:28,609 - pipeline.pipeline_main - DEBUG - Processed condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, output path: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_31_12_2024__14_29_41.xlsx
+2024-12-31 14:30:30,064 - pipeline.pipeline_main - DEBUG - Generated propagation plot at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_significant_pathways_plot.png
+2024-12-31 14:30:30,065 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_31_12_2024__14_29_41.xlsx
+2024-12-31 14:30:30,066 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_significant_pathways_plot.png
+2024-12-31 14:30:30,067 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-31 14:30:30,069 - app.pipeline_runner - INFO - Pipeline execution completed with output: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-31 14:30:30,069 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-31 14:30:30,078 - app.temp_manager - INFO - Temporary files cleaned up successfully
+2024-12-31 14:30:30,079 - app.pipeline_runner - DEBUG - Ensuring cleanup after pipeline execution
+2024-12-31 14:30:30,079 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-31 14:30:30,079 - app.routes - INFO - Pipeline completed successfully for job 661c6b64-0f86-4f7e-86d9-069b28ca72a4
+2024-12-31 14:40:19,863 - app.app_main - INFO - Application is shutting down
+2024-12-31 14:40:26,575 - app.app_main - INFO - Application is starting up
+2024-12-31 14:40:36,310 - app.routes - INFO - New job request received.
+2024-12-31 14:40:36,310 - app.routes - INFO - Pathway file: custom
+2024-12-31 14:40:36,310 - app.routes - INFO - Custom pathway uploaded: kegg.gmt
+2024-12-31 14:40:36,310 - app.routes - INFO - Job code: 3bfd49b0-3b76-4dcc-b312-d9fd7abc52c4
+2024-12-31 14:40:36,310 - app.routes - DEBUG - Processing custom pathway file
+2024-12-31 14:40:36,322 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-31 14:40:36,323 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-31 14:40:36,323 - app.temp_manager - DEBUG - TempFileManager initialized
+2024-12-31 14:40:36,324 - app.pipeline_runner - INFO - Starting pipeline for job 3bfd49b0-3b76-4dcc-b312-d9fd7abc52c4
+2024-12-31 14:40:36,324 - app.temp_manager - DEBUG - Creating temporary files
+2024-12-31 14:40:36,325 - app.temp_manager - DEBUG - Temporary pathway path: /tmp/peanut_1nobc0gw/kegg.gmt
+2024-12-31 14:40:36,325 - app.pipeline_runner - DEBUG - Temporary files created successfully
+2024-12-31 14:40:36,326 - app.pipeline_runner - DEBUG - Handling custom pathway file
+2024-12-31 14:40:36,327 - app.pipeline_runner - INFO - Custom pathway saved to /tmp/peanut_1nobc0gw/kegg.gmt
+2024-12-31 14:40:36,328 - app.pipeline_runner - DEBUG - Executing pipeline with temporary files
+2024-12-31 14:40:36,328 - pipeline.settings - INFO - Using default matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.1.npz
+2024-12-31 14:40:36,328 - pipeline.settings - INFO - Using default network file: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-31 14:40:36,329 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2024-12-31 14:40:38,544 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2024-12-31 14:40:38,545 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2024-12-31 14:41:17,618 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 388 pathways.
+2024-12-31 14:41:25,636 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_31_12_2024__14_40_38.xlsx.
+2024-12-31 14:41:25,694 - pipeline.pipeline_main - DEBUG - Processed condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, output path: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_31_12_2024__14_40_38.xlsx
+2024-12-31 14:41:27,440 - pipeline.pipeline_main - DEBUG - Generated propagation plot at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_significant_pathways_plot.png
+2024-12-31 14:41:27,441 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_31_12_2024__14_40_38.xlsx
+2024-12-31 14:41:27,443 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_significant_pathways_plot.png
+2024-12-31 14:41:27,444 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-31 14:41:27,446 - app.pipeline_runner - INFO - Pipeline execution completed with output: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2024-12-31 14:41:27,447 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-31 14:41:27,448 - app.temp_manager - INFO - Temporary files cleaned up successfully
+2024-12-31 14:41:27,448 - app.pipeline_runner - DEBUG - Ensuring cleanup after pipeline execution
+2024-12-31 14:41:27,448 - app.temp_manager - DEBUG - Starting cleanup
+2024-12-31 14:41:27,448 - app.routes - INFO - Pipeline completed successfully for job 3bfd49b0-3b76-4dcc-b312-d9fd7abc52c4. Results available at /download/3bfd49b0-3b76-4dcc-b312-d9fd7abc52c4
+2024-12-31 14:41:27,455 - app.routes - DEBUG - Download URL prepared for job 3bfd49b0-3b76-4dcc-b312-d9fd7abc52c4: /download/3bfd49b0-3b76-4dcc-b312-d9fd7abc52c4
+2024-12-31 14:41:48,821 - app.app_main - INFO - Application is shutting down

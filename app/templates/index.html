@@ -2,24 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>
-    PEANUT - Pathway Enrichment Analysis through Network Utilization
-  </title>
+  <title>PEANUT - Pathway Enrichment Analysis through Network Utilization</title>
   <meta name="description" content="PEANUT: Perform pathway enrichment analysis using network propagation techniques. Customize alpha propagation, FDR thresholds, and species selection for in-depth biological research.">
   <meta name="keywords" content="pathway enrichment, network propagation, bioinformatics, PPI networks, alpha propagation, Homo sapiens, protein interaction">
   <link rel="icon" type="image/png" href="{{ url_for('static', path='favicon.png') }}">
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- Add a meta tag to store the root path -->
   <meta name="root-path" content="{{ request.scope.get('root_path', '') }}">
-
   <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/dist/tippy.css">
   <script src="https://unpkg.com/@popperjs/core@2"></script>
   <script src="https://unpkg.com/tippy.js@6"></script>
-
   <style>
-
     body {
       font-family: Arial, sans-serif;
       max-width: 1500px;
@@ -106,60 +98,44 @@
       background-color: #f0f0f0;
       border-radius: 5px;
     }
-
     .advanced-settings input[type="checkbox"] {
-        margin-top: 5px;
+      margin-top: 5px;
     }
-
-    /* Optional: Adjust the spacing between the checkbox and the next element */
     .advanced-settings label:nth-of-type(1) {
-        margin-bottom: 5px;
+      margin-bottom: 5px;
     }
-
-    /* Style for the form group containing the checkbox and label */
     .form-group {
-        display: flex;
-        align-items: center;
-        margin-top: 10px;
-        opacity: 1; /* Default opacity */
-        transition: opacity 0.5s;
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+      opacity: 1;
+      transition: opacity 0.5s;
     }
-
-    /* Style the checkbox */
     .form-group input[type="checkbox"] {
-        margin-right: 10px; /* Space between checkbox and label */
-        width: auto; /* Maintain default checkbox size */
+      margin-right: 10px;
+      width: auto;
     }
-
-    /* Style the label for the checkbox */
     .form-group label {
-        font-weight: bold;
+      font-weight: bold;
     }
-
-    /* Ensure other labels are block elements with consistent spacing */
     .advanced-settings label {
-        display: block;
-        margin-top: 10px;
-        font-weight: bold;
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
     }
-
-    /* Style the number inputs consistently */
     .advanced-settings input[type="number"] {
-        width: 100%;
-        padding: 8px;
-        margin-top: 5px;
-        border: 1px solid #ccc;
-        border-radius: 3px;
-        box-sizing: border-box;
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      box-sizing: border-box;
     }
-
     .form-section {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
-
-    /* Button styling */
     button {
       padding: 10px 20px;
       color: white;
@@ -168,7 +144,6 @@
       cursor: pointer;
       transition: background-color 0.3s;
     }
-
     button[type="submit"] { background-color: #4CAF50; }
     button[type="submit"]:hover { background-color: #45a049; }
     button[type="reset"] { background-color: #f44336; }
@@ -182,12 +157,10 @@
       <p>
         <strong>PEANUT</strong> (<em>Pathway Enrichment Analysis through Network Utilization</em>) is a next-generation web server for pathway enrichment analysis. By integrating network propagation techniques into Protein-Protein Interaction (PPI) networks, PEANUT enhances the detection of biologically significant pathways, outperforming traditional methods in both sensitivity and accuracy. This tool provides researchers with a novel way to identify pathways associated with specific gene expression profiles, leveraging the inherent connectivity within biological networks.
       </p>
-    
       <p><strong>How PEANUT Works:</strong></p>
       <p>
         PEANUT uses network propagation to diffuse gene expression scores across the PPI network. This process amplifies the signals of interconnected genes, improving the detection of pathways that might be overlooked in traditional enrichment methods.
       </p>
-    
       <p><strong>Key Features:</strong></p>
       <ul>
         <li>
@@ -203,27 +176,22 @@
           <strong>Open Access:</strong> PEANUT is freely accessible online, designed for researchers across disciplines, and compatible with pre-ranked gene expression data from diverse biological studies.
         </li>
       </ul>
-    
       <p class="info">
         <em>Last updated: {{ current_date }}</em>
       </p>
     </div>
-    
-    
     <h2>Start a new PEANUT job</h2>
-    <form id="pipelineForm">
+    <form id="pipelineForm" action="/run-pipeline" method="post" enctype="multipart/form-data">
       <label for="experiment_name">Experiment Name
         <span data-tippy-content="Enter a unique name for your experiment.">?</span>
       </label>
       <input type="text" id="experiment_name" name="experiment_name" required>
-
       <label for="species">Species
         <span data-tippy-content="Select the species for your analysis.">?</span>
       </label>
       <select id="species" name="species" required>
         <option value="H_sapiens">Homo Sapiens (PPI)</option>
       </select>
-
       <div class="form-section">
         <label for="network">Network Type
           <span data-tippy-content="Choose the network type or upload a custom network.">?</span>
@@ -233,8 +201,6 @@
           <option value="HumanNet">HumanNet</option>
           <option value="custom">Upload Custom Network</option>
         </select>
-
-        <!-- Custom Network Upload (hidden by default) -->
         <div id="custom_network_section" aria-hidden="true" style="display: none;">
           <label for="network_file">Upload Network File:</label>
           <input type="file" id="network_file" name="network_file" accept=".txt,.tsv" aria-describedby="network_file_help">
@@ -250,7 +216,6 @@
           </p>
         </div>
       </div>
-
       <label for="alpha">Propagation Alpha
         <span data-tippy-content="Set the alpha value for network propagation.">?</span>
       </label>
@@ -258,7 +223,6 @@
         <option value="0.1">0.1</option>
         <option value="0.2">0.2</option>
       </select>
-
       <label for="pathway_file">Gene Set
         <span data-tippy-content="Select a predefined gene set or upload your own GMT file.">?</span>
       </label>
@@ -267,7 +231,6 @@
         <option value="msig_c2_canonical">MSig c2 Canonical Pathways</option>
         <option value="custom">Upload Custom Gene Set (GMT)</option>
       </select>
-
       <div id="custom_pathway_section" style="display: none;">
         <label for="pathway_file_upload">Upload GMT File
           <span data-tippy-content="Upload a GMT file containing your custom gene sets. Format: [Pathway Name][Description][Gene1][Gene2]...">?</span>
@@ -279,7 +242,20 @@
           Maximum file size: 20MB
         </p>
       </div>
-
+      <script>
+        function toggleCustomPathway() {
+          const pathwaySelect = document.getElementById('pathway_file');
+          const customSection = document.getElementById('custom_pathway_section');
+          const fileInput = document.getElementById('pathway_file_upload');
+          if (pathwaySelect.value === 'custom') {
+            customSection.style.display = 'block';
+            fileInput.required = true;
+          } else {
+            customSection.style.display = 'none';
+            fileInput.required = false;
+          }
+        }
+      </script>
       <label for="files">Input Preranked Tables
         <span data-tippy-content="Upload your preranked gene expression files. Supported formats include RNK and XLSX.">?</span>
       </label>
@@ -290,69 +266,42 @@
         </a> or XLSX (Columns: GeneID, Score)
       </p>
       <input type="file" id="files" name="files" accept=".xlsx,.xls,.rnk" multiple required>
-
       <div class="advanced-toggle" onclick="toggleAdvancedSettings()" aria-expanded="false" aria-controls="advancedSettings">
         Advanced Settings ▼
       </div>
       <div class="advanced-settings" id="advancedSettings" aria-hidden="true">
-          <div class="form-group">
-              <input type="checkbox" id="run_gsea" name="run_gsea" onclick="toggleNetworkRestriction()">
-              <label for="run_gsea">Run Additional GSEA Analysis</label>
-          </div>
-      
-          <div class="form-group">
-              <input type="checkbox" id="network_restriction" name="network_restriction" disabled>
-              <label for="network_restriction">Network Restriction</label>
-          </div>
-      
-          <label for="plot_title">Plot Title
-              <span data-tippy-content="Customize the title of the final plot. Default: 'Pathway Enrichment'">?</span>
-          </label>
-          <input type="text" id="plot_title" name="plot_title" 
-                 value="Pathway Enrichment" 
-                 placeholder="Enter plot title">
-      
-          <label for="min_genes_per_pathway">
-              Minimum Genes per Pathway
-          </label>
-          <input type="number" id="min_genes_per_pathway"
-                 name="min_genes_per_pathway" value="15" required
-                 min="1" max="1000"
-                 aria-describedby="min_genes_help">
-          <small id="min_genes_help" class="help-text">Must be at least 1 and less than maximum.</small>
-      
-          <label for="max_genes_per_pathway">
-              Maximum Genes per Pathway
-          </label>
-          <input type="number" id="max_genes_per_pathway"
-                 name="max_genes_per_pathway" value="500" required
-                 min="1" max="5000"
-                 aria-describedby="max_genes_help">
-          <small id="max_genes_help" class="help-text">Must be greater than minimum and at most 5000.</small>
-      
-          <label for="fdr_threshold">
-              FDR Threshold
-          </label>
-          <input type="number" id="fdr_threshold" name="fdr_threshold"
-                 step="0.01" min="0" max="1" value="0.05" required
-                 aria-describedby="fdr_help">
-          <small id="fdr_help" class="help-text">Must be between 0 and 1.</small>
+        <div class="form-group">
+          <input type="checkbox" id="run_gsea" name="run_gsea" onclick="toggleNetworkRestriction()">
+          <label for="run_gsea">Run Additional GSEA Analysis</label>
+        </div>
+        <div class="form-group">
+          <input type="checkbox" id="network_restriction" name="network_restriction" disabled>
+          <label for="network_restriction">Network Restriction</label>
+        </div>
+        <label for="plot_title">Plot Title
+          <span data-tippy-content="Customize the title of the final plot. Default: 'Pathway Enrichment'">?</span>
+        </label>
+        <input type="text" id="plot_title" name="plot_title" value="Pathway Enrichment" placeholder="Enter plot title">
+        <label for="min_genes_per_pathway">Minimum Genes per Pathway</label>
+        <input type="number" id="min_genes_per_pathway" name="min_genes_per_pathway" value="15" required min="1" max="1000" aria-describedby="min_genes_help">
+        <small id="min_genes_help" class="help-text">Must be at least 1 and less than maximum.</small>
+        <label for="max_genes_per_pathway">Maximum Genes per Pathway</label>
+        <input type="number" id="max_genes_per_pathway" name="max_genes_per_pathway" value="500" required min="1" max="5000" aria-describedby="max_genes_help">
+        <small id="max_genes_help" class="help-text">Must be greater than minimum and at most 5000.</small>
+        <label for="fdr_threshold">FDR Threshold</label>
+        <input type="number" id="fdr_threshold" name="fdr_threshold" step="0.01" min="0" max="1" value="0.05" required aria-describedby="fdr_help">
+        <small id="fdr_help" class="help-text">Must be between 0 and 1.</small>
       </div>
-      
-
       <button type="submit" id="submitButton">Submit Pathway Analysis</button>
       <button type="reset">Clear Form</button>
-      
     </form>
-
     <div class="info">
       <p>
         Note: Running the analysis might take 1-3 minutes per file.
         Please be patient.
       </p>
     </div>
-
-    <div id="result"></div>
+    <div id="result" style="display: none;"></div>
 
     <div id="jobStatusForm">
       <h2>Check your job status</h2>
@@ -364,30 +313,18 @@
       <div id="statusResult"></div>
     </div>
   </div>
-
   <script>
-    // Retrieve the root path from the meta tag
     const ROOT_PATH = document.querySelector('meta[name="root-path"]').content;
-
-    // File size limits
-    const MAX_NETWORK_SIZE_MB = 50;  // Maximum network file size: 50MB
-    const MAX_INPUT_SIZE_MB = 20;    // Maximum input file size: 20MB
-
-    /**
-     * Validates file size
-     * @param {File} file - The file to validate
-     * @param {number} maxSizeMB - Maximum allowed size in MB
-     * @returns {boolean} - Whether the file is valid
-     */
+    const MAX_NETWORK_SIZE_MB = 50;
+    const MAX_INPUT_SIZE_MB = 20;
     function validateFileSize(file, maxSizeMB) {
-        const maxSizeBytes = maxSizeMB * 1024 * 1024;
-        if (file.size > maxSizeBytes) {
-            alert(`File "${file.name}" is too large. Maximum size is ${maxSizeMB}MB.`);
-            return false;
-        }
-        return true;
+      const maxSizeBytes = maxSizeMB * 1024 * 1024;
+      if (file.size > maxSizeBytes) {
+        alert(`File "${file.name}" is too large. Maximum size is ${maxSizeMB}MB.`);
+        return false;
+      }
+      return true;
     }
-
     let statusCheckInterval = null;
 
     function updateJobStatus(result, jobCode) {
@@ -401,146 +338,47 @@
       `;
 
       const downloadElement = document.getElementById('downloadLink');
-
-      if (result.status === 'Finished' && result.download_url) {
-        downloadElement.innerHTML = `
-        <a href="${result.download_url}">Download Results</a>`;
+      if (result.status === 'Completed' && result.download_url) {
+        downloadElement.innerHTML = `<a href="${result.download_url}" download>Download Results</a>`;
       } else if (result.status === 'Processing') {
-        downloadElement.innerHTML = `
-            <p>Your job is still processing.
-            Please check again later.</p>`;
+        downloadElement.innerHTML = `<p>Your job is still processing. Please check again later.</p>`;
       } else if (result.status === 'Failed') {
-        downloadElement.innerHTML = `
-            <p>Your job has failed. Please try
-            submitting again or contact support
-            if the issue persists.</p>`;
+        downloadElement.innerHTML = `<p>Your job has failed. Please try submitting again or contact support if the issue persists.</p>`;
       } else {
-        downloadElement.innerHTML = `
-            <p>Unexpected job status.
-            Please contact support.</p>`;
+        downloadElement.innerHTML = `<p>Unexpected job status. Please contact support.</p>`;
       }
     }
 
-    /**
-     * Checks the status of a job given its code.
-     * @param {string} jobCode - The unique job code.
-     * @param {boolean} isNewSubmission - Flag indicating if it's a new submission.
-     */
     async function checkJobStatus(jobCode, isNewSubmission = false) {
-        try {
-            const response = await fetch(`${ROOT_PATH}/check-status/${jobCode}`);
-            if (!response.ok) throw new Error();
-            
-            const result = await response.json();
-            updateJobStatus(result, jobCode);
-            
-            if (isNewSubmission && result.status === 'Processing') {
-                statusCheckInterval = setInterval(() => checkJobStatus(jobCode, true), 5000);
-            } else if (result.status !== 'Processing') {
-                clearInterval(statusCheckInterval);
-            }
-        } catch {
-            showRetryForm();
-            clearInterval(statusCheckInterval);
+      try {
+        const response = await fetch(`${ROOT_PATH}/check-status/${jobCode}`);
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+        const result = await response.json();
+        updateJobStatus(result, jobCode); // Updates the UI with the latest job status
+
+        // Poll for updates if job is still processing
+        if (isNewSubmission && result.status === 'Processing') {
+          setTimeout(() => checkJobStatus(jobCode, true), 5000);
         }
+      } catch (error) {
+        console.error('Error checking job status:', error);
+
+        // Show retry option if the status check fails
+        showRetryForm();
+      }
     }
 
-    /**
-     * Validates the uploaded network file's MIME type and size.
-     */
     function validateFileUpload() {
-        const networkFileInput = document.getElementById('network_file');
-        networkFileInput.addEventListener('change', function() {
-            const file = this.files[0];
-            if (file && !validateFileSize(file, MAX_NETWORK_SIZE_MB)) {
-                this.value = ''; // Clear the input
-            }
-        });
+      const networkFileInput = document.getElementById('network_file');
+      networkFileInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file && !validateFileSize(file, MAX_NETWORK_SIZE_MB)) {
+          this.value = '';
+        }
+      });
     }
 
-    /**
-     * Submits the pipeline form and handles the response.
-     */
-    async function handleFormSubmit(e) {
-        e.preventDefault();
-        const MAX_INPUT_SIZE_MB = 20; // Maximum input file size in MB
-        const formData = new FormData();
-        const form = e.target;
-
-        // Collect form data except the files
-        Array.from(form.elements).forEach(element => {
-            if (element.name && element.type !== 'file') {
-                formData.append(element.name, element.type === 'checkbox' ? element.checked : element.value);
-            }
-        });
-
-        // Validate and collect input files
-        const filesInput = document.getElementById('files');
-        if (filesInput.files.length === 0) {
-            alert('Please select at least one file.');
-            return;
-        }
-
-        // Check each input file
-        for (let i = 0; i < filesInput.files.length; i++) {
-            const file = filesInput.files[i];
-            if (!validateFileSize(file, MAX_INPUT_SIZE_MB)) {
-                return;
-            }
-            formData.append('files', file);
-        }
-
-        // Check network file if custom network is selected
-        const networkSelect = document.getElementById('network');
-        const networkFileInput = document.getElementById('network_file');
-        if (networkSelect.value === 'custom' && networkFileInput.files[0]) {
-            const networkFile = networkFileInput.files[0];
-            formData.append('network_file', networkFile);
-        }
-
-        const submitButton = document.getElementById('submitButton');
-        submitButton.disabled = true;
-        submitButton.textContent = "Submitting...";
-
-        try {
-            const response = await fetch(`${ROOT_PATH}/run-pipeline`, {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const result = await response.json();
-            const resultDiv = document.getElementById('result');
-            resultDiv.style.display = 'block';
-            resultDiv.innerHTML = `
-                <h2>Job Submitted Successfully</h2>
-                <p>Your job code is: <strong>${result.job_code}</strong></p>
-                <p id="jobStatus">Status: Processing</p>
-                <p id="downloadLink"></p>
-            `;
-
-            document.getElementById('jobStatusForm').style.display = 'none';
-            clearInterval(statusCheckInterval);
-            checkJobStatus(result.job_code, true);
-        } catch (error) {
-            console.error('Error:', error);
-            const resultDiv = document.getElementById('result');
-            resultDiv.style.display = 'block';
-            resultDiv.innerHTML = `
-                <p>Error: ${error.message}</p>`;
-        } finally {
-            submitButton.disabled = false;
-            submitButton.textContent = "Submit";
-        }
-    }
-
-    /**
-     * Checks the status form submission.
-     * @param {Event} e - The form submission event.
-     */
     function handleStatusFormSubmit(e) {
       e.preventDefault();
       const jobCode = document.getElementById('jobCode').value;
@@ -548,15 +386,10 @@
       checkJobStatus(jobCode, false);
       document.getElementById('jobStatusForm').style.display = 'none';
     }
-
-    /**
-     * Toggles the visibility of the advanced settings section.
-     */
     function toggleAdvancedSettings() {
       const advancedSettings = document.getElementById("advancedSettings");
       const toggleButton = document.querySelector(".advanced-toggle");
       const isExpanded = toggleButton.getAttribute('aria-expanded') === 'true';
-
       if (isExpanded) {
         advancedSettings.style.display = "none";
         toggleButton.innerHTML = "Advanced Settings ▼";
@@ -569,97 +402,18 @@
         advancedSettings.setAttribute('aria-hidden', 'false');
       }
     }
-
-    /**
-     * Toggles the network restriction checkbox based on the GSEA checkbox state.
-     */
     function toggleNetworkRestriction() {
-        const runGseaCheckbox = document.getElementById('run_gsea');
-        const networkRestrictionCheckbox = document.getElementById('network_restriction');
-
-        if (runGseaCheckbox.checked) {
-            networkRestrictionCheckbox.disabled = false;
-            networkRestrictionCheckbox.parentElement.style.opacity = '1';
-        } else {
-            networkRestrictionCheckbox.checked = false;
-            networkRestrictionCheckbox.disabled = true;
-            networkRestrictionCheckbox.parentElement.style.opacity = '0.6'; // Grayed out
-        }
+      const runGseaCheckbox = document.getElementById('run_gsea');
+      const networkRestrictionCheckbox = document.getElementById('network_restriction');
+      if (runGseaCheckbox.checked) {
+        networkRestrictionCheckbox.disabled = false;
+        networkRestrictionCheckbox.parentElement.style.opacity = '1';
+      } else {
+        networkRestrictionCheckbox.checked = false;
+        networkRestrictionCheckbox.disabled = true;
+        networkRestrictionCheckbox.parentElement.style.opacity = '0.6';
+      }
     }
-
-    /**
-     * Initializes all necessary functions on DOMContentLoaded.
-     */
-    document.addEventListener('DOMContentLoaded', () => {
-        // Initialize all form elements
-        const minGenesInput = document.getElementById('min_genes_per_pathway');
-        const maxGenesInput = document.getElementById('max_genes_per_pathway');
-        const fdrInput = document.getElementById('fdr_threshold');
-        const networkSelect = document.getElementById('network');
-        const customNetworkSection = document.getElementById('custom_network_section');
-        const networkFileInput = document.getElementById('network_file');
-        const pipelineForm = document.getElementById('pipelineForm');
-        const statusForm = document.getElementById('statusForm');
-
-        // Initialize network section handling
-        function updateNetworkSection() {
-            const isCustom = networkSelect.value === 'custom';
-            customNetworkSection.style.display = isCustom ? 'block' : 'none';
-            customNetworkSection.setAttribute('aria-hidden', !isCustom);
-            networkSelect.setAttribute('aria-expanded', isCustom);
-            networkFileInput.required = isCustom;
-        }
-
-        // Initialize validation functions
-        function validateGeneInputs() {
-            const minVal = parseInt(minGenesInput.value);
-            const maxVal = parseInt(maxGenesInput.value);
-            
-            if (minVal >= maxVal) {
-                minGenesInput.setCustomValidity('Minimum must be less than maximum');
-                maxGenesInput.setCustomValidity('Maximum must be greater than minimum');
-            } else {
-                minGenesInput.setCustomValidity('');
-                maxGenesInput.setCustomValidity('');
-            }
-        }
-
-        function validateFDR() {
-            const fdrVal = parseFloat(fdrInput.value);
-            if (fdrVal <= 0 || fdrVal >= 1) {
-                fdrInput.setCustomValidity('FDR threshold must be between 0 and 1');
-            } else {
-                fdrInput.setCustomValidity('');
-            }
-        }
-
-        // Add event listeners
-        networkSelect.addEventListener('change', updateNetworkSection);
-        minGenesInput.addEventListener('input', validateGeneInputs);
-        maxGenesInput.addEventListener('input', validateGeneInputs);
-        fdrInput.addEventListener('input', validateFDR);
-        
-        if (pipelineForm) {
-            pipelineForm.addEventListener('submit', handleFormSubmit);
-        }
-        
-        if (statusForm) {
-            statusForm.addEventListener('submit', handleStatusFormSubmit);
-        }
-
-        // Initialize file upload validation
-        validateFileUpload();
-
-        // Run initial validations
-        updateNetworkSection();
-        validateGeneInputs();
-        validateFDR();
-        toggleNetworkRestriction();
-    });
-
-    /**
-     * Handles the retry form creation.
-     */
     function showRetryForm() {
       const resultDiv = document.getElementById('result');
       resultDiv.innerHTML = `
@@ -677,69 +431,144 @@
         checkJobStatus(retryJobCode, false);
       });
     }
-
-    // Add this to your existing script section
-    document.addEventListener('DOMContentLoaded', function() {
-        const minGenesInput = document.getElementById('min_genes_per_pathway');
-        const maxGenesInput = document.getElementById('max_genes_per_pathway');
-        const fdrInput = document.getElementById('fdr_threshold');
-
-        // Validate min/max genes relationship
-        function validateGeneInputs() {
-            const minVal = parseInt(minGenesInput.value);
-            const maxVal = parseInt(maxGenesInput.value);
-            
-            if (minVal >= maxVal) {
-                minGenesInput.setCustomValidity('Minimum must be less than maximum');
-                maxGenesInput.setCustomValidity('Maximum must be greater than minimum');
-            } else {
-                minGenesInput.setCustomValidity('');
-                maxGenesInput.setCustomValidity('');
-            }
-        }
-
-        // Validate FDR threshold
-        function validateFDR() {
-            const fdrVal = parseFloat(fdrInput.value);
-            if (fdrVal <= 0 || fdrVal >= 1) {
-                fdrInput.setCustomValidity('FDR threshold must be between 0 and 1');
-            } else {
-                fdrInput.setCustomValidity('');
-            }
-        }
-
-        // Add event listeners
-        minGenesInput.addEventListener('input', validateGeneInputs);
-        maxGenesInput.addEventListener('input', validateGeneInputs);
-        fdrInput.addEventListener('input', validateFDR);
-
-        // Initial validation
-        validateGeneInputs();
-        validateFDR();
-    });
-
     function validateForm() {
-        const validators = {
-            geneInputs: () => {
-                const min = parseInt(minGenesInput.value);
-                const max = parseInt(maxGenesInput.value);
-                return min < max;
-            },
-            fdr: () => {
-                const val = parseFloat(fdrInput.value);
-                return val > 0 && val < 1;
-            }
-        };
-
-        return Object.values(validators).every(v => v());
+      const validators = {
+        geneInputs: () => {
+          const min = parseInt(minGenesInput.value);
+          const max = parseInt(maxGenesInput.value);
+          return min < max;
+        },
+        fdr: () => {
+          const val = parseFloat(fdrInput.value);
+          return val > 0 && val < 1;
+        }
+      };
+      return Object.values(validators).every(v => v());
     }
+    document.addEventListener('DOMContentLoaded', () => {
+      // Element references
+      const pipelineForm = document.getElementById('pipelineForm');
+      const statusForm = document.getElementById('statusForm');
+      const minGenesInput = document.getElementById('min_genes_per_pathway');
+      const maxGenesInput = document.getElementById('max_genes_per_pathway');
+      const fdrInput = document.getElementById('fdr_threshold');
+      const networkSelect = document.getElementById('network');
+      const customNetworkSection = document.getElementById('custom_network_section');
+      const networkFileInput = document.getElementById('network_file');
+      const pathwaySelect = document.getElementById('pathway_file');
+      const customPathwaySection = document.getElementById('custom_pathway_section');
+      const pathwayFileInput = document.getElementById('pathway_file_upload');
 
-    document.addEventListener('DOMContentLoaded', function() {
+      // Functions
+      async function handleFormSubmit(e) {
+        e.preventDefault();
+
+        const formData = new FormData(pipelineForm);
+        const resultDiv = document.getElementById('result');
+        const submitButton = document.getElementById('submitButton');
+        const jobStatusForm = document.getElementById('jobStatusForm');
+
+        submitButton.disabled = true;
+        submitButton.textContent = "Submitting...";
+
+        try {
+          const response = await fetch(pipelineForm.action, {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+
+          const result = await response.json();
+
+          resultDiv.style.display = 'block';
+          resultDiv.innerHTML = `
+            <h2>Job Submitted Successfully</h2>
+            <p>Your job code is: <strong>${result.job_code}</strong></p>
+            <p>Status: Processing</p>
+          `;
+
+          jobStatusForm.style.display = 'none'; // Hide the job status form
+
+          checkJobStatus(result.job_code, true);
+        } catch (error) {
+          console.error('Error submitting pipeline form:', error);
+          resultDiv.style.display = 'block';
+          resultDiv.innerHTML = `<p>Error: ${error.message}</p>`;
+        } finally {
+          submitButton.disabled = false;
+          submitButton.textContent = "Submit Pathway Analysis";
+        }
+      }
+      
+      function handleStatusFormSubmit(e) {
+        e.preventDefault();
+        const jobCode = document.getElementById('jobCode').value;
+        checkJobStatus(jobCode, false);
+      }
+
+      function updateNetworkSection() {
+        const isCustom = networkSelect.value === 'custom';
+        customNetworkSection.style.display = isCustom ? 'block' : 'none';
+        customNetworkSection.setAttribute('aria-hidden', !isCustom);
+        networkSelect.setAttribute('aria-expanded', isCustom);
+        networkFileInput.required = isCustom;
+      }
+
+      function toggleCustomPathway() {
+        const isCustom = pathwaySelect.value === 'custom';
+        customPathwaySection.style.display = isCustom ? 'block' : 'none';
+        pathwayFileInput.required = isCustom;
+      }
+
+      function validateGeneInputs() {
+        const minVal = parseInt(minGenesInput.value);
+        const maxVal = parseInt(maxGenesInput.value);
+        if (minVal >= maxVal) {
+          minGenesInput.setCustomValidity('Minimum must be less than maximum');
+          maxGenesInput.setCustomValidity('Maximum must be greater than minimum');
+        } else {
+          minGenesInput.setCustomValidity('');
+          maxGenesInput.setCustomValidity('');
+        }
+      }
+
+      function validateFDR() {
+        const fdrVal = parseFloat(fdrInput.value);
+        if (fdrVal <= 0 || fdrVal >= 1) {
+          fdrInput.setCustomValidity('FDR threshold must be between 0 and 1');
+        } else {
+          fdrInput.setCustomValidity('');
+        }
+      }
+
+      // Attach event listeners
+      if (pipelineForm) {
+        pipelineForm.addEventListener('submit', handleFormSubmit); // Form submission
+      }
+      if (statusForm) {
+        statusForm.addEventListener('submit', handleStatusFormSubmit); // Job status check
+      }
+      networkSelect.addEventListener('change', updateNetworkSection); // Network selection
+      pathwaySelect.addEventListener('change', toggleCustomPathway); // Pathway selection
+      minGenesInput.addEventListener('input', validateGeneInputs); // Gene input validation
+      maxGenesInput.addEventListener('input', validateGeneInputs); // Gene input validation
+      fdrInput.addEventListener('input', validateFDR); // FDR input validation
+
+      // Initialize tooltips
       tippy('[data-tippy-content]', {
         placement: 'right',
         arrow: true,
         theme: 'light',
       });
+
+      // Initial validations and setup
+      updateNetworkSection();
+      toggleCustomPathway();
+      validateGeneInputs();
+      validateFDR();
     });
 
     function toggleCollapsible(button) {
@@ -748,19 +577,17 @@
       content.style.display = isVisible ? 'none' : 'block';
       button.textContent = isVisible ? 'Advanced Settings ▼' : 'Advanced Settings ▲';
     }
-
     function toggleCustomPathway() {
-        const pathwaySelect = document.getElementById('pathway_file');
-        const customSection = document.getElementById('custom_pathway_section');
-        const fileInput = document.getElementById('pathway_file_upload');
-        
-        if (pathwaySelect.value === 'custom') {
-            customSection.style.display = 'block';
-            fileInput.required = true;
-        } else {
-            customSection.style.display = 'none';
-            fileInput.required = false;
-        }
+      const pathwaySelect = document.getElementById('pathway_file');
+      const customSection = document.getElementById('custom_pathway_section');
+      const fileInput = document.getElementById('pathway_file_upload');
+      if (pathwaySelect.value === 'custom') {
+        customSection.style.display = 'block';
+        fileInput.required = true;
+      } else {
+        customSection.style.display = 'none';
+        fileInput.required = false;
+      }
     }
   </script>
 </body>

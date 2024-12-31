@@ -408,43 +408,24 @@ def process_single_pathway(
     pathway: str,
     pathway_genes: Set[int],
     scores: Dict[int, float],
-    pathway_pvalues: Dict[str, float],
-    FDR_THRESHOLD: float,
+    pathway_pvalues: Dict[str, float]
 ) -> Dict:
     """
     Process a single pathway for a given condition.
 
-    Args:
-        pathway (str): Name of the pathway.
-        pathway_genes (Set[int]): Set of gene IDs in the pathway.
-        scores (Dict[int, float]): Mapping of gene IDs to their original scores.
-        pathway_pvalues (Dict[str, float]): Dictionary of pathways and their FDR q-values.
-        FDR_THRESHOLD (float): Threshold for significance.
+    Parameters:
+    - pathway (str): Name of the pathway.
+    - pathway_genes (Set[int]): Set of gene IDs in the pathway.
+    - scores (Dict[int, float]): Mapping of gene IDs to scores.
+    - pathway_pvalues (Dict[str, float]): Dictionary of pathway p-values.
 
     Returns:
-        Dict: Dictionary containing mean score and P-value.
+    - Dict: Dictionary containing mean score and p-value.
     """
-    try:
-        # Get scores for genes in the pathway
-        pathway_gene_scores = [scores[gene_id] for gene_id in pathway_genes if gene_id in scores]
+    pathway_gene_scores = [scores[gene_id] for gene_id in pathway_genes if gene_id in scores]
+    mean_score = np.mean(pathway_gene_scores) if pathway_gene_scores else 0
+    return {"Mean": mean_score, "P-value": pathway_pvalues.get(pathway, 1.0)}
 
-        # Calculate mean score of all genes in the pathway
-        mean_score = np.mean(pathway_gene_scores) if pathway_gene_scores else 0
-
-        # Get the p-value for the pathway
-        p_value = pathway_pvalues.get(pathway, 1.0)
-
-        # Compile the results
-        result = {
-            "Mean": mean_score,
-            "P-value": p_value,
-        }
-
-        return result
-
-    except Exception as e:
-        logger.error(f"An error occurred while processing pathway '{pathway}': {e}")
-        raise
 
 
 def process_condition(
@@ -452,74 +433,46 @@ def process_condition(
     settings: Settings,
     condition_data_df: pd.DataFrame,
     all_pathways: Dict[str, Dict],
+    pathway_sizes: Dict[str, int],
+    genes_by_pathway: Dict[str, Set[str]],
+    scores: Dict[str, float],
 ):
     """
-    Processes experimental data for a specific condition and aggregates pathway data across conditions.
+    Processes experimental data for a condition and aggregates pathway data.
 
     Parameters:
-    - condition_settings (ConditionSettings): Settings specific to the condition.
-    - settings (Settings): General settings for the pipeline.
-    - condition_data_df (pd.DataFrame): Original DataFrame containing data for the condition.
-    - all_pathways (Dict[str, Dict]): Dictionary to store pathway data across conditions.
+    - condition_settings: Condition-specific settings.
+    - settings: General pipeline settings.
+    - condition_data_df: DataFrame of condition data.
+    - all_pathways: Dictionary to store significant pathways by condition.
+    - pathway_sizes: Dictionary to store pathway sizes.
+    - genes_by_pathway: Dictionary to store gene sets for pathways.
+    - scores: Dictionary to store gene scores.
 
     Returns:
     - None
     """
-    try:
-        # Extract pathways with their FDR q-values
-        pathway_pvalues = {
-            pathway: data.get("FDR q-val", 1.0)
-            for pathway, data in condition_settings.pathways_statistics.items()
-        }
+    pathway_pvalues = {pathway: data.get("FDR q-val", 1.0) for pathway, data in condition_settings.pathways_statistics.items()}
+    pathways_with_many_genes = load_pathways_genes(settings.pathway_file_dir)
 
-        # Load pathways and filter based on min and max gene counts
-        pathways_with_many_genes = load_pathways_genes(settings.pathway_file_dir)
+    condition_data_df["GeneID"] = condition_data_df["GeneID"].astype(str)
+    condition_data_df["Score"] = condition_data_df["Score"].astype(np.float32)
 
-        # Ensure correct data types for GeneID and Score
-        condition_data_df["GeneID"] = condition_data_df["GeneID"].astype(str)
-        condition_data_df["Score"] = condition_data_df["Score"].astype(np.float32)
+    scores.update({gene_id: score for gene_id, score in zip(condition_data_df["GeneID"], condition_data_df["Score"])})
 
-        # Create scores dictionary with consistent types
-        scores = {
-            gene_id: score
-            for gene_id, score in zip(
-                condition_data_df["GeneID"],
-                condition_data_df["Score"],
-            )
-        }
+    scores_keys = set(scores.keys())
+    local_genes_by_pathway = {
+        pathway: set(map(str, genes)).intersection(scores_keys)
+        for pathway, genes in pathways_with_many_genes.items()
+        if settings.minimum_gene_per_pathway <= len(set(map(str, genes)).intersection(scores_keys)) <= settings.maximum_gene_per_pathway
+    }
+    genes_by_pathway.update(local_genes_by_pathway)
 
-        scores_keys = set(scores.keys())
+    for pathway, genes in local_genes_by_pathway.items():
+        pathway_sizes[pathway] = len(genes)
 
-        # Filter pathways based on gene counts and intersection with scored genes
-        genes_by_pathway = {
-            pathway: set(map(str, genes)).intersection(scores_keys)
-            for pathway, genes in pathways_with_many_genes.items()
-            if settings.minimum_gene_per_pathway
-            <= len(set(map(str, genes)).intersection(scores_keys))
-            <= settings.maximum_gene_per_pathway
-        }
-
-        # Iterate over each pathway and process
-        for pathway, pathway_genes in genes_by_pathway.items():
-            # Initialize pathway entry in all_pathways if not present
-            all_pathways.setdefault(pathway, {})
-
-            # Process the single pathway
-            result = process_single_pathway(
-                pathway=pathway,
-                pathway_genes=pathway_genes,
-                scores=scores,
-                pathway_pvalues=pathway_pvalues,
-                FDR_THRESHOLD=settings.FDR_THRESHOLD,
-            )
-
-            # Aggregate results
+    for pathway, pathway_genes in local_genes_by_pathway.items():
+        all_pathways.setdefault(pathway, {})
+        result = process_single_pathway(pathway, pathway_genes, scores, pathway_pvalues)
+        if result["P-value"] < settings.FDR_THRESHOLD:
             all_pathways[pathway][condition_settings.condition_name] = result
-
-    except Exception as e:
-        logger.error(
-            f"An error occurred while processing condition '{condition_settings.condition_name}': {e}",
-            exc_info=True,
-        )
-        raise
-

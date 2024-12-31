@@ -2,7 +2,7 @@ import asyncio
 import logging
 import zipfile
 from pathlib import Path
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Set
 import pandas as pd
 import yaml
 from dataclasses import replace
@@ -62,7 +62,6 @@ async def pipeline_main(
             if settings.network == 'custom' and settings.network_file:
                 # Save uploaded network file and use its path
                 network_path = f"custom/{settings.network_file}"
-                # Ensure matrix creation for custom networks
                 create_matrix = True
             else:
                 create_matrix = settings.create_similarity_matrix
@@ -81,15 +80,20 @@ async def pipeline_main(
             )
         network = read_network(run_settings.network_file_path)
 
-        # Lists to hold settings for each condition
+        # Initialize data containers
         all_condition_settings: List[Tuple[ConditionSettings, pd.DataFrame]] = []
         gsea_condition_settings: List[Tuple[ConditionSettings, pd.DataFrame]] = []
+        pathway_sizes: Dict[str, int] = {}
+        genes_by_pathway: Dict[str, Set[str]] = {}
+        scores: Dict[str, float] = {}
 
         if debug:
             # Debug mode: Process conditions directly from data
             for condition_name, condition_data_df in conditions_data:
-                # Propagation run
+                # Ensure correct column names for debug data
                 condition_data_df.columns = ['GeneID', 'Score']
+
+                # Process propagation
                 propagation_settings = ConditionSettings(
                     condition_name=f"{condition_name}_Propagation",
                     experiment_name=run_settings.experiment_name,
@@ -99,7 +103,7 @@ async def pipeline_main(
                 )
                 all_condition_settings.append((propagation_settings, condition_data_df))
 
-                # GSEA run (if enabled)
+                # Process GSEA (if enabled)
                 if settings.run_gsea:
                     gsea_settings = ConditionSettings(
                         condition_name=f"{condition_name}_GSEA",
@@ -111,13 +115,15 @@ async def pipeline_main(
                     )
                     gsea_condition_settings.append((gsea_settings, condition_data_df))
         else:
-            # Production mode: Load and process files
+            # Production mode: Process conditions from files
             for condition_name, condition_path in conditions_data:
-                logger.debug(f"Processing condition: {condition_name}, file: {condition_path}")
+                logger.debug(f"Processing condition: {condition_name}")
                 if isinstance(condition_path, pd.DataFrame):
                     condition_data_df = condition_path
                 else:
                     condition_data_df = pd.read_excel(condition_path)
+
+                # Process propagation
                 condition_settings = ConditionSettings(
                     condition_name=condition_name,
                     experiment_name=run_settings.experiment_name,
@@ -127,6 +133,7 @@ async def pipeline_main(
                 )
                 all_condition_settings.append((condition_settings, condition_data_df))
 
+                # Process GSEA (if enabled)
                 if settings.run_gsea:
                     gsea_settings = ConditionSettings(
                         condition_name=f"{condition_name}_GSEA",
@@ -141,7 +148,6 @@ async def pipeline_main(
         # Ensure output directory exists
         for condition_settings, _ in all_condition_settings + gsea_condition_settings:
             condition_settings.output_path.parent.mkdir(parents=True, exist_ok=True)
-            logger.debug(f"Ensured output directory exists: {condition_settings.output_path.parent}")
 
         # Aggregate and process results for propagation
         all_pathways: Dict[str, Dict[str, Any]] = {}
@@ -151,34 +157,41 @@ async def pipeline_main(
                 settings=run_settings,
                 condition_data_df=condition_data_df,
                 all_pathways=all_pathways,
+                pathway_sizes=pathway_sizes,
+                genes_by_pathway=genes_by_pathway,
+                scores=scores,
             )
             logger.debug(f"Processed condition: {condition_settings.condition_name}, output path: {condition_settings.output_path}")
 
         # Aggregate and process results for GSEA
-        gsea_pathways = None
+        gsea_pathways: Dict[str, Dict[str, Any]] = {}
         if settings.run_gsea:
-            gsea_pathways: Dict[str, Dict[str, Any]] = {}
             for condition_settings, condition_data_df in gsea_condition_settings:
                 process_condition(
-                    condition_settings=gsea_settings,
-                    settings=gsea_settings_run,
+                    condition_settings=condition_settings,
+                    settings=run_settings,
                     condition_data_df=condition_data_df,
                     all_pathways=gsea_pathways,
+                    pathway_sizes=pathway_sizes,
+                    genes_by_pathway=genes_by_pathway,
+                    scores=scores,
                 )
-                logger.debug(f"Processed GSEA condition: {condition_settings.condition_name}, output path: {condition_settings.output_path}")
 
         # Generate plots
-        propagation_plot_path = plot_pathways_mean_scores(run_settings, all_pathways, gsea_pathways)
+        propagation_plot_path = plot_pathways_mean_scores(
+            settings=run_settings,
+            all_pathways=all_pathways,
+            gsea_pathways=gsea_pathways,
+            pathway_sizes=pathway_sizes,
+            genes_by_pathway=genes_by_pathway,
+            scores=scores,
+        )
         logger.debug(f"Generated propagation plot at: {propagation_plot_path}")
 
         # Collect all output files
         output_files = [settings.output_path for settings, _ in all_condition_settings + gsea_condition_settings]
         if propagation_plot_path:
             output_files.append(propagation_plot_path)
-
-        # Log all output files
-        for file_path in output_files:
-            logger.debug(f"Output file to be archived: {file_path}")
 
         # Create ZIP archive for all results
         output_zip_dir = run_settings.root_folder / "Outputs" / "Archives"

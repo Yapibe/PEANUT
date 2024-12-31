@@ -172,7 +172,7 @@ def _handle_gsea_case(prior_data: pd.DataFrame, network: nx.Graph, restrict_to_n
 
 def _normalize_prop_scores(matrix: sp.spmatrix, network_gene_index: dict, propagation_score: np.ndarray, filtered_prior_data: pd.DataFrame) -> pd.DataFrame:
     """
-    Normalize the propagation scores.
+    Normalize the propagation scores and return scores only for genes in both the network and the dataset.
 
     Parameters:
     - matrix (sp.spmatrix): The similarity matrix.
@@ -181,7 +181,7 @@ def _normalize_prop_scores(matrix: sp.spmatrix, network_gene_index: dict, propag
     - filtered_prior_data (pd.DataFrame): DataFrame containing prior gene scores.
 
     Returns:
-    - pd.DataFrame: DataFrame containing GeneID and normalized Scores.
+    - pd.DataFrame: DataFrame containing GeneID and normalized Scores for relevant genes.
     """
     try:
         # Set input type to 'ones' and convert to dictionary
@@ -189,9 +189,7 @@ def _normalize_prop_scores(matrix: sp.spmatrix, network_gene_index: dict, propag
         ones_input = ones_input_df.set_index('GeneID')['Score'].to_dict()
 
         # Perform propagation with ones input
-        ones_gene_scores = matrix_prop(
-            ones_input, network_gene_index, matrix=matrix
-        )
+        ones_gene_scores = matrix_prop(ones_input, network_gene_index, matrix=matrix)
 
         # Adjust zero normalization scores
         ones_gene_scores[ones_gene_scores == 0] = 1
@@ -201,19 +199,23 @@ def _normalize_prop_scores(matrix: sp.spmatrix, network_gene_index: dict, propag
 
         # Create DataFrame for normalized scores
         all_network_genes = list(network_gene_index.keys())
-        normalized_df = pd.DataFrame(
-            {"GeneID": all_network_genes, "Score": propagation_score}
-        )
+        normalized_df = pd.DataFrame({"GeneID": all_network_genes, "Score": propagation_score})
 
-        # Convert GeneID to string for consistency
+        # Ensure consistent data type for merging
         normalized_df["GeneID"] = normalized_df["GeneID"].astype(str)
+        filtered_prior_data["GeneID"] = filtered_prior_data["GeneID"].astype(str)
 
-        return normalized_df
-    except Exception as e:
-        logger.error(
-            f"An error occurred in _normalize_prop_scores: {e}"
+        # Return only genes that are in the original dataset
+        relevant_scores_df = normalized_df.merge(
+            filtered_prior_data[['GeneID']], on='GeneID', how='inner'
         )
+        return relevant_scores_df
+
+    except Exception as e:
+        logger.error(f"An error occurred in _normalize_prop_scores: {e}")
         return pd.DataFrame()
+
+
 
 
 def filter_network_genes(propagation_input_df, network):
