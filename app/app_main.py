@@ -1,6 +1,5 @@
 import logging
 import logging.config
-import yaml
 import sys
 from pathlib import Path
 from fastapi import FastAPI

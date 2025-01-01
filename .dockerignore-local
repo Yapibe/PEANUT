@@ -7,6 +7,8 @@ __pycache__/
 *.pyd
 *.whl
 *.egg-info
+.idea
+.vscode
 
 # Exclude version control directories
 .git/
@@ -24,5 +26,6 @@ venv/
 Dockerfile
 *.tar
 
-# Exclude large data files in H_sapiens directory
-pipeline/Data/H_sapiens/
+# Exclude other contents of the H_sapiens/matrix directory
+pipeline/Data/H_sapiens/matrix/*
+!pipeline/Data/H_sapiens/matrix/Anat_0.1.npz

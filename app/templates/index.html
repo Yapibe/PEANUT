@@ -7,7 +7,7 @@
   <meta name="keywords" content="pathway enrichment, network propagation, bioinformatics, PPI networks, alpha propagation, Homo sapiens, protein interaction">
   <link rel="icon" type="image/png" href="{{ url_for('static', path='favicon.png') }}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="root-path" content="{{ request.scope.get('root_path', '') }}">
+  <meta name="root-path" content="/peanut">
   <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/dist/tippy.css">
   <script src="https://unpkg.com/@popperjs/core@2"></script>
   <script src="https://unpkg.com/tippy.js@6"></script>
@@ -314,7 +314,7 @@
     </div>
   </div>
   <script>
-    const ROOT_PATH = document.querySelector('meta[name="root-path"]').content;
+    const ROOT_PATH = '/peanut';
     const MAX_NETWORK_SIZE_MB = 50;
     const MAX_INPUT_SIZE_MB = 20;
     function validateFileSize(file, maxSizeMB) {
@@ -351,23 +351,35 @@
 
     async function checkJobStatus(jobCode, isNewSubmission = false) {
       try {
-        const response = await fetch(`${ROOT_PATH}/check-status/${jobCode}`);
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        const url = `${ROOT_PATH}/check-status/${jobCode}`;
+        console.log('Attempting to fetch status from:', url);
+
+        const response = await fetch(url);
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Status check failed! Status: ${response.status}`);
+          console.error('Error details:', errorText);
+          throw new Error(`Status check failed (${response.status}): ${errorText}`);
+        }
 
         const result = await response.json();
-        updateJobStatus(result, jobCode); // Updates the UI with the latest job status
+        console.log('Status check result:', result);
 
-        // Poll for updates if job is still processing
+        updateJobStatus(result, jobCode);
+
         if (isNewSubmission && result.status === 'Processing') {
+          console.log(`Scheduling next status check for job ${jobCode}`);
           setTimeout(() => checkJobStatus(jobCode, true), 5000);
         }
       } catch (error) {
-        console.error('Error checking job status:', error);
-
-        // Show retry option if the status check fails
+        console.error('Status check error:', error);
         showRetryForm();
       }
     }
+
 
     function validateFileUpload() {
       const networkFileInput = document.getElementById('network_file');
@@ -462,7 +474,7 @@
       // Functions
       async function handleFormSubmit(e) {
         e.preventDefault();
-
+        
         const formData = new FormData(pipelineForm);
         const resultDiv = document.getElementById('result');
         const submitButton = document.getElementById('submitButton');
@@ -472,16 +484,25 @@
         submitButton.textContent = "Submitting...";
 
         try {
-          const response = await fetch(pipelineForm.action, {
+          const url = `${ROOT_PATH}/run-pipeline`;
+          console.log('Attempting to submit form to:', url);
+
+          const response = await fetch(url, {
             method: 'POST',
             body: formData,
           });
 
+          console.log('Response status:', response.status);
+
           if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
+            const errorText = await response.text();
+            console.error(`Form submission failed! Status: ${response.status}`);
+            console.error('Error details:', errorText);
+            throw new Error(`Form submission failed (${response.status}): ${errorText}`);
           }
 
           const result = await response.json();
+          console.log('Form submission result:', result);
 
           resultDiv.style.display = 'block';
           resultDiv.innerHTML = `
@@ -490,13 +511,15 @@
             <p>Status: Processing</p>
           `;
 
-          jobStatusForm.style.display = 'none'; // Hide the job status form
-
+          jobStatusForm.style.display = 'none';
           checkJobStatus(result.job_code, true);
         } catch (error) {
-          console.error('Error submitting pipeline form:', error);
+          console.error('Form submission error:', error);
           resultDiv.style.display = 'block';
-          resultDiv.innerHTML = `<p>Error: ${error.message}</p>`;
+          resultDiv.innerHTML = `
+            <p>Error submitting job: ${error.message}</p>
+            <p>Please try again or contact support if the problem persists.</p>
+          `;
         } finally {
           submitButton.disabled = false;
           submitButton.textContent = "Submit Pathway Analysis";

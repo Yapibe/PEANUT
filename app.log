@@ -263,3 +263,90 @@ AttributeError: 'PosixPath' object has no attribute 'get'
 2024-12-31 14:41:27,448 - app.routes - INFO - Pipeline completed successfully for job 3bfd49b0-3b76-4dcc-b312-d9fd7abc52c4. Results available at /download/3bfd49b0-3b76-4dcc-b312-d9fd7abc52c4
 2024-12-31 14:41:27,455 - app.routes - DEBUG - Download URL prepared for job 3bfd49b0-3b76-4dcc-b312-d9fd7abc52c4: /download/3bfd49b0-3b76-4dcc-b312-d9fd7abc52c4
 2024-12-31 14:41:48,821 - app.app_main - INFO - Application is shutting down
+2025-01-01 13:02:52,696 - app.app_main - INFO - Application is starting up
+2025-01-01 13:26:33,028 - app.app_main - INFO - Application is starting up
+2025-01-01 13:26:42,235 - app.routes - INFO - New job request received.
+2025-01-01 13:26:42,235 - app.routes - INFO - Pathway file: kegg
+2025-01-01 13:26:42,236 - app.routes - INFO - Custom pathway uploaded: 
+2025-01-01 13:26:42,236 - app.routes - INFO - Job code: 550d3be1-4fc2-47d3-83ee-61b145920f1d
+2025-01-01 13:26:43,086 - app.utils - INFO - Successfully read xlsx file: /tmp/GSE781_KEGG_RENAL_CELL_CARCINOMA.xlsx
+2025-01-01 13:26:43,091 - app.utils - INFO - Input file validation successful: /tmp/GSE781_KEGG_RENAL_CELL_CARCINOMA.xlsx
+2025-01-01 13:26:43,092 - app.temp_manager - DEBUG - TempFileManager initialized
+2025-01-01 13:26:43,093 - app.pipeline_runner - INFO - Starting pipeline for job 550d3be1-4fc2-47d3-83ee-61b145920f1d
+2025-01-01 13:26:43,093 - app.pipeline_runner - DEBUG - Executing pipeline with default files
+2025-01-01 13:26:43,093 - pipeline.settings - INFO - Using default matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.1.npz
+2025-01-01 13:26:43,093 - pipeline.settings - INFO - Using default network file: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2025-01-01 13:26:43,093 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2025-01-01 13:26:45,628 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2025-01-01 13:26:45,629 - pipeline.pipeline_main - DEBUG - Processing condition: GSE781_KEGG_RENAL_CELL_CARCINOMA.xlsx
+2025-01-01 13:27:28,514 - pipeline.propagation_routines - ERROR - An error occurred in perform_propagation: Length mismatch: Expected axis has 4 elements, new values have 2 elements
+2025-01-01 13:27:28,611 - pipeline.pipeline_main - DEBUG - Processed condition: GSE781_KEGG_RENAL_CELL_CARCINOMA.xlsx, output path: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE781_KEGG_RENAL_CELL_CARCINOMA.xlsx_01_01_2025__13_26_45.xlsx
+2025-01-01 13:27:28,620 - pipeline.pipeline_main - ERROR - An error occurred in pipeline_main: 'Pathway'
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 181, in pipeline_main
+    propagation_plot_path = plot_pathways_mean_scores(
+  File "/home/yair/projects/Yair_propagation/pipeline/visualization_tools.py", line 115, in plot_pathways_mean_scores
+    mean_ranks = data_df.pivot(index="Pathway", columns="Condition", values="Mean_Score").rank(
+  File "/home/yair/.local/lib/python3.10/site-packages/pandas/core/frame.py", line 9339, in pivot
+    return pivot(self, index=index, columns=columns, values=values)
+  File "/home/yair/.local/lib/python3.10/site-packages/pandas/core/reshape/pivot.py", line 553, in pivot
+    index_list = [data[idx] for idx in com.convert_to_list_like(index)]
+  File "/home/yair/.local/lib/python3.10/site-packages/pandas/core/reshape/pivot.py", line 553, in <listcomp>
+    index_list = [data[idx] for idx in com.convert_to_list_like(index)]
+  File "/home/yair/.local/lib/python3.10/site-packages/pandas/core/frame.py", line 4102, in __getitem__
+    indexer = self.columns.get_loc(key)
+  File "/home/yair/.local/lib/python3.10/site-packages/pandas/core/indexes/range.py", line 417, in get_loc
+    raise KeyError(key)
+KeyError: 'Pathway'
+2025-01-01 13:27:28,640 - app.pipeline_runner - ERROR - Pipeline failed for job 550d3be1-4fc2-47d3-83ee-61b145920f1d: 'Pathway'
+2025-01-01 13:27:28,640 - app.pipeline_runner - DEBUG - Ensuring cleanup after pipeline execution
+2025-01-01 13:27:28,640 - app.temp_manager - DEBUG - Starting cleanup
+2025-01-01 13:27:28,641 - app.routes - ERROR - Pipeline execution failed for job 550d3be1-4fc2-47d3-83ee-61b145920f1d: 'Pathway'
+Traceback (most recent call last):
+  File "/home/yair/projects/Yair_propagation/app/routes.py", line 146, in _run_pipeline_task
+    results = await runner.run(settings_input=settings, file_dfs=file_dfs, filenames=filenames)
+  File "/home/yair/projects/Yair_propagation/app/pipeline_runner.py", line 61, in run
+    output_file = await execute_pipeline(
+  File "/home/yair/projects/Yair_propagation/pipeline/pipeline_main.py", line 181, in pipeline_main
+    propagation_plot_path = plot_pathways_mean_scores(
+  File "/home/yair/projects/Yair_propagation/pipeline/visualization_tools.py", line 115, in plot_pathways_mean_scores
+    mean_ranks = data_df.pivot(index="Pathway", columns="Condition", values="Mean_Score").rank(
+  File "/home/yair/.local/lib/python3.10/site-packages/pandas/core/frame.py", line 9339, in pivot
+    return pivot(self, index=index, columns=columns, values=values)
+  File "/home/yair/.local/lib/python3.10/site-packages/pandas/core/reshape/pivot.py", line 553, in pivot
+    index_list = [data[idx] for idx in com.convert_to_list_like(index)]
+  File "/home/yair/.local/lib/python3.10/site-packages/pandas/core/reshape/pivot.py", line 553, in <listcomp>
+    index_list = [data[idx] for idx in com.convert_to_list_like(index)]
+  File "/home/yair/.local/lib/python3.10/site-packages/pandas/core/frame.py", line 4102, in __getitem__
+    indexer = self.columns.get_loc(key)
+  File "/home/yair/.local/lib/python3.10/site-packages/pandas/core/indexes/range.py", line 417, in get_loc
+    raise KeyError(key)
+KeyError: 'Pathway'
+2025-01-01 13:27:28,669 - app.routes - DEBUG - Job 550d3be1-4fc2-47d3-83ee-61b145920f1d failed with error: 'Pathway'
+2025-01-01 13:28:15,106 - app.routes - INFO - New job request received.
+2025-01-01 13:28:15,106 - app.routes - INFO - Pathway file: kegg
+2025-01-01 13:28:15,106 - app.routes - INFO - Custom pathway uploaded: 
+2025-01-01 13:28:15,106 - app.routes - INFO - Job code: dae462e5-bdfb-48a8-a2a9-6499fcdb1734
+2025-01-01 13:28:15,119 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2025-01-01 13:28:15,123 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2025-01-01 13:28:15,123 - app.temp_manager - DEBUG - TempFileManager initialized
+2025-01-01 13:28:15,125 - app.pipeline_runner - INFO - Starting pipeline for job dae462e5-bdfb-48a8-a2a9-6499fcdb1734
+2025-01-01 13:28:15,125 - app.pipeline_runner - DEBUG - Executing pipeline with default files
+2025-01-01 13:28:15,127 - pipeline.settings - INFO - Using default matrix path: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.1.npz
+2025-01-01 13:28:15,128 - pipeline.settings - INFO - Using default network file: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2025-01-01 13:28:15,128 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2025-01-01 13:28:17,809 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2025-01-01 13:28:17,809 - pipeline.pipeline_main - DEBUG - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2025-01-01 13:29:16,252 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 388 pathways.
+2025-01-01 13:29:37,695 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_01_01_2025__13_28_17.xlsx.
+2025-01-01 13:29:37,778 - pipeline.pipeline_main - DEBUG - Processed condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk, output path: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_01_01_2025__13_28_17.xlsx
+2025-01-01 13:29:39,975 - pipeline.pipeline_main - DEBUG - Generated propagation plot at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_significant_pathways_plot.png
+2025-01-01 13:29:39,976 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_01_01_2025__13_28_17.xlsx
+2025-01-01 13:29:39,979 - pipeline.pipeline_main - DEBUG - Archived file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Plots/test_significant_pathways_plot.png
+2025-01-01 13:29:39,979 - pipeline.pipeline_main - INFO - Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2025-01-01 13:29:39,982 - app.pipeline_runner - INFO - Pipeline execution completed with output: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2025-01-01 13:29:39,982 - app.pipeline_runner - DEBUG - Ensuring cleanup after pipeline execution
+2025-01-01 13:29:39,982 - app.temp_manager - DEBUG - Starting cleanup
+2025-01-01 13:29:39,983 - app.routes - INFO - Pipeline completed successfully for job dae462e5-bdfb-48a8-a2a9-6499fcdb1734. Results available at /download/dae462e5-bdfb-48a8-a2a9-6499fcdb1734
+2025-01-01 13:29:40,001 - app.routes - DEBUG - Download URL prepared for job dae462e5-bdfb-48a8-a2a9-6499fcdb1734: /download/dae462e5-bdfb-48a8-a2a9-6499fcdb1734
+2025-01-01 13:43:08,020 - app.app_main - INFO - Application is shutting down

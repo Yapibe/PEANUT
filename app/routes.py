@@ -149,7 +149,7 @@ async def _run_pipeline_task(
         output_file = results.get("output_file")
 
         # Update job storage with the download link
-        download_url = f"/download/{job_code}"  # Example URL for downloading results
+        download_url = f"/peanut/download/{job_code}"
         job_storage[job_code].update({
             "status": "Completed",
             "output_file": str(output_file),
@@ -184,7 +184,7 @@ async def check_status(job_code: str) -> JobStatus:
     # Prepare download URL if job is completed
     download_url = None
     if job["status"] == "Completed" and job["output_file"]:
-        download_url = f"/download/{job_code}"
+        download_url = f"/peanut/download/{job_code}"
         logger.debug(f"Download URL prepared for job {job_code}: {download_url}")
     elif job["status"] == "Failed":
         logger.debug(f"Job {job_code} failed with error: {job['error']}")

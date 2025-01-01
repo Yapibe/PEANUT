@@ -5,24 +5,22 @@ FROM python:3.10
 WORKDIR /app
 
 # Copy the requirements file and install dependencies
-COPY requirements.txt ./ 
+COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code
 COPY . /app
 
-# Include the entire pathways and networks directories
-COPY pipeline/Data/H_sapiens/pathways /app/pipeline/Data/H_sapiens/pathways
-COPY pipeline/Data/H_sapiens/network /app/pipeline/Data/H_sapiens/network
+# Copy the config directory
+COPY config /app/config
 
-# Include only the specific file from the matrix directory
-COPY pipeline/Data/H_sapiens/matrix/Anat_0.1.npz /app/pipeline/Data/H_sapiens/matrix/
-
-# Create the Outputs/logs directory
-RUN mkdir -p /app/pipeline/Outputs/logs
+# Ensure the Outputs/logs directory exists and set permissions
+RUN mkdir -p /app/pipeline/Outputs/logs \
+    && chmod -R 775 /app \
+    && chown -R root:root /app
 
 # Expose the port your app runs on
 EXPOSE 8000
 
-# Command to run your application locally with reload support
-CMD ["uvicorn", "app.app_main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Command to run your application
+CMD ["uvicorn", "app.app_main:app", "--host", "0.0.0.0", "--port", "8000", "--root-path", "/peanut", "--log-config", "/app/config/log_config.yaml"]
