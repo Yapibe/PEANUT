@@ -8,6 +8,7 @@ import pandas as pd
 import uuid
 from datetime import datetime
 import tempfile
+import traceback
 
 from .models import SettingsInput, JobStatus
 from .utils import validate_network_file, validate_input_file, convert_gmt_to_pathway_format
@@ -15,6 +16,7 @@ from .pipeline_runner import PipelineRunner
 from .temp_manager import TempFileManager
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 router = APIRouter()
 
 # Set up templates
@@ -45,21 +47,19 @@ async def run_pipeline(
     Endpoint to run the pipeline with the provided settings and input files.
     """
     try:
-        # Log initial inputs
-        logger.info("New job request received.")
-        logger.info(f"Pathway file: {pathway_file}")
-        logger.info(f"Custom pathway uploaded: {pathway_file_upload is not None and pathway_file_upload.filename}")
-
-        # Generate unique job code
         job_code = str(uuid.uuid4())
-        logger.info(f"Job code: {job_code}")
-
-        # Initialize job storage
+        logger.info(f"Generated job code: {job_code}")
+        
+        # Initialize job storage with detailed logging
+        logger.debug(f"Initializing job storage for {job_code}")
         job_storage[job_code] = {
             "status": "Processing",
             "output_file": None,
-            "error": None
+            "error": None,
+            "created_at": datetime.now().isoformat(),
+            "last_updated": datetime.now().isoformat()
         }
+        logger.debug(f"Current job storage state: {job_storage}")
 
         # Read and store content of custom network and pathway files in memory
         if network == 'custom' and network_file:
@@ -97,8 +97,8 @@ async def run_pipeline(
 
         # Create the pipeline runner
         runner = PipelineRunner(job_code)
-
-        # Run the pipeline in the background
+        
+        logger.info("Adding pipeline task to background tasks")
         background_tasks.add_task(
             _run_pipeline_task,
             runner=runner,
@@ -122,11 +122,13 @@ async def run_pipeline(
             job_storage=job_storage,
             job_code=job_code
         )
-
+        
+        logger.info(f"Pipeline request processed successfully. Returning job code: {job_code}")
         return {"job_code": job_code}
 
     except Exception as e:
-        logger.error(f"Error processing pipeline request: {e}")
+        logger.error(f"Pipeline request failed with error: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=422, detail=str(e))
 
 
@@ -141,31 +143,41 @@ async def _run_pipeline_task(
     """
     Task to run the pipeline in the background.
     """
+    logger.info(f"=== Starting background pipeline task for job {job_code} ===")
+    logger.debug(f"Current job storage state: {job_storage}")
+    
     try:
-        # Execute the pipeline
+        logger.info("Executing pipeline")
         results = await runner.run(settings_input=settings, file_dfs=file_dfs, filenames=filenames)
-
-        # Extract the output file from the results
+        
         output_file = results.get("output_file")
-
-        # Update job storage with the download link
+        logger.info(f"Pipeline execution completed. Output file: {output_file}")
+        
         download_url = f"/peanut/download/{job_code}"
+        logger.debug(f"Generated download URL: {download_url}")
+        
+        logger.debug(f"Updating job storage for {job_code}")
         job_storage[job_code].update({
             "status": "Completed",
             "output_file": str(output_file),
             "download_url": download_url,
-            "error": None
+            "error": None,
+            "last_updated": datetime.now().isoformat()
         })
         logger.info(f"Pipeline completed successfully for job {job_code}. Results available at {download_url}")
 
 
     except Exception as e:
-        # Update job storage with failure
+        logger.error(f"Pipeline execution failed for job {job_code}")
+        logger.error(f"Error details: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        
         job_storage[job_code].update({
             "status": "Failed",
             "output_file": None,
             "download_url": None,
-            "error": str(e)
+            "error": str(e),
+            "last_updated": datetime.now().isoformat()
         })
         logger.error(f"Pipeline execution failed for job {job_code}: {e}", exc_info=True)
 
@@ -175,22 +187,23 @@ async def check_status(job_code: str) -> JobStatus:
     """
     Check the status of a job by its code.
     """
-    if job_code not in job_storage:
-        logger.error(f"Job code not found: {job_code}")
-        raise HTTPException(status_code=404, detail="Job not found")
-        
-    job = job_storage[job_code]
+    logger.info(f"=== Checking status for job {job_code} ===")
+    logger.debug(f"Current job storage state: {job_storage}")
     
-    # Prepare download URL if job is completed
+    if job_code not in job_storage:
+        logger.error(f"Job code {job_code} not found in storage")
+        logger.debug(f"Available job codes: {list(job_storage.keys())}")
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    job = job_storage[job_code]
+    logger.debug(f"Retrieved job data: {job}")
+    
     download_url = None
     if job["status"] == "Completed" and job["output_file"]:
         download_url = f"/peanut/download/{job_code}"
-        logger.debug(f"Download URL prepared for job {job_code}: {download_url}")
-    elif job["status"] == "Failed":
-        logger.debug(f"Job {job_code} failed with error: {job['error']}")
-    else:
-        logger.debug(f"Job {job_code} is still in progress: {job['status']}")
-
+        logger.info(f"Job completed. Download URL: {download_url}")
+    
+    logger.info(f"Returning status for job {job_code}: {job['status']}")
     return JobStatus(
         status=job["status"],
         download_url=download_url,

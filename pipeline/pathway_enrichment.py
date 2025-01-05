@@ -1,4 +1,3 @@
-import decimal
 import logging
 from typing import Dict, List, Tuple
 import gseapy as gp
@@ -69,7 +68,7 @@ def perform_statist_ks(
         }
 
     except Exception as e:
-        logger.error(f"An error occurred during KS test: {e}", exc_info=True)
+        # logger.error(f"An error occurred during KS test: {e}", exc_info=True)
         raise
 
 
@@ -133,7 +132,7 @@ def perform_statist_mann_whitney(
             })
 
         if not mw_p_values:
-            logger.info("No pathways to test. Skipping FDR correction.")
+            # logger.info("No pathways to test. Skipping FDR correction.")
             return
 
         # Apply Benjamini-Hochberg correction to adjust the MW p-values
@@ -163,10 +162,10 @@ def perform_statist_mann_whitney(
             # Example: Combine KS and MW p-values for NES (optional)
             # data["NES"] = compute_nes(data)
 
-        logger.info(f"Completed Mann-Whitney U test and ranking for {len(pathways)} pathways.")
+        # logger.info(f"Completed Mann-Whitney U test and ranking for {len(pathways)} pathways.")
 
     except Exception as e:
-        logger.error(f"An error occurred during Mann-Whitney test: {e}", exc_info=True)
+        # logger.error(f"An error occurred during Mann-Whitney test: {e}", exc_info=True)
         raise
 
 

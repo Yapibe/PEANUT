@@ -6,6 +6,7 @@ from .models import SettingsInput
 from pipeline.settings import Settings
 from pipeline.pipeline_main import pipeline_main as execute_pipeline
 import pandas as pd
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -15,14 +16,17 @@ class PipelineRunner:
     def __init__(self, job_id: str):
         self.job_id = job_id
         self.temp_manager = TempFileManager()
+        logger.info(f"=== Initialized PipelineRunner for job {job_id} ===")
 
     async def run(self, settings_input: SettingsInput, file_dfs: List[pd.DataFrame], filenames: List[str]) -> Dict[str, Any]:
         logger.info(f"Starting pipeline for job {self.job_id}")
         try:
             # Detect if temporary files are needed
             use_temp_files = settings_input.is_custom_network() or settings_input.is_custom_pathway()
+            logger.info(f"Using temporary files: {use_temp_files}")
 
             if use_temp_files:
+                logger.debug("Creating temporary files")
                 with self.temp_manager.create_temp_files(
                     network_filename=settings_input.network_file.filename if settings_input.is_custom_network() else None,
                     pathway_filename=settings_input.pathway_file_upload.filename if settings_input.is_custom_pathway() else None
@@ -71,7 +75,9 @@ class PipelineRunner:
             }
 
         except Exception as e:
-            logger.error(f"Pipeline failed for job {self.job_id}: {e}")
+            logger.error(f"Pipeline execution failed for job {self.job_id}")
+            logger.error(f"Error details: {str(e)}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
             raise
         finally:
             logger.debug("Ensuring cleanup after pipeline execution")

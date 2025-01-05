@@ -14,10 +14,12 @@ COPY . /app
 # Copy the config directory
 COPY config /app/config
 
-# Ensure the Outputs/logs directory exists and set permissions
-RUN mkdir -p /app/pipeline/Outputs/logs \
-    && chmod -R 775 /app \
-    && chown -R root:root /app
+# Create necessary directories and set permissions
+RUN mkdir -p /app/pipeline/Outputs/logs && \
+    touch /app/pipeline/Outputs/logs/app.log && \
+    touch /app/pipeline/Outputs/logs/access.log && \
+    chmod -R 775 /app/pipeline/Outputs/logs && \
+    chown -R root:root /app
 
 # Expose the port your app runs on
 EXPOSE 8000

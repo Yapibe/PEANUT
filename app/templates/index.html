@@ -328,56 +328,137 @@
     let statusCheckInterval = null;
 
     function updateJobStatus(result, jobCode) {
+      console.log('Updating job status:', {
+        result: result,
+        jobCode: jobCode,
+        currentUrl: window.location.href
+      });
+
       const resultDiv = document.getElementById('result');
       resultDiv.style.display = 'block';
-      resultDiv.innerHTML = `
+      
+      const statusHtml = `
         <h2>Job Status</h2>
         <p>Job Code: <strong>${jobCode}</strong></p>
         <p id="jobStatus">Status: ${result.status}</p>
         <p id="downloadLink"></p>
       `;
+      
+      console.log('Setting status HTML:', statusHtml);
+      resultDiv.innerHTML = statusHtml;
 
       const downloadElement = document.getElementById('downloadLink');
       if (result.status === 'Completed' && result.download_url) {
-        downloadElement.innerHTML = `<a href="${result.download_url}" download>Download Results</a>`;
+        const fullDownloadUrl = window.location.origin + result.download_url;
+        console.log('Setting download link:', fullDownloadUrl);
+        downloadElement.innerHTML = `<a href="${fullDownloadUrl}" download>Download Results</a>`;
       } else if (result.status === 'Processing') {
+        console.log('Job still processing');
         downloadElement.innerHTML = `<p>Your job is still processing. Please check again later.</p>`;
       } else if (result.status === 'Failed') {
+        console.log('Job failed:', result.error);
         downloadElement.innerHTML = `<p>Your job has failed. Please try submitting again or contact support if the issue persists.</p>`;
+        if (result.error) {
+          downloadElement.innerHTML += `<p>Error: ${result.error}</p>`;
+        }
       } else {
+        console.log('Unexpected job status:', result.status);
         downloadElement.innerHTML = `<p>Unexpected job status. Please contact support.</p>`;
       }
     }
 
     async function checkJobStatus(jobCode, isNewSubmission = false) {
       try {
-        const url = `${ROOT_PATH}/check-status/${jobCode}`;
-        console.log('Attempting to fetch status from:', url);
-
-        const response = await fetch(url);
+        // 1. Construct the URL for status check
+        const url = buildStatusCheckUrl(jobCode);
+        logStatusCheckStart(jobCode, url);
         
-        console.log('Response status:', response.status);
+        // 2. Make the request and validate response
+        const response = await fetch(url);
+        logResponseDetails(response);
         
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`Status check failed! Status: ${response.status}`);
-          console.error('Error details:', errorText);
-          throw new Error(`Status check failed (${response.status}): ${errorText}`);
+          await handleFailedResponse(response);
         }
-
+        
+        // 3. Parse response and update UI
         const result = await response.json();
-        console.log('Status check result:', result);
+        logStatusResult(result);
 
-        updateJobStatus(result, jobCode);
-
-        if (isNewSubmission && result.status === 'Processing') {
-          console.log(`Scheduling next status check for job ${jobCode}`);
-          setTimeout(() => checkJobStatus(jobCode, true), 5000);
+        if (result.status === 'Completed' || result.status === 'Failed') {
+          const submitButton = document.getElementById('submitButton');
+          submitButton.disabled = false;
+          submitButton.textContent = "Submit Pathway Analysis";
         }
+        // 4. Update the UI with job status
+        updateJobStatus(result, jobCode);
+        
+        // 5. Schedule next check if job is still processing
+        if (shouldScheduleNextCheck(isNewSubmission, result)) {
+          scheduleNextCheck(jobCode);
+        }
+        
       } catch (error) {
-        console.error('Status check error:', error);
-        showRetryForm();
+        handleStatusCheckError(error);
       }
+    }
+
+    // Helper functions
+    function buildStatusCheckUrl(jobCode) {
+      return `${ROOT_PATH}/check-status/${jobCode}`;
+    }
+
+    function logStatusCheckStart(jobCode, url) {
+      console.log('Checking job status:', {
+        jobCode,
+        url,
+        fullUrl: window.location.origin + url
+      });
+    }
+
+    function logResponseDetails(response) {
+      console.log('Status check response:', {
+        status: response.status,
+        ok: response.ok,
+        statusText: response.statusText,
+        headers: Object.fromEntries([...response.headers]),
+        url: response.url
+      });
+    }
+
+    async function handleFailedResponse(response) {
+      const errorText = await response.text();
+      console.error('Status check failed:', {
+        status: response.status,
+        error: errorText,
+        responseUrl: response.url
+      });
+      throw new Error(`Status check failed (${response.status}): ${errorText}`);
+    }
+
+    function logStatusResult(result) {
+      console.log('Status check result:', {
+        result: result,
+        downloadUrl: result.download_url ? window.location.origin + result.download_url : null
+      });
+    }
+
+    function shouldScheduleNextCheck(isNewSubmission, result) {
+      return isNewSubmission && result.status === 'Processing';
+    }
+
+    function scheduleNextCheck(jobCode) {
+      console.log(`Scheduling next status check for job ${jobCode} in 5 seconds`);
+      setTimeout(() => checkJobStatus(jobCode, true), 5000);
+    }
+
+    function handleStatusCheckError(error) {
+      console.error('Status check error:', {
+        error: error,
+        message: error.message,
+        stack: error.stack
+      });
+      showRetryForm();
     }
 
 
@@ -474,56 +555,81 @@
       // Functions
       async function handleFormSubmit(e) {
         e.preventDefault();
+        console.log('Form submission started');
         
         const formData = new FormData(pipelineForm);
         const resultDiv = document.getElementById('result');
         const submitButton = document.getElementById('submitButton');
         const jobStatusForm = document.getElementById('jobStatusForm');
 
+        // Disable button at start
         submitButton.disabled = true;
         submitButton.textContent = "Submitting...";
-
+        
         try {
-          const url = `${ROOT_PATH}/run-pipeline`;
-          console.log('Attempting to submit form to:', url);
+            const url = `${ROOT_PATH}/run-pipeline`;
+            console.log('Submitting form:', {
+                url: url,
+                fullUrl: window.location.origin + url,
+                formDataEntries: Object.fromEntries(formData)
+            });
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData,
+            });
+            
+            console.log('Form submission response:', {
+                status: response.status,
+                ok: response.ok,
+                statusText: response.statusText,
+                headers: Object.fromEntries([...response.headers]),
+                url: response.url
+            });
 
-          const response = await fetch(url, {
-            method: 'POST',
-            body: formData,
-          });
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Form submission failed:', {
+                    status: response.status,
+                    error: errorText,
+                    responseUrl: response.url
+                });
+                throw new Error(`Form submission failed (${response.status}): ${errorText}`);
+            }
 
-          console.log('Response status:', response.status);
+            const result = await response.json();
+            console.log('Form submission result:', result);
 
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`Form submission failed! Status: ${response.status}`);
-            console.error('Error details:', errorText);
-            throw new Error(`Form submission failed (${response.status}): ${errorText}`);
-          }
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <h2>Job Submitted Successfully</h2>
+                <p>Your job code is: <strong>${result.job_code}</strong></p>
+                <p>Status: Processing</p>
+            `;
 
-          const result = await response.json();
-          console.log('Form submission result:', result);
-
-          resultDiv.style.display = 'block';
-          resultDiv.innerHTML = `
-            <h2>Job Submitted Successfully</h2>
-            <p>Your job code is: <strong>${result.job_code}</strong></p>
-            <p>Status: Processing</p>
-          `;
-
-          jobStatusForm.style.display = 'none';
-          checkJobStatus(result.job_code, true);
+            jobStatusForm.style.display = 'none';
+            
+            console.log('Starting status checks for job:', result.job_code);
+            checkJobStatus(result.job_code, true);
+            
+            // Note: Button stays disabled until checkJobStatus determines job is complete
+            
         } catch (error) {
-          console.error('Form submission error:', error);
-          resultDiv.style.display = 'block';
-          resultDiv.innerHTML = `
-            <p>Error submitting job: ${error.message}</p>
-            <p>Please try again or contact support if the problem persists.</p>
-          `;
-        } finally {
-          submitButton.disabled = false;
-          submitButton.textContent = "Submit Pathway Analysis";
+            console.error('Form submission error:', {
+                error: error,
+                message: error.message,
+                stack: error.stack
+            });
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <p>Error submitting job: ${error.message}</p>
+                <p>Please try again or contact support if the problem persists.</p>
+            `;
+            // Only re-enable button on error
+            submitButton.disabled = false;
+            submitButton.textContent = "Submit Pathway Analysis";
         }
+        // Removed the finally block to prevent premature button reset
       }
       
       function handleStatusFormSubmit(e) {

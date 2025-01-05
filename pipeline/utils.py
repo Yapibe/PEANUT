@@ -200,7 +200,7 @@ def read_network(network_filename: Path) -> nx.Graph:
         nx.Graph: A graph object representing the network.
     """
     try:
-        logger.info(f"Reading network from: {network_filename}")
+        # logger.info(f"Reading network from: {network_filename}")
         if not network_filename.exists():
             logger.error(f"Network file not found: {network_filename}")
             raise FileNotFoundError(f"Network file not found: {network_filename}")
@@ -209,7 +209,7 @@ def read_network(network_filename: Path) -> nx.Graph:
             network_filename, header=None, usecols=[0, 1, 2]
         )
         graph = nx.from_pandas_edgelist(network, 0, 1, 2)
-        logger.info(f"Successfully loaded network with {len(graph.nodes())} nodes and {len(graph.edges())} edges")
+        # logger.info(f"Successfully loaded network with {len(graph.nodes())} nodes and {len(graph.edges())} edges")
         return graph
     except FileNotFoundError:
         logger.error(f"File not found: {network_filename}")

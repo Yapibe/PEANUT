@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware  # Import from uvicorn
 from .routes import router
 
-# Remove loading log_config.yaml and set up basicConfig directly
+# Configure both application and access logging
 logging.basicConfig(
     level=logging.DEBUG,
     handlers=[
@@ -18,6 +18,14 @@ logging.basicConfig(
     ],
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
+
+# Explicitly configure uvicorn access logger
+uvicorn_access_logger = logging.getLogger("uvicorn.access")
+uvicorn_access_logger.setLevel(logging.INFO)
+if not uvicorn_access_logger.handlers:
+    uvicorn_access_logger.addHandler(logging.StreamHandler(sys.stdout))
+    uvicorn_access_logger.addHandler(logging.FileHandler("access.log"))
+
 logger = logging.getLogger(__name__)
 
 # FastAPI app lifespan
