@@ -18,7 +18,7 @@ class GeneralArgs:
     run_propagation: bool = True
     run_gsea: bool = False
     create_similarity_matrix: bool = False
-    imputation: bool = False
+    imputation_mode: str = "both"  # Options: "both", "dataset", "network", "all"
 
     # Paths and directories
     root_folder: str = field(init=False)

@@ -180,14 +180,14 @@ def set_input_type(prior_data, input_type='Score'):
 
 def get_scores(score_path):
     """
-        Loads gene scores and P-values from a file and returns a dictionary mapping gene IDs to their scores and P-values.
+    Loads gene scores from a file and returns a dictionary mapping gene IDs to their scores.
 
-        Args:
-            score_path (str): The path to the file containing the propagation scores.
+    Args:
+        score_path (str): The path to the file containing the propagation scores.
 
-        Returns:
-            dict: A dictionary with gene IDs as keys and tuples of (Score, P-value) as values.
-        """
+    Returns:
+        dict: A dictionary with gene IDs as keys and scores as values.
+    """
     try:
         # Load propagation results from the specified file
         propagation_results = load_propagation_scores(score_path)
@@ -195,9 +195,9 @@ def get_scores(score_path):
         # Sort the propagation scores by GeneID
         sorted_scores = propagation_results['gene_prop_scores'].sort_values(by='GeneID').reset_index(drop=True)
 
-        # Create a dictionary mapping gene IDs to tuples of (Score, P-value)
-        gene_scores = {gene_id: (score, pvalue) for gene_id, score, pvalue
-                       in zip(sorted_scores['GeneID'], sorted_scores['Score'], sorted_scores['P-value'])}
+        # Create a dictionary mapping gene IDs to scores
+        gene_scores = {gene_id: score for gene_id, score
+                      in zip(sorted_scores['GeneID'], sorted_scores['Score'])}
 
         return gene_scores
 

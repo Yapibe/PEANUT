@@ -199,21 +199,35 @@ def global_gene_ranking(scores: dict):
 
     Returns:
     - pd.Series: A series with gene IDs as index and their global ranks as values.
+    
+    Raises:
+    - ValueError: If scores dictionary is empty or contains invalid values
     """
-    # Extract scores
-    gene_ids = list(scores.keys())
-    gene_scores = [score[0] for score in scores.values()]
+    if not scores:
+        raise ValueError("Scores dictionary is empty")
 
-    # Create a DataFrame for easier handling
-    df = pd.DataFrame({'GeneID': gene_ids, 'Score': gene_scores})
+    try:
+        # Extract scores (no longer tuples, just direct values)
+        gene_ids = list(scores.keys())
+        gene_scores = list(scores.values())
 
-    # Rank the scores (higher scores get lower rank numbers)
-    df['Rank'] = df['Score'].rank(ascending=False, method='average')
+        # Validate scores
+        if any(not isinstance(score, (int, float)) for score in gene_scores):
+            raise ValueError("Invalid score values detected. All scores must be numeric.")
 
-    # Create a Series with GeneID as index and Rank as values
-    global_ranking = df.set_index('GeneID')['Rank']
+        # Create a DataFrame for easier handling
+        df = pd.DataFrame({'GeneID': gene_ids, 'Score': gene_scores})
 
-    return global_ranking
+        # Rank the scores (higher scores get lower rank numbers)
+        df['Rank'] = df['Score'].rank(ascending=False, method='average')
+
+        # Create a Series with GeneID as index and Rank as values
+        global_ranking = df.set_index('GeneID')['Rank']
+
+        return global_ranking
+
+    except Exception as e:
+        raise ValueError(f"Error in global gene ranking: {str(e)}")
 
 
 

@@ -62,18 +62,10 @@ PATHWAY_FILES = config['analysis_settings']['pathway_files']
 PROP_METHODS = config['analysis_settings']['prop_methods']
 ALPHAS = config['analysis_settings']['alphas']
 MAX_WORKERS = config['analysis_settings']['max_workers']
-
-
-# Pre-Calculated Data
-PRE_CALCULATED_DATA = config['pre_calculated_data']
-
-def get_pre_calculated_data(disease_name):
-    """Retrieve pre-calculated related pathways for a given disease."""
-    return PRE_CALCULATED_DATA.get(disease_name, [])
-
+IMPUTATION_MODES = config['analysis_settings']['imputation_modes']
 
 # Analysis Functions
-def run_analysis(test_name, prior_data, network, network_name, alpha, method, output_path, pathway_file):
+def run_analysis(test_name, prior_data, network, network_name, alpha, method, output_path, pathway_file, imputation_mode):
     """
     Perform propagation and enrichment analysis.
     
@@ -86,7 +78,7 @@ def run_analysis(test_name, prior_data, network, network_name, alpha, method, ou
         method (str): Propagation method.
         output_path (str): Path to save the output.
         pathway_file (str): Pathway file used.
-        related_pathways (list): Related pathways for the disease.
+        imputation_mode (str): Imputation mode.
     """
     general_args = GeneralArgs(
         network=network_name,
@@ -94,7 +86,8 @@ def run_analysis(test_name, prior_data, network, network_name, alpha, method, ou
         method=method,
         alpha=alpha if method == 'PEANUT' else 1,
         run_propagation= True,
-        input_type='abs_Score' if method in ['PEANUT', 'ABS GSEA'] else 'Score'
+        input_type='abs_Score' if method in ['PEANUT', 'ABS GSEA'] else 'Score',
+        imputation_mode=imputation_mode
     )
     if method == 'NGSEA':
         general_args.run_NGSEA = True
@@ -143,7 +136,8 @@ def process_single_file(
     alpha: float,
     method: str,
     file_name: str,
-    loaded_pathways: dict
+    loaded_pathways: dict,
+    imputation_mode: str
 ) -> dict:
     """
     Process a single file: perform analysis and collect results.
@@ -156,7 +150,7 @@ def process_single_file(
         method (str): Propagation method.
         file_name (str): Name of the input file.
         loaded_pathways (dict): Loaded pathways data.
-        related_pathways (list): Related pathways for the disease.
+        imputation_mode (str): Imputation mode.
 
     Returns:
         dict: Results and higher-ranked pathways information.
@@ -177,7 +171,8 @@ def process_single_file(
         alpha=alpha,
         method=method,
         output_path=output_file_path,
-        pathway_file=pathway_file
+        pathway_file=pathway_file,
+        imputation_mode=imputation_mode
     )
 
     # Get rank and FDR q-val of the associated pathway
@@ -242,13 +237,12 @@ def process_single_file(
 
 
 # Summary Generation
-def generate_summary_df(filtered_df, prop_methods):
+def generate_summary_df(filtered_df):
     """
-    Generate a summary DataFrame with pivoted results.
+    Generate a summary DataFrame with pivoted results for imputation modes.
 
     Args:
         filtered_df (pd.DataFrame): Filtered DataFrame of results.
-        prop_methods (list): List of propagation methods.
 
     Returns:
         pd.DataFrame: Summary DataFrame.
@@ -256,31 +250,31 @@ def generate_summary_df(filtered_df, prop_methods):
     # Create pivot table including 'Group'
     pivot_df = filtered_df.pivot_table(
         index=['Dataset', 'Pathway'],
-        columns='Method',
-        values=['Rank', 'Significant', 'Up-regulated', 'Group'],  # Added 'Group' here
+        columns='Imputation Mode',
+        values=['Rank', 'Significant', 'Up-regulated', 'Group'],
         aggfunc='first'
     ).reset_index()
 
     # Flatten the MultiIndex columns
     pivot_df.columns = [
-        f'{metric} {method}' if method else metric
-        for metric, method in pivot_df.columns
+        f'{metric} {mode}' if mode else metric
+        for metric, mode in pivot_df.columns
     ]
 
-    # Define the ordered columns, including 'Group'
+    # Define the ordered columns
     ordered_columns = ['Dataset', 'Pathway']
-    for method in prop_methods:
+    for mode in IMPUTATION_MODES:
         for metric in ['Rank', 'Significant', 'Up-regulated', 'Group']:
-            column_name = f'{metric} {method}'
+            column_name = f'{metric} {mode}'
             ordered_columns.append(column_name)
 
     # Reorder the columns
     pivot_df = pivot_df[ordered_columns]
 
-    # Handle missing methods by filling with NaN
-    for method in prop_methods:
+    # Handle missing imputation modes by filling with NaN
+    for mode in IMPUTATION_MODES:
         for metric in ['Rank', 'Significant', 'Up-regulated', 'Group']:
-            column_name = f'{metric} {method}'
+            column_name = f'{metric} {mode}'
             if column_name not in pivot_df.columns:
                 pivot_df[column_name] = np.nan
 
@@ -298,8 +292,7 @@ def generate_summary_df(filtered_df, prop_methods):
     return summary_df
 
 
-
-FILE_LIST = get_file_list(DIRECTORIES['input'])
+FILE_LIST = get_file_list(DIRECTORIES['input'], limit=1)
 logger.info(f"Found {len(FILE_LIST)} .xlsx files in {DIRECTORIES['input']}")
 
 NETWORKS_DATA, PATHWAYS_DATA = load_data(NETWORKS, PATHWAY_FILES, DIRECTORIES['pathways'])
@@ -318,18 +311,20 @@ def main():
                             dataset_name, pathway_name = file_name.replace('.xlsx', '').split('_', 1)
                             if pathway_name in PATHWAYS_DATA[pathway_file]:
                                 for prop_method in PROP_METHODS:
-                                    futures.append(
-                                        executor.submit(
-                                            process_single_file,
-                                            NETWORKS_DATA[network_name],
-                                            pathway_file,
-                                            network_name,
-                                            alpha,
-                                            prop_method,
-                                            file_name,
-                                            PATHWAYS_DATA
+                                    for imputation_mode in IMPUTATION_MODES:
+                                        futures.append(
+                                            executor.submit(
+                                                process_single_file,
+                                                NETWORKS_DATA[network_name],
+                                                pathway_file,
+                                                network_name,
+                                                alpha,
+                                                prop_method,
+                                                file_name,
+                                                PATHWAYS_DATA,
+                                                imputation_mode
+                                            )
                                         )
-                                    )
 
         for future in as_completed(futures):
             result = future.result()
@@ -346,7 +341,8 @@ def main():
                     (results_df['Pathway file'] == pathway_file) &
                     (results_df['Alpha'] == alpha)
                 ]
-                summary_df = generate_summary_df(filtered_df, PROP_METHODS)
+                # Generate the summary focused on imputation modes
+                summary_df = generate_summary_df(filtered_df)
 
                 summary_output_dir = os.path.join(
                     DIRECTORIES['summary_base'],
