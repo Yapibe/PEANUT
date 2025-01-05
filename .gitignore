@@ -26,7 +26,7 @@ Thumbs.db
 # Project-specific
 Inputs/
 Outputs/
-Data/
+Data/H_sapiens/matrix
 
 # Logs and databases
 *.log
@@ -90,7 +90,7 @@ peanut.tar
 app/
 
 # Ignore the entire pipeline/Data directory
-pipeline/Data/
+pipeline/Data/H_sapiens/matrix
 
 # Except for specific files and directories
 !pipeline/Data/H_sapiens/pathways/disease_to_pathway.csv
