@@ -10,6 +10,5 @@ pipeline/scripts/
 pipeline/__pycache__/
 app/__pycache__/
 .idea/
-app/static/
 peanut.tar
 .vscode/

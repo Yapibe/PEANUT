@@ -869,3 +869,6 @@ KeyError: 'Pathway'
 2025-01-02 14:45:29,858 - app.routes - DEBUG - Retrieved job data: {'status': 'Completed', 'output_file': '/home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip', 'error': None, 'created_at': '2025-01-02T14:44:11.293019', 'last_updated': '2025-01-02T14:45:29.845831', 'download_url': '/peanut/download/146b79cb-1a43-4df0-a4d5-9b49fe3be7af'}
 2025-01-02 14:45:29,858 - app.routes - INFO - Job completed. Download URL: /peanut/download/146b79cb-1a43-4df0-a4d5-9b49fe3be7af
 2025-01-02 14:45:29,859 - app.routes - INFO - Returning status for job 146b79cb-1a43-4df0-a4d5-9b49fe3be7af: Completed
+2025-01-07 15:29:18,511 - app.app_main - INFO - Application is starting up
+2025-01-07 15:56:50,088 - app.app_main - INFO - Application is starting up
+2025-01-07 16:45:10,612 - app.app_main - INFO - Application is shutting down

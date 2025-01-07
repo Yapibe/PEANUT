@@ -148,6 +148,57 @@
     button[type="submit"]:hover { background-color: #45a049; }
     button[type="reset"] { background-color: #f44336; }
     button[type="reset"]:hover { background-color: #da190b; }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.4);
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 600px;
+        border-radius: 5px;
+    }
+
+    .close-modal {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .close-modal:hover {
+        color: black;
+    }
+
+    .sample-data-btn {
+        background-color: #f0f0f0;
+        color: #666;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        margin: 10px 0;
+        transition: background-color 0.3s;
+        font-size: 0.9em;
+    }
+
+    .sample-data-btn:hover {
+        background-color: #e0e0e0;
+        color: #333;
+    }
+
   </style>
 </head>
 <body>
@@ -182,8 +233,9 @@
     </div>
     <h2>Start a new PEANUT job</h2>
     <form id="pipelineForm" action="/run-pipeline" method="post" enctype="multipart/form-data">
+
       <label for="experiment_name">Experiment Name
-        <span data-tippy-content="Enter a unique name for your experiment.">?</span>
+        <span data-tippy-content="A unique identifier for your analysis. This name will be used in result files and can help you track multiple analyses.">?</span>
       </label>
       <input type="text" id="experiment_name" name="experiment_name" required>
       <label for="species">Species
@@ -194,7 +246,7 @@
       </select>
       <div class="form-section">
         <label for="network">Network Type
-          <span data-tippy-content="Choose the network type or upload a custom network.">?</span>
+          <span data-tippy-content="Choose between pre-built networks (Anat, HumanNet) or upload your own network file. Custom networks should represent protein-protein interactions with confidence scores.">?</span>
         </label>
         <select id="network" name="network" aria-controls="custom_network_section" aria-expanded="false" required>
           <option value="Anat">Anat</option>
@@ -202,7 +254,9 @@
           <option value="custom">Upload Custom Network</option>
         </select>
         <div id="custom_network_section" aria-hidden="true" style="display: none;">
-          <label for="network_file">Upload Network File:</label>
+          <label for="network_file">Upload Network File:
+            <span data-tippy-content="Network file must be tab-separated (TSV) with three columns: Source protein, Target protein, and Weight (interaction confidence score between 0-1). Proteins should be identified by GeneID">?</span>
+          </label>
           <input type="file" id="network_file" name="network_file" accept=".txt,.tsv" aria-describedby="network_file_help">
           <p class="help-text" id="network_file_help">
             File should be tab-separated with three columns: Source (integer/string), Target (integer/string), Weight (float)<br>
@@ -217,14 +271,14 @@
         </div>
       </div>
       <label for="alpha">Propagation Alpha
-        <span data-tippy-content="Set the alpha value for network propagation.">?</span>
+        <span data-tippy-content="Controls how far the signal spreads through the network.">?</span>
       </label>
       <select id="alpha" name="alpha" required>
         <option value="0.1">0.1</option>
         <option value="0.2">0.2</option>
       </select>
       <label for="pathway_file">Gene Set
-        <span data-tippy-content="Select a predefined gene set or upload your own GMT file.">?</span>
+        <span data-tippy-content="Choose from pre-loaded pathway databases: KEGG (metabolic and signaling pathways) or MSigDB C2 (curated gene sets from various sources). Custom GMT files allow using your own gene sets following the same format.">?</span>
       </label>
       <select id="pathway_file" name="pathway_file" onchange="toggleCustomPathway()" required>
         <option value="kegg">KEGG</option>
@@ -233,7 +287,7 @@
       </select>
       <div id="custom_pathway_section" style="display: none;">
         <label for="pathway_file_upload">Upload GMT File
-          <span data-tippy-content="Upload a GMT file containing your custom gene sets. Format: [Pathway Name][Description][Gene1][Gene2]...">?</span>
+          <span data-tippy-content="GMT file format: Each line represents one gene set with tab-separated fields: [Pathway Name][Description][Gene1][Gene2]... Genes should match the format used in your input files (e.g., GeneID). Example: PATHWAY1    Pathway description   GENE1   GENE2   GENE3">?</span>
         </label>
         <input type="file" id="pathway_file_upload" name="pathway_file_upload" accept=".gmt">
         <p class="help-text">
@@ -257,7 +311,7 @@
         }
       </script>
       <label for="files">Input Preranked Tables
-        <span data-tippy-content="Upload your preranked gene expression files. Supported formats include RNK and XLSX.">?</span>
+        <span data-tippy-content="Upload files containing ranked gene lists. Each file should have two columns: GeneID and Score. Scores can be any numerical value (e.g., log2 fold change). RNK files are tab-separated with a link to the format below, XLSX files should have headers (GeneID, Score).">?</span>
       </label>
       <p>
         Supported Formats:
@@ -266,29 +320,40 @@
         </a> or XLSX (Columns: GeneID, Score)
       </p>
       <input type="file" id="files" name="files" accept=".xlsx,.xls,.rnk" multiple required>
+      <button type="button" class="sample-data-btn" onclick="openSampleDataModal()">Download Sample Data</button>
       <div class="advanced-toggle" onclick="toggleAdvancedSettings()" aria-expanded="false" aria-controls="advancedSettings">
         Advanced Settings ▼
       </div>
       <div class="advanced-settings" id="advancedSettings" aria-hidden="true">
         <div class="form-group">
           <input type="checkbox" id="run_gsea" name="run_gsea" onclick="toggleNetworkRestriction()">
-          <label for="run_gsea">Run Additional GSEA Analysis</label>
+          <label for="run_gsea">Run Additional GSEA Analysis
+            <span data-tippy-content="Performs traditional Gene Set Enrichment Analysis alongside PEANUT, allowing direct comparison between network-based and standard enrichment results.">?</span>
+          </label>
         </div>
         <div class="form-group">
           <input type="checkbox" id="network_restriction" name="network_restriction" disabled>
-          <label for="network_restriction">Network Restriction</label>
+          <label for="network_restriction">Network Restriction
+            <span data-tippy-content="When enabled, GSEA analysis will only consider genes present in the selected network, ensuring fair comparison with PEANUT results. Disable to include all genes in GSEA analysis.">?</span>
+          </label>
         </div>
         <label for="plot_title">Plot Title
-          <span data-tippy-content="Customize the title of the final plot. Default: 'Pathway Enrichment'">?</span>
+          <span data-tippy-content="Custom title for the enrichment plots. Will appear at the top of result visualizations.">?</span>
         </label>
         <input type="text" id="plot_title" name="plot_title" value="Pathway Enrichment" placeholder="Enter plot title">
-        <label for="min_genes_per_pathway">Minimum Genes per Pathway</label>
+        <label for="min_genes_per_pathway">Minimum Genes per Pathway
+          <span data-tippy-content="Sets the minimum size threshold for pathways to be included in the analysis. Pathways with fewer genes will be filtered out. Default: 15 genes. Lower values may include more specific but potentially noise-sensitive pathways.">?</span>
+        </label>
         <input type="number" id="min_genes_per_pathway" name="min_genes_per_pathway" value="15" required min="1" max="1000" aria-describedby="min_genes_help">
         <small id="min_genes_help" class="help-text">Must be at least 1 and less than maximum.</small>
-        <label for="max_genes_per_pathway">Maximum Genes per Pathway</label>
+        <label for="max_genes_per_pathway">Maximum Genes per Pathway
+          <span data-tippy-content="Sets the maximum size threshold for pathways. Pathways with more genes will be filtered out. Default: 500 genes. Higher values may include broader, less specific pathways.">?</span>
+        </label>
         <input type="number" id="max_genes_per_pathway" name="max_genes_per_pathway" value="500" required min="1" max="5000" aria-describedby="max_genes_help">
         <small id="max_genes_help" class="help-text">Must be greater than minimum and at most 5000.</small>
-        <label for="fdr_threshold">FDR Threshold</label>
+        <label for="fdr_threshold">FDR Threshold
+          <span data-tippy-content="False Discovery Rate threshold for significant pathways. Default: 0.05 (5%). Pathways with FDR below this threshold are considered significantly enriched. Lower values are more stringent.">?</span>
+        </label>
         <input type="number" id="fdr_threshold" name="fdr_threshold" step="0.01" min="0" max="1" value="0.05" required aria-describedby="fdr_help">
         <small id="fdr_help" class="help-text">Must be between 0 and 1.</small>
       </div>
@@ -311,6 +376,24 @@
         <button type="submit">Check Status</button>
       </form>
       <div id="statusResult"></div>
+    </div>
+  </div>
+  <div id="sampleDataModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeSampleDataModal()">&times;</span>
+        <h3>Sample Data</h3>
+        <p>This sample data is from a study on Alzheimer's disease (GSE5281) comparing gene expression in the visual cortex. The file contains pre-ranked gene expression data suitable for pathway enrichment analysis.</p>
+        <p>You can:</p>
+        <ol>
+            <li>Download and view the sample data to understand the required format</li>
+            <li>Use it directly in PEANUT to test the analysis pipeline</li>
+        </ol>
+        <p><strong>File format:</strong> Tab-separated .rnk file with GeneID and expression score columns</p>
+        <a href="/peanut/static/sample_data/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk" 
+           download="GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk" 
+           class="sample-data-btn">
+            Download Sample Data
+        </a>
     </div>
   </div>
   <script>
@@ -717,6 +800,22 @@
         customSection.style.display = 'none';
         fileInput.required = false;
       }
+    }
+
+    function openSampleDataModal() {
+        document.getElementById('sampleDataModal').style.display = 'block';
+    }
+
+    function closeSampleDataModal() {
+        document.getElementById('sampleDataModal').style.display = 'none';
+    }
+
+    // Close modal when clicking outside of it
+    window.onclick = function(event) {
+        const modal = document.getElementById('sampleDataModal');
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
     }
   </script>
 </body>
