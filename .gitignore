@@ -26,7 +26,7 @@ Thumbs.db
 # Project-specific
 Inputs/
 Outputs/
-Data/
+pipeline/Data/H_sapiens/matrix/
 
 # Logs and databases
 *.log

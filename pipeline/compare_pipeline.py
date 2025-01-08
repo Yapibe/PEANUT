@@ -98,9 +98,9 @@ def run_analysis(test_name, prior_data, network, network_name, alpha, method, ou
         network=network_name,
         pathway_file=pathway_file,
         method=method,
-        alpha=alpha if method in ['PEANUT', 'ABS_PROP'] else 1,
+        alpha=alpha if method in ['PEANUT', 'ABS_GSEA'] else 1,
         run_propagation= True,
-        input_type='abs_Score' if method in ['PEANUT', 'ABS_PROP', 'ABS_SCORE'] else 'Score'
+        input_type='abs_Score' if method in ['PEANUT', 'ABS_GSEA'] else 'Score'
     )
     if method == 'NGSEA':
         general_args.run_NGSEA = True

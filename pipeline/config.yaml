@@ -1,6 +1,5 @@
 analysis_settings:
   FDR_threshold: 0.05
-  JAC_THRESHOLD: 0.02
   alphas:
   - 0.1
   max_workers: 1
@@ -10,6 +9,9 @@ analysis_settings:
   - kegg
   prop_methods:
   - PEANUT
+  - ABS_GSEA
+  - NGSEA
+
 directories:
   input: pipeline/Inputs/experiments_data/GSE/XLSX
   output_base: pipeline/Outputs/NGSEA
