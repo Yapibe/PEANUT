@@ -17,7 +17,7 @@ import gseapy as gp
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def perform_permutation_test(filtered_pathways: dict, genes_by_pathway: dict, scores: dict, n_iterations: int = 10000, pval_threshold: float = 0.05) -> dict:
+def perform_permutation_test(filtered_pathways: dict, genes_by_pathway: dict, scores: dict, n_iterations: int = 1000, pval_threshold: float = 0.05) -> dict:
     """
     Perform a permutation test to assess the significance of the observed pathway scores.
     Updates pathways with adjusted permutation p-values and adds a boolean flag for significance.
@@ -36,7 +36,7 @@ def perform_permutation_test(filtered_pathways: dict, genes_by_pathway: dict, sc
         logger.info("No pathways to test with the permutation test.")
         return {}
     
-    score_values = np.array([score[0] for score in scores.values()])
+    score_values = np.array([score for score in scores.values()])
     
     # Store observed means and p-values for all pathways
     observed_means = []
@@ -58,7 +58,7 @@ def perform_permutation_test(filtered_pathways: dict, genes_by_pathway: dict, sc
             continue
     
         # Calculate the observed mean score for the pathway
-        observed_mean = np.mean([scores[gene_id][0] for gene_id in valid_genes])
+        observed_mean = np.mean([scores[gene_id] for gene_id in valid_genes])
     
         # Generate null distribution for this pathway size
         permuted_means = np.array([
@@ -168,7 +168,7 @@ def perform_mann_whitney_test(task: EnrichTask, args: GeneralArgs, scores: dict,
         task.filtered_genes.update(data['genes'])
     
     # Rank the scores for the filtered genes
-    filtered_scores = [scores[gene_id][0] for gene_id in task.filtered_genes if gene_id in scores]
+    filtered_scores = [scores[gene_id] for gene_id in task.filtered_genes if gene_id in scores]
     ranks = rankdata(filtered_scores)
     scores_rank = {gene_id: rank for gene_id, rank in zip(task.filtered_genes, ranks)}
     
@@ -180,7 +180,7 @@ def perform_mann_whitney_test(task: EnrichTask, args: GeneralArgs, scores: dict,
     for pathway in pathways:
         data = task.pathways_with_ks_pvalues[pathway]
         pathway_genes = set(data['genes'])
-        pathway_scores = [scores[gene_id][0] for gene_id in pathway_genes if gene_id in scores]
+        pathway_scores = [scores[gene_id] for gene_id in pathway_genes if gene_id in scores]
         background_genes = task.filtered_genes - pathway_genes
     
         pathway_ranks = [scores_rank[gene_id] for gene_id in pathway_genes if gene_id in scores_rank]
@@ -189,7 +189,7 @@ def perform_mann_whitney_test(task: EnrichTask, args: GeneralArgs, scores: dict,
         _, mw_pval = compute_mw(pathway_ranks, background_ranks)
         mw_p_values.append(mw_pval)
     
-        sorted_genes = sorted(pathway_genes, key=lambda gene: scores[gene][0], reverse=True)
+        sorted_genes = sorted(pathway_genes, key=lambda gene: scores[gene], reverse=True)
     
         # Collect pathway details
         data.update({

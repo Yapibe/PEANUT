@@ -147,7 +147,6 @@ def matrix_prop(propagation_input: dict, gene_indexes: dict, matrix=None) -> np.
     F_0 = np.zeros(num_genes)  # Changed to a 1D array
     for gene_id, value in propagation_input.items():
         F_0[gene_indexes[gene_id]] = value
-
     F = matrix @ F_0
 
     return F
@@ -343,7 +342,7 @@ def perform_propagation(test_name: str, general_args, network=None, prior_data=N
     prop_task = PropagationTask(general_args=general_args, test_name=test_name)
     
     # Modify prior_data based on the input type
-    if general_args.input_type == 'abs_Score':
+    if general_args.input_type == 'Abs_Score':
         propagation_input_df = set_input_type(prior_data, general_args.input_type)
     else:
         propagation_input_df = prior_data

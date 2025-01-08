@@ -164,14 +164,11 @@ def set_input_type(prior_data, input_type='Score'):
     Returns:
         pandas.DataFrame: DataFrame with the modified 'Score' column.
     """
-    if input_type not in {'ones', 'abs_Score', 'Score'}:
-        raise ValueError(f'{input_type} is not a valid input type')
-
     modified_prior_data = prior_data.copy()
 
     if input_type == 'ones':
         modified_prior_data['Score'] = 1
-    elif input_type == 'abs_Score':
+    elif input_type == 'Abs_Score':
         modified_prior_data['Score'] = prior_data['Score'].abs()
     # If input_type is 'Score', we don't need to do anything as we want to keep the original scores
 

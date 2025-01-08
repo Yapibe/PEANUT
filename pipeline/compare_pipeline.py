@@ -86,13 +86,9 @@ def run_analysis(test_name, prior_data, network, network_name, alpha, method, ou
         method=method,
         alpha=alpha if method == 'PEANUT' else 1,
         run_propagation= True,
-        input_type='abs_Score' if method in ['PEANUT', 'ABS GSEA'] else 'Score',
+        input_type='Abs_Score',
         imputation_mode=imputation_mode
     )
-    if method == 'NGSEA':
-        general_args.run_NGSEA = True
-        general_args.run_gsea = True
-
     if general_args.run_propagation:
         perform_propagation(test_name, general_args, network, prior_data)
 
@@ -125,8 +121,6 @@ def get_pathway_rank(output_path: str, pathway_name: str) -> tuple:
     except Exception as e:
         logger.error(f"Error reading {output_path}: {e}")
     return None, None, None, None
-
-
 
 
 def process_single_file(
@@ -210,7 +204,7 @@ def process_single_file(
     pathway_genes = loaded_pathways[pathway_file].get(pathway_name, [])
     
     # Get scores for pathway genes that are in the network
-    pathway_gene_scores = filtered_prior_data[0][filtered_prior_data[0]['GeneID'].isin(pathway_genes)]['Score']
+    pathway_gene_scores = filtered_prior_data[filtered_prior_data['GeneID'].isin(pathway_genes)]['Score']
     
     # Calculate mean score to determine regulation direction
     mean_score = pathway_gene_scores.mean() if not pathway_gene_scores.empty else 0
@@ -227,7 +221,8 @@ def process_single_file(
             'Rank': rank,
             'FDR q-val': fdr_q_val,
             'Significant': significant,
-            'Up-regulated': is_upregulated
+            'Up-regulated': is_upregulated,
+            'Imputation Mode': imputation_mode
         },
         'higher_ranked_pathways': higher_ranked,
         'higher_ranked_ranks': higher_ranked_ranks,
@@ -251,7 +246,7 @@ def generate_summary_df(filtered_df):
     pivot_df = filtered_df.pivot_table(
         index=['Dataset', 'Pathway'],
         columns='Imputation Mode',
-        values=['Rank', 'Significant', 'Up-regulated', 'Group'],
+        values=['Rank', 'Significant', 'Group'],
         aggfunc='first'
     ).reset_index()
 
@@ -264,7 +259,7 @@ def generate_summary_df(filtered_df):
     # Define the ordered columns
     ordered_columns = ['Dataset', 'Pathway']
     for mode in IMPUTATION_MODES:
-        for metric in ['Rank', 'Significant', 'Up-regulated', 'Group']:
+        for metric in ['Rank', 'Significant', 'Group']:
             column_name = f'{metric} {mode}'
             ordered_columns.append(column_name)
 
@@ -273,7 +268,7 @@ def generate_summary_df(filtered_df):
 
     # Handle missing imputation modes by filling with NaN
     for mode in IMPUTATION_MODES:
-        for metric in ['Rank', 'Significant', 'Up-regulated', 'Group']:
+        for metric in ['Rank', 'Significant', 'Group']:
             column_name = f'{metric} {mode}'
             if column_name not in pivot_df.columns:
                 pivot_df[column_name] = np.nan
@@ -292,7 +287,7 @@ def generate_summary_df(filtered_df):
     return summary_df
 
 
-FILE_LIST = get_file_list(DIRECTORIES['input'], limit=1)
+FILE_LIST = get_file_list(DIRECTORIES['input'])
 logger.info(f"Found {len(FILE_LIST)} .xlsx files in {DIRECTORIES['input']}")
 
 NETWORKS_DATA, PATHWAYS_DATA = load_data(NETWORKS, PATHWAY_FILES, DIRECTORIES['pathways'])
