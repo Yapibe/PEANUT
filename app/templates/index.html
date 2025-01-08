@@ -7,7 +7,7 @@
   <meta name="keywords" content="pathway enrichment, network propagation, bioinformatics, PPI networks, alpha propagation, Homo sapiens, protein interaction">
   <link rel="icon" type="image/png" href="{{ url_for('static', path='favicon.png') }}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="root-path" content="/peanut">
+  <meta name="root-path" content="{{ root_path }}">
   <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/dist/tippy.css">
   <script src="https://unpkg.com/@popperjs/core@2"></script>
   <script src="https://unpkg.com/tippy.js@6"></script>
@@ -397,7 +397,7 @@
     </div>
   </div>
   <script>
-    const ROOT_PATH = '/peanut';
+    const ROOT_PATH = document.querySelector('meta[name="root-path"]').content;
     const MAX_NETWORK_SIZE_MB = 50;
     const MAX_INPUT_SIZE_MB = 20;
     function validateFileSize(file, maxSizeMB) {

@@ -24,5 +24,8 @@ RUN mkdir -p /app/pipeline/Outputs/logs && \
 # Expose the port your app runs on
 EXPOSE 8000
 
+# Set default root path (can be overridden at runtime)
+ENV ROOT_PATH=/peanut
+
 # Command to run your application
-CMD ["uvicorn", "app.app_main:app", "--host", "0.0.0.0", "--port", "8000", "--root-path", "/peanut", "--log-config", "/app/config/log_config.yaml"]
+CMD ["sh", "-c", "uvicorn app.app_main:app --host 0.0.0.0 --port 8000 --root-path ${ROOT_PATH} --log-config /app/config/log_config.yaml"]
