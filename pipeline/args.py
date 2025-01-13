@@ -51,7 +51,12 @@ class GeneralArgs:
 
         self.input_dir =  path.join(self.root_folder, 'Inputs', 'experiments_data', self.Experiment_name, 'XLSX')
         self.propagation_folder = self._create_output_subdir(
-            path.join('Propagation_Scores', self.method or '', self.network, self.pathway_file, f'alpha_{self.alpha}'))
+            path.join('Propagation_Scores', 
+                     self.method or '', 
+                     self.network, 
+                     self.pathway_file, 
+                     f'alpha_{self.alpha}',
+                     f'imputation_{self.imputation_mode}' if self.method == 'PEANUT' else '').rstrip('/'))
         self.network_file_path = path.join(self.data_dir, 'network', self.network)
         self.pathway_file_dir = path.join(self.data_dir, 'pathways', self.pathway_file)
 

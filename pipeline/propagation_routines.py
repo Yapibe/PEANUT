@@ -367,25 +367,27 @@ def perform_propagation(test_name: str, general_args, network=None, prior_data=N
     # Normalize scores
     normalized_df = _normalize_prop_scores(matrix, network_gene_index, propagation_score)
 
-    # Handle post-normalization based on imputation mode
+    # Create final scores DataFrame based on imputation mode
     if general_args.imputation_mode == "both":
-        # Keep only genes in both dataset and network
+        # Keep only genes that exist in both dataset and network
         final_scores_df = normalized_df.merge(
             prior_data[['GeneID']], on='GeneID', how='inner'
         )
     elif general_args.imputation_mode == "dataset":
-        # Combine propagated scores for "both" and original scores for dataset-only genes
+        # Keep all genes from the original dataset (both those in network and those only in dataset)
+        genes_in_network = normalized_df[normalized_df['GeneID'].isin(prior_data['GeneID'])].copy()
+        dataset_only_genes = prior_data[~prior_data['GeneID'].isin(network.nodes())].copy()
+        final_scores_df = pd.concat([genes_in_network, dataset_only_genes])
+    elif general_args.imputation_mode == "network":
+        # Keep all genes from the network (both those in dataset and network-exclusive)
+        final_scores_df = normalized_df.copy()
+    elif general_args.imputation_mode == "all":
+        # Keep all genes from both dataset and network
         dataset_only_genes = prior_data[~prior_data['GeneID'].isin(network.nodes())].copy()
         final_scores_df = pd.concat([normalized_df, dataset_only_genes])
-    elif general_args.imputation_mode == "network":
-        # Combine propagated scores for "both" and imputed scores for network-only genes
-        network_only_genes = normalized_df[~normalized_df['GeneID'].isin(prior_data['GeneID'])].copy()
-        final_scores_df = pd.concat([normalized_df, network_only_genes])
-    elif general_args.imputation_mode == "all":
-        # Keep all genes (both propagated and original scores)
-        dataset_only_genes = prior_data[~prior_data['GeneID'].isin(network.nodes())].copy()
-        network_only_genes = normalized_df[~normalized_df['GeneID'].isin(prior_data['GeneID'])].copy()
-        final_scores_df = pd.concat([normalized_df, dataset_only_genes, network_only_genes])
+
+    # Sort and reset index for consistency
+    final_scores_df = final_scores_df.sort_values('GeneID').reset_index(drop=True)
 
     # Save the results
     _save_propagation_results(propagation_input_df, final_scores_df, prop_task, general_args)

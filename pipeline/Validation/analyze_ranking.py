@@ -2,24 +2,29 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from scipy.stats import wilcoxon, pearsonr, ranksums
+from scipy.stats import wilcoxon
 import numpy as np
 from matplotlib.ticker import MultipleLocator  # Import MultipleLocator
 
 # Define configurations
-data_dir = 'pipeline/Outputs/NGSEA/Summary'
+data_dir = 'pipeline/Outputs/Summary'
 network = 'H_sapiens'
 alphas = [0.2]
-methods = ['PEANUT', 'GSEA', 'ABS GSEA', 'NGSEA']
+methods = ['Both','Network', 'Dataset', 'All', 'GSEA', 'NGSEA']
 
 # Define specific method pairs to compare and plot significance bars
 methods_to_compare = [
     ('GSEA', 'NGSEA'),
-    ('GSEA', 'PEANUT'),
-    ('NGSEA', 'PEANUT'),
-    ('PEANUT', 'ABS GSEA')
+    ('GSEA', 'Both'),
+    ('NGSEA', 'Both'),
+    ('GSEA', 'Network'),
+    ('NGSEA', 'Network'),
+    ('GSEA', 'Dataset'),
+    ('NGSEA', 'Dataset'),
+    ('GSEA', 'All'),
+    ('NGSEA', 'All')
 ]
-run_type = "4"
+
 # Output directory for saving plots
 output_plot_dir = "pipeline/Outputs/Plots"
 os.makedirs(output_plot_dir, exist_ok=True)  # Create the directory if it doesn't exist
@@ -91,7 +96,7 @@ def plot_comparative_ranks(df, alpha, output_plot_dir):
     plt.tight_layout()
 
     # Save the plot
-    plot_filename = f'Comparative_Ranks_{run_type}.png'
+    plot_filename = f'Comparative_Ranks.png'
     plot_filepath = os.path.join(output_plot_dir, plot_filename)
     plt.savefig(plot_filepath, format='png', dpi=300)
     print(f"Plot saved to: {plot_filepath}")
@@ -99,7 +104,7 @@ def plot_comparative_ranks(df, alpha, output_plot_dir):
 
 
 def load_data(alpha, data_dir):
-    file_name = f'rankings_summary_{run_type}.xlsx'
+    file_name = f'combined.xlsx'
     file_path = os.path.join(data_dir, file_name)
     if os.path.exists(file_path):
         df = pd.read_excel(file_path)
@@ -183,7 +188,7 @@ def analyze_data(df, alpha, output_plot_dir):
         test_results.append((method1, method2, w_result.statistic, w_result.pvalue, better_method))
 
     # Print test results
-    print(f"\nAlpha {alpha} - Wilcoxon signed-rank test results {run_type}:")
+    print(f"\nAlpha {alpha} - Wilcoxon signed-rank test results:")
     for i, (method1, method2, stat, p_value, better_method) in enumerate(test_results):
         print(f"{method1} vs {method2}: Statistic={stat}, p-value={p_value}, "
               f"Better Method={better_method}, Mean Rank Difference={mean_rank_diffs[i]}")
@@ -252,7 +257,7 @@ def analyze_data(df, alpha, output_plot_dir):
 
     # Adjust layout and save the plot
     plt.tight_layout()
-    plot_filename = f'Rank_Comparison_{run_type}.png'
+    plot_filename = f'Rank_Comparison.png'
     plot_filepath = os.path.join(output_plot_dir, plot_filename)
     plt.savefig(plot_filepath, dpi=300, bbox_inches='tight')
     plt.close()
@@ -267,7 +272,7 @@ def main():
         if df is not None and not df.empty:
             # Analyze and plot existing data
             analyze_data(df, alpha, output_plot_dir)
-            plot_comparative_ranks(df, alpha, output_plot_dir)
+            #plot_comparative_ranks(df, alpha, output_plot_dir)
         else:
             print(f"No data available for alpha {alpha}")
 

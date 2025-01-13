@@ -86,9 +86,17 @@ def run_analysis(test_name, prior_data, network, network_name, alpha, method, ou
         method=method,
         alpha=alpha if method == 'PEANUT' else 1,
         run_propagation= True,
-        input_type='Abs_Score',
+        input_type='Abs_Score' if method == 'PEANUT' else 'Score',
         imputation_mode=imputation_mode
     )
+
+    if method == 'NGSEA':
+        general_args.run_NGSEA = True
+        general_args.run_gsea = True
+
+    if method == 'GSEA':
+        general_args.run_gsea = True
+
     if general_args.run_propagation:
         perform_propagation(test_name, general_args, network, prior_data)
 
@@ -107,8 +115,9 @@ def get_pathway_rank(output_path: str, pathway_name: str) -> tuple:
         tuple: (rank, fdr_q_val, group, results_df) if found, else (None, None, None, None)
     """
     try:
-        results_df = pd.read_excel(output_path)
-
+        # Try reading with explicit engine specification
+        results_df = pd.read_excel(output_path, engine='openpyxl')
+        
         # Pathways are already grouped and sorted
         pathway_row = results_df[results_df['Name'] == pathway_name]
         if not pathway_row.empty:
@@ -117,9 +126,21 @@ def get_pathway_rank(output_path: str, pathway_name: str) -> tuple:
             group = pathway_row['Group'].values[0] if 'Group' in pathway_row else None
             return rank, fdr_q_val, group, results_df
         else:
-            logger.error(f"Pathway '{pathway_name}' not found in {output_path}.")
+            logger.warning(f"Pathway '{pathway_name}' not found in {output_path}.")
     except Exception as e:
-        logger.error(f"Error reading {output_path}: {e}")
+        # Try alternative reading methods if the first attempt fails
+        try:
+            # Try reading with xlrd engine for older Excel formats
+            results_df = pd.read_excel(output_path, engine='xlrd')
+            pathway_row = results_df[results_df['Name'] == pathway_name]
+            if not pathway_row.empty:
+                rank = pathway_row['Rank'].values[0]
+                fdr_q_val = pathway_row['FDR q-val'].values[0]
+                group = pathway_row['Group'].values[0] if 'Group' in pathway_row else None
+                return rank, fdr_q_val, group, results_df
+        except Exception as inner_e:
+            logger.error(f"Failed to read {output_path} with both engines: {str(e)} and {str(inner_e)}")
+    
     return None, None, None, None
 
 
@@ -155,7 +176,12 @@ def process_single_file(
         DIRECTORIES['output_base'], method, network_name, pathway_file, f"alpha_{alpha}"
     )
     os.makedirs(output_dir, exist_ok=True)
-    output_file_path = os.path.join(output_dir, file_name)
+    
+    if imputation_mode != 'None':
+        output_file_path = os.path.join(output_dir, imputation_mode, file_name)
+        os.makedirs(os.path.dirname(output_file_path), exist_ok=True)  # Create imputation mode subdirectory
+    else:
+        output_file_path = os.path.join(output_dir, file_name)
 
     run_analysis(
         test_name=file_name,
@@ -235,6 +261,7 @@ def process_single_file(
 def generate_summary_df(filtered_df):
     """
     Generate a summary DataFrame with pivoted results for imputation modes.
+    Handles both GSEA and non-GSEA methods.
 
     Args:
         filtered_df (pd.DataFrame): Filtered DataFrame of results.
@@ -242,44 +269,84 @@ def generate_summary_df(filtered_df):
     Returns:
         pd.DataFrame: Summary DataFrame.
     """
-    # Create pivot table including 'Group'
-    pivot_df = filtered_df.pivot_table(
-        index=['Dataset', 'Pathway'],
-        columns='Imputation Mode',
-        values=['Rank', 'Significant', 'Group'],
-        aggfunc='first'
-    ).reset_index()
+    # Create separate pivot tables for GSEA and non-GSEA methods
+    gsea_df = filtered_df[filtered_df['Method'].isin(['GSEA', 'NGSEA'])]
+    non_gsea_df = filtered_df[~filtered_df['Method'].isin(['GSEA', 'NGSEA'])]
 
-    # Flatten the MultiIndex columns
-    pivot_df.columns = [
-        f'{metric} {mode}' if mode else metric
-        for metric, mode in pivot_df.columns
-    ]
+    pivot_dfs = []
+
+    # Process non-GSEA methods
+    if not non_gsea_df.empty:
+        non_gsea_pivot = non_gsea_df.pivot_table(
+            index=['Dataset', 'Pathway'],
+            columns='Imputation Mode',
+            values=['Rank', 'Significant', 'Group'],
+            aggfunc='first'
+        ).reset_index()
+
+        # Flatten the MultiIndex columns for non-GSEA
+        non_gsea_pivot.columns = [
+            f'{metric} {mode}' if mode else metric
+            for metric, mode in non_gsea_pivot.columns
+        ]
+        pivot_dfs.append(non_gsea_pivot)
+
+    # Process GSEA methods
+    if not gsea_df.empty:
+        gsea_pivot = gsea_df.pivot_table(
+            index=['Dataset', 'Pathway'],
+            columns='Method',
+            values=['Rank', 'Significant'],  # GSEA doesn't have Group
+            aggfunc='first'
+        ).reset_index()
+
+        # Flatten the MultiIndex columns for GSEA
+        gsea_pivot.columns = [
+            f'{metric} {method}' if method else metric
+            for metric, method in gsea_pivot.columns
+        ]
+        pivot_dfs.append(gsea_pivot)
+
+    if not pivot_dfs:
+        logger.warning("No data to summarize")
+        return pd.DataFrame()
+
+    # Merge all pivot tables
+    summary_df = pivot_dfs[0]
+    for df in pivot_dfs[1:]:
+        summary_df = summary_df.merge(df, on=['Dataset', 'Pathway'], how='outer')
 
     # Define the ordered columns
     ordered_columns = ['Dataset', 'Pathway']
+    
+    # Add non-GSEA columns
     for mode in IMPUTATION_MODES:
         for metric in ['Rank', 'Significant', 'Group']:
             column_name = f'{metric} {mode}'
-            ordered_columns.append(column_name)
+            if column_name in summary_df.columns:
+                ordered_columns.append(column_name)
 
-    # Reorder the columns
-    pivot_df = pivot_df[ordered_columns]
+    # Add GSEA columns
+    for method in ['GSEA', 'NGSEA']:
+        for metric in ['Rank', 'Significant']:
+            column_name = f'{metric} {method}'
+            if column_name in summary_df.columns:
+                ordered_columns.append(column_name)
 
-    # Handle missing imputation modes by filling with NaN
-    for mode in IMPUTATION_MODES:
-        for metric in ['Rank', 'Significant', 'Group']:
-            column_name = f'{metric} {mode}'
-            if column_name not in pivot_df.columns:
-                pivot_df[column_name] = np.nan
+    # Reorder the columns (only include columns that exist)
+    existing_columns = [col for col in ordered_columns if col in summary_df.columns]
+    summary_df = summary_df[existing_columns]
+
+    # Handle missing values
+    summary_df = summary_df.fillna(np.nan)
 
     # Calculate average values for numerical columns
-    avg_values = pivot_df.select_dtypes(include=[np.number]).mean().to_dict()
+    avg_values = summary_df.select_dtypes(include=[np.number]).mean().to_dict()
     avg_row = {**{col: '' for col in ['Dataset', 'Pathway']},
                **avg_values}
 
     # Append the average row to the DataFrame
-    summary_df = pd.concat([pivot_df, pd.DataFrame([avg_row])], ignore_index=True)
+    summary_df = pd.concat([summary_df, pd.DataFrame([avg_row])], ignore_index=True)
 
     # Sort the DataFrame by 'Dataset'
     summary_df.sort_values(by='Dataset', inplace=True)

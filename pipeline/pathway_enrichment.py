@@ -17,7 +17,7 @@ import gseapy as gp
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def perform_permutation_test(filtered_pathways: dict, genes_by_pathway: dict, scores: dict, n_iterations: int = 1000, pval_threshold: float = 0.05) -> dict:
+def perform_permutation_test(filtered_pathways: dict, genes_by_pathway: dict, scores: dict, n_iterations: int = 100, pval_threshold: float = 0.05) -> dict:
     """
     Perform a permutation test to assess the significance of the observed pathway scores.
     Updates pathways with adjusted permutation p-values and adds a boolean flag for significance.
@@ -265,7 +265,7 @@ def perform_enrichment(test_name: str, general_args: GeneralArgs, output_path: s
         # Prepare data for GSEA
         gene_expression_data = pd.DataFrame({
             "gene": list(scores.keys()),
-            "logFC": [score[0] for score in scores.values()],  # Extract scores for logFC
+            "logFC": [score for score in scores.values()],  # Extract scores for logFC
         })
 
         gene_expression_data["gene"] = gene_expression_data["gene"].astype(str)
