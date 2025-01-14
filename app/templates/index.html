@@ -183,20 +183,28 @@
     }
 
     .sample-data-btn {
-        background-color: #f0f0f0;
-        color: #666;
-        padding: 8px 16px;
+        background-color: #4a90e2;
+        color: white;
+        padding: 10px 20px;
         border: none;
-        border-radius: 3px;
+        border-radius: 5px;
         cursor: pointer;
-        margin: 10px 0;
+        margin: 15px 0;
         transition: background-color 0.3s;
-        font-size: 0.9em;
+        font-size: 1em;
+        font-weight: bold;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .sample-data-btn:hover {
-        background-color: #e0e0e0;
-        color: #333;
+        background-color: #357abd;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .modal-content .sample-data-btn {
+        display: inline-block;
+        text-decoration: none;
+        margin: 5px 0;
     }
 
   </style>
@@ -246,7 +254,10 @@
       </select>
       <div class="form-section">
         <label for="network">Network Type
-          <span data-tippy-content="Choose between pre-built networks (Anat, HumanNet) or upload your own network file. Custom networks should represent protein-protein interactions with confidence scores.">?</span>
+          <span data-tippy-content="Choose between pre-built networks optimized for different analysis goals:
+          • Anat: A high-confidence protein interaction network prioritizing functional relationships for precise, biologically meaningful insights, with potentially lower coverage compared to broader networks.
+          • HumanNet: A broad network integrating diverse data sources for extensive coverage, with potential trade-offs in precision.
+          Custom networks should represent protein-protein interactions with confidence scores.">?</span>
         </label>
         <select id="network" name="network" aria-controls="custom_network_section" aria-expanded="false" required>
           <option value="Anat">Anat</option>
@@ -271,7 +282,10 @@
         </div>
       </div>
       <label for="alpha">Propagation Alpha
-        <span data-tippy-content="Controls how far the signal spreads through the network.">?</span>
+        <span data-tippy-content="The alpha parameter controls how far the signal spreads through the network:
+        • 0.1: Allows broader signal diffusion, better for detecting pathway-level effects
+        • 0.2: More conservative propagation, emphasizing direct interactions
+        Note: For custom networks, you can select any alpha value, but computing the similarity matrix will require significant computational time (~120 minutes).">?</span>
       </label>
       <select id="alpha" name="alpha" required>
         <option value="0.1">0.1</option>
@@ -382,18 +396,35 @@
     <div class="modal-content">
         <span class="close-modal" onclick="closeSampleDataModal()">&times;</span>
         <h3>Sample Data</h3>
-        <p>This sample data is from a study on Alzheimer's disease (GSE5281) comparing gene expression in the visual cortex. The file contains pre-ranked gene expression data suitable for pathway enrichment analysis.</p>
-        <p>You can:</p>
+        <p>The following sample files are available to help you test and understand PEANUT:</p>
         <ol>
-            <li>Download and view the sample data to understand the required format</li>
-            <li>Use it directly in PEANUT to test the analysis pipeline</li>
+            <li><strong>Gene Expression Data:</strong> Data from a study on Alzheimer's disease (GSE5281) comparing gene expression in the visual cortex
+                <ul>
+                    <li>Format: Tab-separated .rnk file with GeneID and expression score columns</li>
+                    <li><a href="/peanut/static/sample_data/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk" 
+                          download="GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk" 
+                          class="sample-data-btn">
+                        Download Expression Data
+                    </a></li>
+                </ul>
+            </li>
+            <li><strong>KEGG Pathways:</strong> Comprehensive collection of curated biological pathways from the KEGG database
+                <ul>
+                    <li>Format: GMT file containing pathway definitions</li>
+                    <li><a href="/peanut/static/sample_data/kegg.gmt" 
+                          download="kegg.gmt" 
+                          class="sample-data-btn">
+                        Download KEGG Pathways
+                    </a></li>
+                </ul>
+            </li>
         </ol>
-        <p><strong>File format:</strong> Tab-separated .rnk file with GeneID and expression score columns</p>
-        <a href="/peanut/static/sample_data/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk" 
-           download="GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk" 
-           class="sample-data-btn">
-            Download Sample Data
-        </a>
+        <p>You can:</p>
+        <ul>
+            <li>Download and view the sample data to understand the required formats</li>
+            <li>Use these files directly in PEANUT to test the analysis pipeline</li>
+            <li>Use the KEGG pathways file as a custom gene set by selecting "Upload Custom Gene Set (GMT)" in the form</li>
+        </ul>
     </div>
   </div>
   <script>

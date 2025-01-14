@@ -872,3 +872,4 @@ KeyError: 'Pathway'
 2025-01-07 15:29:18,511 - app.app_main - INFO - Application is starting up
 2025-01-07 15:56:50,088 - app.app_main - INFO - Application is starting up
 2025-01-07 16:45:10,612 - app.app_main - INFO - Application is shutting down
+2025-01-13 14:19:11,103 - app.app_main - INFO - Application is starting up
