@@ -19,6 +19,7 @@ class GeneralArgs:
     run_gsea: bool = False
     create_similarity_matrix: bool = False
     imputation_mode: str = "both"  # Options: "both", "dataset", "network", "all"
+    ones_imputation: bool = False
 
     # Paths and directories
     root_folder: str = field(init=False)

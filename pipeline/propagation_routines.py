@@ -131,7 +131,7 @@ def read_sparse_matrix_txt(network: nx.Graph, similarity_matrix_path: str) -> tu
     return matrix, gene_index
 
 
-def matrix_prop(propagation_input: dict, gene_indexes: dict, matrix=None) -> np.ndarray:
+def matrix_prop(propagation_input: dict, gene_indexes: dict, matrix=None, ones_imputation=False) -> np.ndarray:
     """
     Propagates seed gene values through a precomputed inverse matrix for faster calculation.
 
@@ -145,6 +145,8 @@ def matrix_prop(propagation_input: dict, gene_indexes: dict, matrix=None) -> np.
     """
     num_genes = len(gene_indexes)
     F_0 = np.zeros(num_genes)  # Changed to a 1D array
+    if ones_imputation:
+        F_0 = np.ones(num_genes)
     for gene_id, value in propagation_input.items():
         F_0[gene_indexes[gene_id]] = value
     F = matrix @ F_0
@@ -362,7 +364,7 @@ def perform_propagation(test_name: str, general_args, network=None, prior_data=N
     }
 
     # Perform propagation
-    propagation_score = matrix_prop(filtered_propagation_input, network_gene_index, matrix=matrix)
+    propagation_score = matrix_prop(filtered_propagation_input, network_gene_index, matrix=matrix, ones_imputation=general_args.ones_imputation)
 
     # Normalize scores
     normalized_df = _normalize_prop_scores(matrix, network_gene_index, propagation_score)

@@ -22,7 +22,7 @@ analysis_settings:
  
   alphas:
     - 0.2                                            # Alpha values for analysis
-  max_workers: 1                                    # Number of parallel workers
+  max_workers: 60                                    # Number of parallel workers
   FDR_threshold: 0.05     
 logging:
   level: "DEBUG"                                       # Logging level (e.g., DEBUG, INFO, WARNING)

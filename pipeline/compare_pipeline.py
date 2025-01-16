@@ -87,7 +87,8 @@ def run_analysis(test_name, prior_data, network, network_name, alpha, method, ou
         alpha=alpha if method == 'PEANUT' else 1,
         run_propagation= True,
         input_type='Abs_Score' if method == 'PEANUT' else 'Score',
-        imputation_mode=imputation_mode
+        imputation_mode=imputation_mode,
+        ones_imputation=False
     )
 
     if method == 'NGSEA':
