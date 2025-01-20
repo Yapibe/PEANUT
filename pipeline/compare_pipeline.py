@@ -87,8 +87,7 @@ def run_analysis(test_name, prior_data, network, network_name, alpha, method, ou
         alpha=alpha if method == 'PEANUT' else 1,
         run_propagation= True,
         input_type='Abs_Score' if method == 'PEANUT' else 'Score',
-        imputation_mode=imputation_mode,
-        ones_imputation=False
+        imputation_mode=imputation_mode
     )
 
     if method == 'NGSEA':
@@ -101,7 +100,7 @@ def run_analysis(test_name, prior_data, network, network_name, alpha, method, ou
     if general_args.run_propagation:
         perform_propagation(test_name, general_args, network, prior_data)
 
-    perform_enrichment(test_name, general_args, output_path)
+    # perform_enrichment(test_name, general_args, output_path)
 
 
 def get_pathway_rank(output_path: str, pathway_name: str) -> tuple:
@@ -195,7 +194,8 @@ def process_single_file(
         pathway_file=pathway_file,
         imputation_mode=imputation_mode
     )
-
+    logger.info(f"Analysis complete for {file_name}")
+    return
     # Get rank and FDR q-val of the associated pathway
     rank, fdr_q_val, group, results_df = get_pathway_rank(output_file_path, pathway_name)
 

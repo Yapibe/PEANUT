@@ -7,9 +7,9 @@ directories:
 analysis_settings:
   imputation_modes:
     - "both"        # Genes in both dataset and network
-    - "dataset"     # Genes in both + genes only in dataset (original score)
-    - "network"     # Genes in both + genes only in network (propagated score)
-    - "all"         # All genes (original + propagated scores)
+    # - "dataset"     # Genes in both + genes only in dataset (original score)
+    # - "network"     # Genes in both + genes only in network (propagated score)
+    # - "all"         # All genes (original + propagated scores)
 
   networks:
     - "Anat"                                    # List of networks to analyze
@@ -22,7 +22,7 @@ analysis_settings:
  
   alphas:
     - 0.2                                            # Alpha values for analysis
-  max_workers: 60                                    # Number of parallel workers
+  max_workers: 1                                    # Number of parallel workers
   FDR_threshold: 0.05     
 logging:
   level: "DEBUG"                                       # Logging level (e.g., DEBUG, INFO, WARNING)

@@ -6,9 +6,11 @@ import numpy as np
 import networkx as nx
 from args import GeneralArgs, PropagationTask
 from utils import save_propagation_score, set_input_type
-from tqdm import tqdm
 import pandas as pd
 import logging
+import matplotlib.pyplot as plt
+import json
+
 
 # Configure logger
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -131,7 +133,7 @@ def read_sparse_matrix_txt(network: nx.Graph, similarity_matrix_path: str) -> tu
     return matrix, gene_index
 
 
-def matrix_prop(propagation_input: dict, gene_indexes: dict, matrix=None, ones_imputation=False) -> np.ndarray:
+def matrix_prop(propagation_input: dict, gene_indexes: dict, matrix=None) -> np.ndarray:
     """
     Propagates seed gene values through a precomputed inverse matrix for faster calculation.
 
@@ -145,8 +147,6 @@ def matrix_prop(propagation_input: dict, gene_indexes: dict, matrix=None, ones_i
     """
     num_genes = len(gene_indexes)
     F_0 = np.zeros(num_genes)  # Changed to a 1D array
-    if ones_imputation:
-        F_0 = np.ones(num_genes)
     for gene_id, value in propagation_input.items():
         F_0[gene_indexes[gene_id]] = value
     F = matrix @ F_0
@@ -245,18 +245,21 @@ def _normalize_prop_scores(similarity_matrix, gene_to_index_map, raw_prop_scores
     indices_to_reset = list(set(zero_norm_indices).difference(zero_prop_indices))
     normalization_scores[indices_to_reset] = 1
 
+    # Create a copy of raw scores for normalization to avoid modifying the original
+    normalized_scores = raw_prop_scores.copy()
+    
     # Normalize non-zero propagation scores
-    nonzero_prop_indices = np.nonzero(raw_prop_scores != 0)[0]
-    raw_prop_scores[nonzero_prop_indices] /= np.abs(normalization_scores[nonzero_prop_indices])
+    nonzero_prop_indices = np.nonzero(normalized_scores != 0)[0]
+    normalized_scores[nonzero_prop_indices] /= np.abs(normalization_scores[nonzero_prop_indices])
 
     # Create DataFrame with all network genes
-    network_genes = list(gene_to_index_map.keys())
-    normalized_scores = raw_prop_scores[np.array([gene_to_index_map[gene_id] for gene_id in network_genes])]
+    normalized_scores = normalized_scores[np.array([gene_to_index_map[gene_id] for gene_id in all_nodes])]
 
     return pd.DataFrame({
-        'GeneID': network_genes,
+        'GeneID': all_nodes,
         'Score': normalized_scores
     })
+
 
 
 
@@ -328,7 +331,7 @@ def handle_no_propagation_cases(prior_data, prop_task, general_args, network):
         _handle_no_propagation_case(prior_data, prop_task, general_args, network)
 
 
-def perform_propagation(test_name: str, general_args, network=None, prior_data=None):
+def perform_propagation(test_name: str, general_args: GeneralArgs, network: nx.Graph, prior_data: pd.DataFrame):
     """
     Performs the propagation of gene scores through the network.
 
@@ -341,6 +344,8 @@ def perform_propagation(test_name: str, general_args, network=None, prior_data=N
     Returns:
     - None
     """
+
+
     prop_task = PropagationTask(general_args=general_args, test_name=test_name)
     
     # Modify prior_data based on the input type
@@ -364,27 +369,89 @@ def perform_propagation(test_name: str, general_args, network=None, prior_data=N
     }
 
     # Perform propagation
-    propagation_score = matrix_prop(filtered_propagation_input, network_gene_index, matrix=matrix, ones_imputation=general_args.ones_imputation)
+    propagation_score = matrix_prop(filtered_propagation_input, network_gene_index, matrix=matrix)
 
     # Normalize scores
     normalized_df = _normalize_prop_scores(matrix, network_gene_index, propagation_score)
 
+    # Directory for saving outputs
+    output_dir = os.path.join(prop_task.output_folder, "distributions")
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Calculate statistics for each score type
+    stats = {}
+
+    # Dataset scores
+    stats['dataset'] = {
+        'mean': propagation_input_df['Score'].mean(),
+        'std': propagation_input_df['Score'].std(),
+        'min': propagation_input_df['Score'].min(),
+        'max': propagation_input_df['Score'].max(),
+        'range': propagation_input_df['Score'].max() - propagation_input_df['Score'].min(),
+    }
+
+    # Network (propagation) scores
+    network_scores_series = pd.Series(propagation_score)
+    stats['network'] = {
+        'mean': network_scores_series.mean(),
+        'std': network_scores_series.std(),
+        'min': network_scores_series.min(),
+        'max': network_scores_series.max(),
+        'range': network_scores_series.max() - network_scores_series.min(),
+    }
+
+    # Intersection (normalized) scores
+    stats['normalized'] = {
+        'mean': normalized_df['Score'].mean(),
+        'std': normalized_df['Score'].std(),
+        'min': normalized_df['Score'].min(),
+        'max': normalized_df['Score'].max(),
+        'range': normalized_df['Score'].max() - normalized_df['Score'].min(),
+    }
+
+    # Save statistics to a JSON file with the dataset name
+    stats_file = os.path.join(output_dir, f"score_statistics_{test_name}.json")
+    with open(stats_file, 'w') as f:
+        json.dump(stats, f, indent=4)
+
+
+    # Plot histograms
+    plt.figure()
+    propagation_input_df['Score'].hist(bins=50)
+    plt.title(f"Dataset Scores - {test_name}")
+    plt.xlabel("Score")
+    plt.ylabel("Frequency")
+    plt.savefig(os.path.join(output_dir, "dataset_scores_histogram.png"))
+    plt.close()
+
+    plt.figure()
+    network_scores_series.hist(bins=50)
+    plt.title(f"Network Scores (Raw Propagation) - {test_name}")
+    plt.xlabel("Score")
+    plt.ylabel("Frequency")
+    plt.savefig(os.path.join(output_dir, "network_scores_histogram.png"))
+    plt.close()
+
+    plt.figure()
+    normalized_df['Score'].hist(bins=50)
+    plt.title(f"Intersection Scores (Normalized) - {test_name}")
+    plt.xlabel("Score")
+    plt.ylabel("Frequency")
+    plt.savefig(os.path.join(output_dir, "intersection_scores_histogram.png"))
+    plt.close()
+
     # Create final scores DataFrame based on imputation mode
     if general_args.imputation_mode == "both":
-        # Keep only genes that exist in both dataset and network
         final_scores_df = normalized_df.merge(
             prior_data[['GeneID']], on='GeneID', how='inner'
         )
     elif general_args.imputation_mode == "dataset":
-        # Keep all genes from the original dataset (both those in network and those only in dataset)
         genes_in_network = normalized_df[normalized_df['GeneID'].isin(prior_data['GeneID'])].copy()
         dataset_only_genes = prior_data[~prior_data['GeneID'].isin(network.nodes())].copy()
         final_scores_df = pd.concat([genes_in_network, dataset_only_genes])
     elif general_args.imputation_mode == "network":
-        # Keep all genes from the network (both those in dataset and network-exclusive)
         final_scores_df = normalized_df.copy()
     elif general_args.imputation_mode == "all":
-        # Keep all genes from both dataset and network
         dataset_only_genes = prior_data[~prior_data['GeneID'].isin(network.nodes())].copy()
         final_scores_df = pd.concat([normalized_df, dataset_only_genes])
 
