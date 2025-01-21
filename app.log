@@ -873,3 +873,19 @@ KeyError: 'Pathway'
 2025-01-07 15:56:50,088 - app.app_main - INFO - Application is starting up
 2025-01-07 16:45:10,612 - app.app_main - INFO - Application is shutting down
 2025-01-13 14:19:11,103 - app.app_main - INFO - Application is starting up
+2025-01-21 13:09:32,212 - app.app_main - INFO - Application is starting up
+2025-01-21 13:21:35,724 - app.app_main - INFO - Application is shutting down
+2025-01-21 13:21:37,876 - app.app_main - INFO - Static files are served from: /home/yair/projects/Yair_propagation/app/static
+2025-01-21 13:21:37,888 - app.app_main - INFO - Application is starting up
+2025-01-21 13:24:26,031 - app.app_main - INFO - Application is shutting down
+2025-01-21 13:24:28,279 - app.app_main - INFO - Static files are served from: /home/yair/projects/Yair_propagation/app/static
+2025-01-21 13:24:28,280 - app.app_main - INFO - Static files are served from: /home/yair/projects/Yair_propagation/app/static
+2025-01-21 13:24:28,286 - app.app_main - INFO - Application is starting up
+2025-01-21 13:24:46,926 - app.app_main - INFO - Application is shutting down
+2025-01-21 13:24:48,971 - app.app_main - INFO - Static files are served from: /home/yair/projects/Yair_propagation/app/static
+2025-01-21 13:24:48,979 - app.app_main - INFO - Application is starting up
+2025-01-21 13:28:06,704 - app.app_main - INFO - Application is shutting down
+2025-01-21 13:28:08,803 - app.app_main - INFO - Static files will be served from: /home/yair/projects/Yair_propagation/app/static
+2025-01-21 13:28:08,803 - app.app_main - INFO - Contents of static directory: [PosixPath('/home/yair/projects/Yair_propagation/app/static/sample_data'), PosixPath('/home/yair/projects/Yair_propagation/app/static/test.txt'), PosixPath('/home/yair/projects/Yair_propagation/app/static/favicon.png')]
+2025-01-21 13:28:08,809 - app.app_main - INFO - Application is starting up
+2025-01-21 15:21:08,775 - app.app_main - INFO - Application is shutting down

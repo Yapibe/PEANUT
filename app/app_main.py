@@ -65,6 +65,9 @@ app.mount(
     StaticFiles(directory=str(static_dir)),
     name="static",
 )
+logger.info(f"Static files will be served from: {static_dir}")
+logger.info(f"Contents of static directory: {list(static_dir.iterdir())}")
+
 
 # Include routes
 app.include_router(router)
