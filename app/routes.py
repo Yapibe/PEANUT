@@ -25,6 +25,11 @@ templates = Jinja2Templates(directory="app/templates")
 # In-memory job storage
 job_storage: Dict[str, Dict] = {}
 
+# Sample data file paths
+SAMPLE_DATA_DIR = Path("app/static/sample_data")
+SAMPLE_EXPRESSION_FILE = SAMPLE_DATA_DIR / "GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk"
+SAMPLE_KEGG_FILE = SAMPLE_DATA_DIR / "kegg.gmt"
+
 @router.post("/run-pipeline")
 async def run_pipeline(
     background_tasks: BackgroundTasks,
@@ -235,4 +240,38 @@ async def read_index(request: Request):
     return templates.TemplateResponse(
         "index.html",
         {"request": request, "current_date": current_date}
+    )
+
+@router.get("/sample-data/expression")
+async def download_sample_expression():
+    """
+    Endpoint to download sample expression data with proper headers
+    """
+    logger.info("Downloading sample expression data")
+    if not SAMPLE_EXPRESSION_FILE.exists():
+        logger.error(f"Sample expression file not found: {SAMPLE_EXPRESSION_FILE}")
+        raise HTTPException(status_code=404, detail="Sample expression file not found")
+    
+    return FileResponse(
+        path=SAMPLE_EXPRESSION_FILE, 
+        filename="GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk",
+        media_type="text/plain",
+        headers={"Content-Disposition": "attachment; filename=GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk"}
+    )
+
+@router.get("/sample-data/kegg")
+async def download_sample_kegg():
+    """
+    Endpoint to download sample KEGG pathway data with proper headers
+    """
+    logger.info("Downloading sample KEGG pathway data")
+    if not SAMPLE_KEGG_FILE.exists():
+        logger.error(f"Sample KEGG file not found: {SAMPLE_KEGG_FILE}")
+        raise HTTPException(status_code=404, detail="Sample KEGG file not found")
+    
+    return FileResponse(
+        path=SAMPLE_KEGG_FILE, 
+        filename="kegg.gmt",
+        media_type="text/plain",
+        headers={"Content-Disposition": "attachment; filename=kegg.gmt"}
     )

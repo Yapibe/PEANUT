@@ -1,17 +1,18 @@
 import logging
 import logging.config
 import sys
+import time
 from pathlib import Path
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response, status
 from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.staticfiles import StaticFiles
-from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware  # Import from uvicorn
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from .routes import router
 
 # Configure both application and access logging
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     handlers=[
         logging.FileHandler("app.log"),
         logging.StreamHandler(sys.stdout)
@@ -45,9 +46,31 @@ class AddCacheControlHeadersMiddleware(BaseHTTPMiddleware):
             response.headers["Expires"] = "0"
         return response
 
+class RequestLoggingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        start_time = time.time()
+        try:
+            response = await call_next(request)
+            process_time = time.time() - start_time
+            logger.info(
+                f"Request: {request.method} {request.url.path} - Status: {response.status_code} - Time: {process_time:.4f}s"
+            )
+            return response
+        except Exception as e:
+            process_time = time.time() - start_time
+            logger.error(
+                f"Request: {request.method} {request.url.path} - Error: {str(e)} - Time: {process_time:.4f}s"
+            )
+            return Response(
+                content={"detail": "Internal server error"},
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                media_type="application/json"
+            )
+
 middleware = [
-    Middleware(ProxyHeadersMiddleware),  # Use Uvicorn's ProxyHeadersMiddleware
+    Middleware(ProxyHeadersMiddleware),
     Middleware(AddCacheControlHeadersMiddleware),
+    Middleware(RequestLoggingMiddleware),
 ]
 
 # FastAPI app initialization
@@ -56,6 +79,12 @@ app = FastAPI(
     middleware=middleware,
     root_path="/peanut",
 )
+
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    """Simple health check endpoint to verify service is running"""
+    return {"status": "healthy", "service": "PEANUT"}
 
 # Mount static files directly on the app
 static_dir = Path(__file__).resolve().parent / "static"
@@ -67,7 +96,6 @@ app.mount(
 )
 logger.info(f"Static files will be served from: {static_dir}")
 logger.info(f"Contents of static directory: {list(static_dir.iterdir())}")
-
 
 # Include routes
 app.include_router(router)
