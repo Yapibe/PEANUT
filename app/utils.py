@@ -1,13 +1,20 @@
-import io
 import logging
 import pandas as pd
 from fastapi import HTTPException
-import numpy as np
-from pipeline.utils import read_prior_set
 from pathlib import Path
-from typing import Tuple, List, Optional
+from typing import Tuple, List
+import yaml
+import logging.config
 
-logger = logging.getLogger(__name__)
+def setup_logging():
+    """Load logging configuration from YAML file."""
+    config_path = Path(__file__).parent.parent / 'config' / 'log_config.yaml'
+    with open(config_path, 'r') as f:
+        config = yaml.safe_load(f)
+    logging.config.dictConfig(config)
+    return logging.getLogger(__name__)
+
+logger = setup_logging()
 
 def validate_columns(df: pd.DataFrame, required_columns: List[str], filename: str) -> None:
     """
@@ -40,11 +47,18 @@ def validate_numeric_values(df: pd.DataFrame, numeric_columns: List[str], filena
         ValueError: If non-numeric values are found
     """
     for col in numeric_columns:
-        non_numeric = df[~pd.to_numeric(df[col], errors='coerce').notna()]
-        if not non_numeric.empty:
-            msg = f"Non-numeric values found in {col} column of {filename}"
-            logger.error(f"{msg}. First few invalid rows: {non_numeric.head()}")
-            raise ValueError(msg)
+        try:
+            # Try to convert to numeric, coercing errors to NaN
+            numeric_series = pd.to_numeric(df[col], errors='coerce')
+            non_numeric = df[numeric_series.isna()]
+            
+            if not non_numeric.empty:
+                msg = f"Non-numeric values found in {col} column of {filename}"
+                logger.error(f"{msg}. First few invalid rows: {non_numeric.head()}")
+                raise ValueError(msg)
+        except Exception as e:
+            logger.error(f"Error validating numeric values in {filename}: {str(e)}")
+            raise
 
 def validate_network_file(file_path: Path) -> Tuple[pd.DataFrame, bool]:
     """
@@ -58,9 +72,18 @@ def validate_network_file(file_path: Path) -> Tuple[pd.DataFrame, bool]:
     
     Raises:
         ValueError: If validation fails
+        HTTPException: If file cannot be read
     """
     try:
-        df = pd.read_csv(file_path, sep='\t', header=None)
+        # Read the file with error handling
+        try:
+            df = pd.read_csv(file_path, sep='\t', header=None)
+        except Exception as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Could not read network file: {str(e)}"
+            )
+        
         logger.info(f"Successfully read network file: {file_path}")
         
         # Check minimum columns
@@ -87,12 +110,18 @@ def validate_network_file(file_path: Path) -> Tuple[pd.DataFrame, bool]:
             if not ((df['Weight'] >= 0) & (df['Weight'] <= 1)).all():
                 raise ValueError("Weights must be between 0 and 1")
         
+        # Check for duplicate edges
+        if df.duplicated(subset=['Source', 'Target']).any():
+            logger.warning(f"Duplicate edges found in network file: {file_path}")
+        
         logger.info(f"Network file validation successful: {file_path}")
         return df, is_weighted
         
     except Exception as e:
         logger.error(f"Error validating network file {file_path}: {str(e)}")
-        raise
+        if isinstance(e, HTTPException):
+            raise
+        raise ValueError(f"Invalid network file: {str(e)}")
 
 def validate_input_file(file_path: Path, file_type: str) -> pd.DataFrame:
     """
@@ -107,13 +136,21 @@ def validate_input_file(file_path: Path, file_type: str) -> pd.DataFrame:
     
     Raises:
         ValueError: If validation fails
+        HTTPException: If file cannot be read
     """
     try:
-        if file_type == 'rnk':
-            df = pd.read_csv(file_path, sep='\t', header=None)
-            df.columns = ['GeneID', 'Score']
-        else:  # xlsx
-            df = pd.read_excel(file_path)
+        # Read the file with error handling
+        try:
+            if file_type == 'rnk':
+                df = pd.read_csv(file_path, sep='\t', header=None)
+                df.columns = ['GeneID', 'Score']
+            else:  # xlsx
+                df = pd.read_excel(file_path)
+        except Exception as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Could not read {file_type} file: {str(e)}"
+            )
         
         logger.info(f"Successfully read {file_type} file: {file_path}")
         
@@ -123,12 +160,20 @@ def validate_input_file(file_path: Path, file_type: str) -> pd.DataFrame:
         # Validate Score column is numeric
         validate_numeric_values(df, ['Score'], file_path.name)
         
+        # Check for duplicate genes
+        if df['GeneID'].duplicated().any():
+            logger.warning(f"Duplicate genes found in {file_path}")
+            # Keep only the first occurrence of each gene
+            df = df.drop_duplicates(subset=['GeneID'], keep='first')
+        
         logger.info(f"Input file validation successful: {file_path}")
         return df
         
     except Exception as e:
         logger.error(f"Error validating {file_type} file {file_path}: {str(e)}")
-        raise
+        if isinstance(e, HTTPException):
+            raise
+        raise ValueError(f"Invalid {file_type} file: {str(e)}")
 
 def convert_gmt_to_pathway_format(gmt_path: Path, output_path: Path) -> None:
     """
@@ -140,33 +185,49 @@ def convert_gmt_to_pathway_format(gmt_path: Path, output_path: Path) -> None:
         
     Raises:
         ValueError: If the GMT file format is invalid
+        HTTPException: If file cannot be read or written
     """
     try:
         new_data = []
-        with open(gmt_path, 'r') as file:
-            for line in file:
-                parts = line.strip().split('\t')
-                if len(parts) < 3:  # Ensure minimum required parts
-                    raise ValueError("Invalid GMT file format: each line must have at least 3 columns")
-                pathway_name = parts[0]
-                genes = parts[2:]  # Skip the description
-                new_data.append([pathway_name] + genes)
+        try:
+            with open(gmt_path, 'r') as file:
+                for line_num, line in enumerate(file, 1):
+                    parts = line.strip().split('\t')
+                    if len(parts) < 3:
+                        raise ValueError(f"Invalid GMT format at line {line_num}: each line must have at least 3 columns")
+                    pathway_name = parts[0]
+                    genes = parts[2:]  # Skip the description
+                    new_data.append([pathway_name] + genes)
+        except Exception as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Could not read GMT file: {str(e)}"
+            )
         
         # Convert to DataFrame and save
-        new_pathways_df = pd.DataFrame(new_data)
-        
-        # Ensure output directory exists
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        # Save to TSV format
-        new_pathways_df.to_csv(
-            output_path,
-            index=False,
-            header=False,
-            sep='\t'
-        )
-        logger.info(f"Successfully converted GMT file to pathway format: {output_path}")
+        try:
+            new_pathways_df = pd.DataFrame(new_data)
+            
+            # Ensure output directory exists
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Save to TSV format
+            new_pathways_df.to_csv(
+                output_path,
+                index=False,
+                header=False,
+                sep='\t'
+            )
+            logger.info(f"Successfully converted GMT file to pathway format: {output_path}")
+            
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Could not write pathway file: {str(e)}"
+            )
         
     except Exception as e:
         logger.error(f"Error converting GMT file: {str(e)}")
+        if isinstance(e, HTTPException):
+            raise
         raise ValueError(f"Failed to convert GMT file: {str(e)}")

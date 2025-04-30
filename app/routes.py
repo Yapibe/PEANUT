@@ -1,4 +1,3 @@
-import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from fastapi import APIRouter, UploadFile, HTTPException, BackgroundTasks, Request, Form, File
@@ -7,28 +6,41 @@ from fastapi.templating import Jinja2Templates
 import pandas as pd
 import uuid
 from datetime import datetime
-import tempfile
 import traceback
-
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from .models import SettingsInput, JobStatus
-from .utils import validate_network_file, validate_input_file, convert_gmt_to_pathway_format
+from .utils import validate_input_file, setup_logging
 from .pipeline_runner import PipelineRunner
-from .temp_manager import TempFileManager
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger = setup_logging()
 router = APIRouter()
 
 # Set up templates
 templates = Jinja2Templates(directory="app/templates")
 
-# In-memory job storage
+# In-memory job storage with cleanup
 job_storage: Dict[str, Dict] = {}
+JOB_EXPIRY_HOURS = 4  # Jobs expire after 4 hours
 
 # Sample data file paths
 SAMPLE_DATA_DIR = Path("app/static/sample_data")
 SAMPLE_EXPRESSION_FILE = SAMPLE_DATA_DIR / "GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk"
 SAMPLE_KEGG_FILE = SAMPLE_DATA_DIR / "kegg.gmt"
+
+# Thread pool for file operations
+thread_pool = ThreadPoolExecutor(max_workers=4)
+
+async def cleanup_expired_jobs():
+    """Clean up expired jobs from storage."""
+    current_time = datetime.now()
+    expired_jobs = [
+        job_id for job_id, job in job_storage.items()
+        if (current_time - datetime.fromisoformat(job['created_at'])).total_seconds() > JOB_EXPIRY_HOURS * 3600
+    ]
+    for job_id in expired_jobs:
+        logger.info(f"Cleaning up expired job: {job_id}")
+        del job_storage[job_id]
 
 @router.post("/run-pipeline")
 async def run_pipeline(
@@ -48,15 +60,16 @@ async def run_pipeline(
     network_file: Optional[UploadFile] = None,
     files: List[UploadFile] = File(...),
 ):
-    """
-    Endpoint to run the pipeline with the provided settings and input files.
-    """
+    """Run the PEANUT pipeline with the provided settings and input files."""
     try:
+        # Clean up expired jobs
+        await cleanup_expired_jobs()
+        
+        # Generate job code
         job_code = str(uuid.uuid4())
         logger.info(f"Generated job code: {job_code}")
         
-        # Initialize job storage with detailed logging
-        logger.debug(f"Initializing job storage for {job_code}")
+        # Initialize job storage
         job_storage[job_code] = {
             "status": "Processing",
             "output_file": None,
@@ -64,46 +77,42 @@ async def run_pipeline(
             "created_at": datetime.now().isoformat(),
             "last_updated": datetime.now().isoformat()
         }
-        logger.debug(f"Current job storage state: {job_storage}")
-
-        # Read and store content of custom network and pathway files in memory
-        if network == 'custom' and network_file:
-            logger.debug("Processing custom network file")
-            network_content = await network_file.read()
-            network_file = UploadFile(
-                filename=network_file.filename,
-                file=pd.io.common.BytesIO(network_content)
-            )
-
-        if pathway_file == 'custom' and pathway_file_upload:
-            logger.debug("Processing custom pathway file")
-            pathway_content = await pathway_file_upload.read()
-            pathway_file_upload = UploadFile(
-                filename=pathway_file_upload.filename,
-                file=pd.io.common.BytesIO(pathway_content)
-            )
+        logger.debug(f"Initialized job storage for {job_code}")
 
         # Validate and process input files
         file_dfs, filenames = [], []
         for file in files:
             file_type = file.filename.split('.')[-1].lower()
             if file_type not in ['rnk', 'xlsx']:
-                raise HTTPException(status_code=400, detail=f"Unsupported file type: {file_type}")
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Unsupported file type: {file_type}. Only .rnk and .xlsx files are supported."
+                )
 
+            # Read file content
             content = await file.read()
             temp_path = Path(f"/tmp/{file.filename}")
-            temp_path.write_bytes(content)
+            
             try:
-                df = validate_input_file(temp_path, file_type)
+                # Write to temporary file
+                temp_path.write_bytes(content)
+                
+                # Validate file
+                df = await asyncio.get_event_loop().run_in_executor(
+                    thread_pool,
+                    lambda: validate_input_file(temp_path, file_type)
+                )
                 file_dfs.append(df)
                 filenames.append(file.filename)
             finally:
-                temp_path.unlink()  # Clean up temporary files
+                # Clean up temporary file
+                if temp_path.exists():
+                    temp_path.unlink()
 
-        # Create the pipeline runner
+        # Create pipeline runner
         runner = PipelineRunner(job_code)
         
-        logger.info("Adding pipeline task to background tasks")
+        # Add pipeline task to background tasks
         background_tasks.add_task(
             _run_pipeline_task,
             runner=runner,
@@ -134,8 +143,9 @@ async def run_pipeline(
     except Exception as e:
         logger.error(f"Pipeline request failed with error: {str(e)}")
         logger.error(f"Traceback: {traceback.format_exc()}")
+        if isinstance(e, HTTPException):
+            raise
         raise HTTPException(status_code=422, detail=str(e))
-
 
 async def _run_pipeline_task(
     runner: PipelineRunner,
@@ -145,14 +155,11 @@ async def _run_pipeline_task(
     job_storage: Dict[str, Dict[str, Any]],
     job_code: str,
 ):
-    """
-    Task to run the pipeline in the background.
-    """
-    logger.info(f"=== Starting background pipeline task for job {job_code} ===")
-    logger.debug(f"Current job storage state: {job_storage}")
+    """Run the pipeline in the background."""
+    logger.info(f"Starting background pipeline task for job {job_code}")
     
     try:
-        logger.info("Executing pipeline")
+        # Execute pipeline
         results = await runner.run(settings_input=settings, file_dfs=file_dfs, filenames=filenames)
         
         output_file = results.get("output_file")
@@ -161,7 +168,7 @@ async def _run_pipeline_task(
         download_url = f"/peanut/download/{job_code}"
         logger.debug(f"Generated download URL: {download_url}")
         
-        logger.debug(f"Updating job storage for {job_code}")
+        # Update job storage
         job_storage[job_code].update({
             "status": "Completed",
             "output_file": str(output_file),
@@ -170,7 +177,6 @@ async def _run_pipeline_task(
             "last_updated": datetime.now().isoformat()
         })
         logger.info(f"Pipeline completed successfully for job {job_code}. Results available at {download_url}")
-
 
     except Exception as e:
         logger.error(f"Pipeline execution failed for job {job_code}")
@@ -184,20 +190,17 @@ async def _run_pipeline_task(
             "error": str(e),
             "last_updated": datetime.now().isoformat()
         })
-        logger.error(f"Pipeline execution failed for job {job_code}: {e}", exc_info=True)
-
 
 @router.get("/check-status/{job_code}")
 async def check_status(job_code: str) -> JobStatus:
-    """
-    Check the status of a job by its code.
-    """
-    logger.info(f"=== Checking status for job {job_code} ===")
-    logger.debug(f"Current job storage state: {job_storage}")
+    """Check the status of a job by its code."""
+    logger.info(f"Checking status for job {job_code}")
+    
+    # Clean up expired jobs
+    await cleanup_expired_jobs()
     
     if job_code not in job_storage:
         logger.error(f"Job code {job_code} not found in storage")
-        logger.debug(f"Available job codes: {list(job_storage.keys())}")
         raise HTTPException(status_code=404, detail="Job not found")
     
     job = job_storage[job_code]
@@ -208,19 +211,18 @@ async def check_status(job_code: str) -> JobStatus:
         download_url = f"/peanut/download/{job_code}"
         logger.info(f"Job completed. Download URL: {download_url}")
     
-    logger.info(f"Returning status for job {job_code}: {job['status']}")
     return JobStatus(
         status=job["status"],
         download_url=download_url,
         error=job["error"]
     )
 
-
 @router.get("/download/{job_code}")
 async def download_results(job_code: str):
-    """
-    Endpoint to download the results of a completed job.
-    """
+    """Download the results of a completed job."""
+    # Clean up expired jobs
+    await cleanup_expired_jobs()
+    
     if job_code not in job_storage or job_storage[job_code]["status"] != "Completed":
         logger.error(f"Download requested for invalid or incomplete job: {job_code}")
         raise HTTPException(status_code=404, detail="Job not found or not completed")
@@ -230,8 +232,14 @@ async def download_results(job_code: str):
         logger.error(f"Output file not found for job: {job_code}")
         raise HTTPException(status_code=404, detail="Output file not found")
 
-    return FileResponse(output_file, media_type="application/zip", filename=Path(output_file).name)
-
+    return FileResponse(
+        output_file,
+        media_type="application/zip",
+        filename=Path(output_file).name,
+        headers={
+            "Content-Disposition": f"attachment; filename={Path(output_file).name}"
+        }
+    )
 
 @router.get("/", response_class=HTMLResponse)
 async def read_index(request: Request):
@@ -244,34 +252,32 @@ async def read_index(request: Request):
 
 @router.get("/sample-data/expression")
 async def download_sample_expression():
-    """
-    Endpoint to download sample expression data with proper headers
-    """
-    logger.info("Downloading sample expression data")
+    """Download sample expression data."""
     if not SAMPLE_EXPRESSION_FILE.exists():
-        logger.error(f"Sample expression file not found: {SAMPLE_EXPRESSION_FILE}")
+        logger.error("Sample expression file not found")
         raise HTTPException(status_code=404, detail="Sample expression file not found")
     
     return FileResponse(
-        path=SAMPLE_EXPRESSION_FILE, 
-        filename="GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk",
+        SAMPLE_EXPRESSION_FILE,
         media_type="text/plain",
-        headers={"Content-Disposition": "attachment; filename=GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk"}
+        filename=SAMPLE_EXPRESSION_FILE.name,
+        headers={
+            "Content-Disposition": f"attachment; filename={SAMPLE_EXPRESSION_FILE.name}"
+        }
     )
 
 @router.get("/sample-data/kegg")
 async def download_sample_kegg():
-    """
-    Endpoint to download sample KEGG pathway data with proper headers
-    """
-    logger.info("Downloading sample KEGG pathway data")
+    """Download sample KEGG pathway data."""
     if not SAMPLE_KEGG_FILE.exists():
-        logger.error(f"Sample KEGG file not found: {SAMPLE_KEGG_FILE}")
+        logger.error("Sample KEGG file not found")
         raise HTTPException(status_code=404, detail="Sample KEGG file not found")
     
     return FileResponse(
-        path=SAMPLE_KEGG_FILE, 
-        filename="kegg.gmt",
+        SAMPLE_KEGG_FILE,
         media_type="text/plain",
-        headers={"Content-Disposition": "attachment; filename=kegg.gmt"}
+        filename=SAMPLE_KEGG_FILE.name,
+        headers={
+            "Content-Disposition": f"attachment; filename={SAMPLE_KEGG_FILE.name}"
+        }
     )

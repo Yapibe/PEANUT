@@ -25,6 +25,13 @@ handlers:
     maxBytes: 10485760  # 10MB
     backupCount: 5
     encoding: utf8
+  error_file:
+    class: logging.handlers.RotatingFileHandler
+    formatter: default
+    filename: "/app/pipeline/Outputs/logs/error.log"
+    maxBytes: 10485760  # 10MB
+    backupCount: 5
+    encoding: utf8
 
 loggers:
   uvicorn:
@@ -36,10 +43,26 @@ loggers:
     handlers: [console, access_file]
     propagate: no
   uvicorn.error:
-    level: INFO
-    handlers: [console, app_file]
+    level: ERROR
+    handlers: [console, error_file]
     propagate: no
   app:  # Add logger for your application
+    level: DEBUG
+    handlers: [console, app_file]
+    propagate: no
+  app.pipeline_runner:
+    level: DEBUG
+    handlers: [console, app_file]
+    propagate: no
+  app.routes:
+    level: DEBUG
+    handlers: [console, app_file]
+    propagate: no
+  app.temp_manager:
+    level: DEBUG
+    handlers: [console, app_file]
+    propagate: no
+  app.utils:
     level: DEBUG
     handlers: [console, app_file]
     propagate: no

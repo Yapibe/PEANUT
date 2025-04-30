@@ -9,13 +9,12 @@ similarity matrices, performing propagation, and normalizing results.
 import logging
 import time
 from pathlib import Path
-from typing import Dict, Tuple, Optional, Union
+from typing import Dict, Tuple
 import networkx as nx
 import numpy as np
 import pandas as pd
 import scipy.sparse as sp
-from scipy.sparse.linalg import cg, inv
-
+from scipy.sparse.linalg import cg
 from .pathway_enrichment import perform_enrichment
 from .settings import Settings, ConditionSettings
 

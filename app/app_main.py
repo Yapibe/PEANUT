@@ -1,33 +1,15 @@
-import logging
-import logging.config
-import sys
-import time
 from pathlib import Path
 from fastapi import FastAPI, Request, Response, status
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.staticfiles import StaticFiles
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from .routes import router
+from .utils import setup_logging
 
-# Configure both application and access logging
-logging.basicConfig(
-    level=logging.INFO,
-    handlers=[
-        logging.FileHandler("app.log"),
-        logging.StreamHandler(sys.stdout)
-    ],
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-
-# Explicitly configure uvicorn access logger
-uvicorn_access_logger = logging.getLogger("uvicorn.access")
-uvicorn_access_logger.setLevel(logging.INFO)
-if not uvicorn_access_logger.handlers:
-    uvicorn_access_logger.addHandler(logging.StreamHandler(sys.stdout))
-    uvicorn_access_logger.addHandler(logging.FileHandler("access.log"))
-
-logger = logging.getLogger(__name__)
+# Setup logging
+logger = setup_logging()
 
 # FastAPI app lifespan
 async def lifespan(app: FastAPI):
@@ -67,10 +49,20 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 media_type="application/json"
             )
 
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
+
 middleware = [
     Middleware(ProxyHeadersMiddleware),
     Middleware(AddCacheControlHeadersMiddleware),
     Middleware(RequestLoggingMiddleware),
+    Middleware(SecurityHeadersMiddleware),
 ]
 
 # FastAPI app initialization
@@ -78,6 +70,20 @@ app = FastAPI(
     lifespan=lifespan,
     middleware=middleware,
     root_path="/peanut",
+    title="PEANUT",
+    description="Pathway Enrichment Analysis Using Network Propagation",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Health check endpoint
@@ -88,6 +94,9 @@ async def health_check():
 
 # Mount static files directly on the app
 static_dir = Path(__file__).resolve().parent / "static"
+if not static_dir.exists():
+    logger.warning(f"Static directory not found: {static_dir}")
+    static_dir.mkdir(parents=True, exist_ok=True)
 
 app.mount(
     "/static",

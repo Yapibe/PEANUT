@@ -15,6 +15,7 @@ from typing import Union, Dict, List, Tuple, Set, Any, Optional
 import numpy as np
 import networkx as nx
 import pandas as pd
+import yaml
 
 from .settings import Settings, ConditionSettings
 
@@ -24,7 +25,28 @@ logger = logging.getLogger(__name__)
 # LOAD FUNCTIONS
 # ###################################################################
 
+def load_config(config_path: Optional[Path] = None) -> Dict[str, Any]:
+    """Load configuration from YAML file.
+    
+    Args:
+        config_path: Optional path to config file. If None, uses default location.
+        
+    Returns:
+        Dictionary containing configuration settings
+    """
+    if config_path is None:
+        config_path = Path(__file__).resolve().parent.parent / "config" / "pipeline_config.yaml"
+    
+    try:
+        with open(config_path, 'r') as f:
+            config = yaml.safe_load(f)
+        logger.info(f"Loaded configuration from {config_path}")
+        return config
+    except Exception as e:
+        logger.error(f"Error loading configuration from {config_path}: {str(e)}")
+        raise
 
+    
 def load_pathways_genes(pathways_dir: Path) -> Dict[str, List[str]]:
     """
     Load the pathways and their associated genes from a file.

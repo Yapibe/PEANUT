@@ -11,9 +11,9 @@ import zipfile
 from pathlib import Path
 from typing import List, Tuple, Dict, Any, Set, Optional, Union
 import pandas as pd
-import yaml
 from dataclasses import replace
 import sys
+import networkx as nx
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ sys.path.append(str(parent_dir))
 from app.models import SettingsInput
 from pipeline.propagation_routines import perform_propagation
 from pipeline.settings import ConditionSettings, Settings
-from pipeline.utils import process_condition, read_network
+from pipeline.utils import process_condition, read_network, load_config
 from pipeline.visualization_tools import plot_pathways_mean_scores
 
 
@@ -366,12 +366,7 @@ async def main():
         logger.info("Starting PEANUT pipeline from configuration file")
         
         # Load configuration from YAML file
-        config_path = Path(__file__).resolve().parent / "config.yaml"
-        if not config_path.exists():
-            raise FileNotFoundError(f"Configuration file not found: {config_path}")
-            
-        with config_path.open("r") as f:
-            config = yaml.safe_load(f)
+        config = load_config()
             
         logger.info(f"Loaded configuration for experiment: {config['experiment_name']}")
 

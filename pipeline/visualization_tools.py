@@ -7,7 +7,7 @@ analysis, including generating plots for pathway scores across conditions.
 
 import logging
 from pathlib import Path
-from typing import Dict, Optional, List, Set, Any, Tuple
+from typing import Dict, Optional, Set
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd

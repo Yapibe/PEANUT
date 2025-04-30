@@ -75,7 +75,7 @@ The PEANUT tool is available at [GitHub Repository](https://github.com/Yapibe/PE
    - The results will include significant pathways and gene information for each condition, along with comparative visualizations in a PNG file.
 
 ### Backend Usage (Optional)
-1. **Configure the Program**: Modify `config.yaml` to specify input/output directories and statistical parameters for advanced usage outside the web interface.
+1. **Configure the Program**: Modify `config/pipeline_config.yaml` to specify input/output directories and statistical parameters for advanced usage outside the web interface.
 2. **Run the Backend Pipeline**:
    ```sh
    python pipeline/pipeline_main.py
@@ -140,6 +140,9 @@ For users preferring command-line execution, the pipeline consists of:
     - `pipeline_runner.py`: Executes the backend pipeline.
     - `routes.py`: Handles file uploads, job status, and result download routes.
     - `utils.py`: Utility functions for data processing and file handling.
+  - **config/**: 
+    - `log_config.yaml`: Contains Logger configurations
+    - `pipeline_config.yaml`: Contains pipeline configurations
   - **pipeline/**: Backend code for pathway analysis.
     - **Data/**
       - `H_sapiens`: Contains gene names, pathways, network, and matrix data.
