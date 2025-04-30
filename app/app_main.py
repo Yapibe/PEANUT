@@ -28,7 +28,6 @@ if not uvicorn_access_logger.handlers:
     uvicorn_access_logger.addHandler(logging.FileHandler("access.log"))
 
 logger = logging.getLogger(__name__)
-logger.debug("Logging has been configured with basicConfig")
 
 # FastAPI app lifespan
 async def lifespan(app: FastAPI):
