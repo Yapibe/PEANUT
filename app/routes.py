@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, cast
 from fastapi import APIRouter, UploadFile, HTTPException, BackgroundTasks, Request, Form, File
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -12,31 +12,30 @@ from concurrent.futures import ThreadPoolExecutor
 from .models import SettingsInput, JobStatus
 from .utils import validate_input_file, setup_logging
 from .pipeline_runner import PipelineRunner
+from .app_main import config
 
 logger = setup_logging()
 router = APIRouter()
 
 # Set up templates
-templates = Jinja2Templates(directory="app/templates")
+templates = Jinja2Templates(directory=str(config["base_dir"] / "templates"))
 
 # In-memory job storage with cleanup
-job_storage: Dict[str, Dict] = {}
-JOB_EXPIRY_HOURS = 4  # Jobs expire after 4 hours
+job_storage: Dict[str, Dict[str, Any]] = {}
 
 # Sample data file paths
-SAMPLE_DATA_DIR = Path("app/static/sample_data")
-SAMPLE_EXPRESSION_FILE = SAMPLE_DATA_DIR / "GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk"
-SAMPLE_KEGG_FILE = SAMPLE_DATA_DIR / "kegg.gmt"
+SAMPLE_EXPRESSION_FILE = config["sample_data_dir"] / "GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk"
+SAMPLE_KEGG_FILE = config["sample_data_dir"] / "kegg.gmt"
 
 # Thread pool for file operations
-thread_pool = ThreadPoolExecutor(max_workers=4)
+thread_pool = ThreadPoolExecutor(max_workers=config["worker_count"])
 
-async def cleanup_expired_jobs():
+async def cleanup_expired_jobs() -> None:
     """Clean up expired jobs from storage."""
     current_time = datetime.now()
     expired_jobs = [
         job_id for job_id, job in job_storage.items()
-        if (current_time - datetime.fromisoformat(job['created_at'])).total_seconds() > JOB_EXPIRY_HOURS * 3600
+        if (current_time - datetime.fromisoformat(cast(str, job['created_at']))).total_seconds() > config["job_expiry_hours"] * 3600
     ]
     for job_id in expired_jobs:
         logger.info(f"Cleaning up expired job: {job_id}")
@@ -79,6 +78,28 @@ async def run_pipeline(
         }
         logger.debug(f"Initialized job storage for {job_code}")
 
+        # Create temporary directory for network and pathway files
+        temp_dir = Path(f"/tmp/peanut_{job_code}")
+        temp_dir.mkdir(exist_ok=True)
+        
+        # Save network file if provided
+        network_file_path = None
+        if network == 'custom' and network_file:
+            logger.debug(f"Saving custom network file: {network_file.filename}")
+            network_file_path = temp_dir / network_file.filename
+            content = await network_file.read()
+            network_file_path.write_bytes(content)
+            logger.info(f"Saved network file to {network_file_path}")
+            
+        # Save pathway file if provided
+        pathway_file_path = None
+        if pathway_file == 'custom' and pathway_file_upload:
+            logger.debug(f"Saving custom pathway file: {pathway_file_upload.filename}")
+            pathway_file_path = temp_dir / pathway_file_upload.filename
+            content = await pathway_file_upload.read()
+            pathway_file_path.write_bytes(content)
+            logger.info(f"Saved pathway file to {pathway_file_path}")
+
         # Validate and process input files
         file_dfs, filenames = [], []
         for file in files:
@@ -112,29 +133,37 @@ async def run_pipeline(
         # Create pipeline runner
         runner = PipelineRunner(job_code)
         
+        # Create settings for the pipeline
+        settings_input = SettingsInput(
+            experiment_name=experiment_name,
+            species=species,
+            alpha=alpha,
+            network=network,
+            pathway_file=pathway_file,
+            min_genes_per_pathway=min_genes_per_pathway,
+            max_genes_per_pathway=max_genes_per_pathway,
+            fdr_threshold=fdr_threshold,
+            run_gsea=run_gsea,
+            restrict_to_network=restrict_to_network,
+            figure_title=plot_title,
+        )
+        
+        # Set file paths if files were uploaded
+        if network_file_path:
+            settings_input.network_file_path = str(network_file_path)
+        if pathway_file_path:
+            settings_input.pathway_file_path = str(pathway_file_path)
+        
         # Add pipeline task to background tasks
         background_tasks.add_task(
             _run_pipeline_task,
             runner=runner,
-            settings=SettingsInput(
-                experiment_name=experiment_name,
-                species=species,
-                alpha=alpha,
-                network=network,
-                network_file=network_file,
-                pathway_file=pathway_file,
-                pathway_file_upload=pathway_file_upload,
-                min_genes_per_pathway=min_genes_per_pathway,
-                max_genes_per_pathway=max_genes_per_pathway,
-                fdr_threshold=fdr_threshold,
-                run_gsea=run_gsea,
-                restrict_to_network=restrict_to_network,
-                figure_title=plot_title,
-            ),
+            settings=settings_input,
             file_dfs=file_dfs,
             filenames=filenames,
             job_storage=job_storage,
-            job_code=job_code
+            job_code=job_code,
+            temp_dir=temp_dir
         )
         
         logger.info(f"Pipeline request processed successfully. Returning job code: {job_code}")
@@ -154,6 +183,7 @@ async def _run_pipeline_task(
     filenames: List[str],
     job_storage: Dict[str, Dict[str, Any]],
     job_code: str,
+    temp_dir: Path,
 ):
     """Run the pipeline in the background."""
     logger.info(f"Starting background pipeline task for job {job_code}")
@@ -165,7 +195,8 @@ async def _run_pipeline_task(
         output_file = results.get("output_file")
         logger.info(f"Pipeline execution completed. Output file: {output_file}")
         
-        download_url = f"/peanut/download/{job_code}"
+        # Generate download URL with configured root path
+        download_url = f"{config['root_path']}/download/{job_code}"
         logger.debug(f"Generated download URL: {download_url}")
         
         # Update job storage
@@ -190,6 +221,15 @@ async def _run_pipeline_task(
             "error": str(e),
             "last_updated": datetime.now().isoformat()
         })
+    finally:
+        # Clean up temporary files
+        if temp_dir.exists():
+            import shutil
+            try:
+                shutil.rmtree(temp_dir)
+                logger.debug(f"Cleaned up temporary directory: {temp_dir}")
+            except Exception as e:
+                logger.error(f"Failed to clean up temporary directory {temp_dir}: {str(e)}")
 
 @router.get("/check-status/{job_code}")
 async def check_status(job_code: str) -> JobStatus:
@@ -208,13 +248,14 @@ async def check_status(job_code: str) -> JobStatus:
     
     download_url = None
     if job["status"] == "Completed" and job["output_file"]:
-        download_url = f"/peanut/download/{job_code}"
+        download_url = f"{config['root_path']}/download/{job_code}"
         logger.info(f"Job completed. Download URL: {download_url}")
     
     return JobStatus(
         status=job["status"],
         download_url=download_url,
-        error=job["error"]
+        error=job["error"],
+        job_code=job_code
     )
 
 @router.get("/download/{job_code}")
@@ -262,7 +303,8 @@ async def download_sample_expression():
         media_type="text/plain",
         filename=SAMPLE_EXPRESSION_FILE.name,
         headers={
-            "Content-Disposition": f"attachment; filename={SAMPLE_EXPRESSION_FILE.name}"
+            "Content-Disposition": f"attachment; filename=\"{SAMPLE_EXPRESSION_FILE.name}\"",
+            "Content-Type": "text/plain; charset=utf-8"
         }
     )
 
@@ -278,6 +320,7 @@ async def download_sample_kegg():
         media_type="text/plain",
         filename=SAMPLE_KEGG_FILE.name,
         headers={
-            "Content-Disposition": f"attachment; filename={SAMPLE_KEGG_FILE.name}"
+            "Content-Disposition": f"attachment; filename=\"{SAMPLE_KEGG_FILE.name}\"",
+            "Content-Type": "text/plain; charset=utf-8"
         }
     )

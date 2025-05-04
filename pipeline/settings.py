@@ -8,6 +8,7 @@ settings for both global pipeline parameters and condition-specific settings.
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import Optional, Dict, Set, Any
 import pandas as pd
@@ -15,36 +16,50 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Constants for default values
+DEFAULT_ALPHA = 1.0
+PRECOMPUTED_ALPHAS = {0.1, 0.2}
+DEFAULT_MIN_GENES = 15
+DEFAULT_MAX_GENES = 500
+DEFAULT_FDR = 0.05
+
+
+class Species(str, Enum):
+    """Valid species options."""
+    H_SAPIENS = "H_sapiens"
+    MOUSE = "mouse"
+
+
+class NetworkType(str, Enum):
+    """Valid network types."""
+    ANAT = "Anat"
+    HUMANNET = "HumanNet"
+    CUSTOM = "custom"
+
+
+class PathwayFileType(str, Enum):
+    """Valid pathway file types."""
+    KEGG = "kegg"
+    MSIG_C2_CANONICAL = "msig_c2_canonical"
+    CUSTOM = "custom"
+
+
 @dataclass
 class Settings:
     """General arguments used throughout the pipeline.
     
     This class stores global settings that apply to the entire pipeline execution,
     including network configuration, pathway parameters, and analysis thresholds.
-    
-    Attributes:
-        experiment_name: Unique name for the experiment.
-        species: Species identifier (default: "H_sapiens").
-        alpha: Propagation parameter between 0-1 (default: 1).
-        network: Network identifier or path (default: "Anat").
-        pathway_file: Pathway database to use (default: "kegg").
-        minimum_gene_per_pathway: Minimum genes needed for pathway analysis (default: 15).
-        maximum_gene_per_pathway: Maximum genes allowed for pathway analysis (default: 500).
-        FDR_THRESHOLD: False discovery rate threshold for significance (default: 0.05).
-        run_gsea: Whether to run GSEA instead of propagation (default: False).
-        restrict_to_network: Whether to restrict gene analysis to network genes only (default: False).
-        create_similarity_matrix: Whether to create a new similarity matrix (default: False).
-        figure_title: Title for generated figures (default: "Pathway Enrichment").
     """
 
     experiment_name: str
-    species: str = "H_sapiens"
-    alpha: float = 1.0
-    network: str = "Anat"
-    pathway_file: str = "kegg"
-    minimum_gene_per_pathway: int = 15
-    maximum_gene_per_pathway: int = 500
-    FDR_THRESHOLD: float = 0.05
+    species: Species = Species.H_SAPIENS
+    alpha: float = DEFAULT_ALPHA
+    network: NetworkType = NetworkType.ANAT
+    pathway_file: PathwayFileType = PathwayFileType.KEGG
+    min_genes_per_pathway: int = DEFAULT_MIN_GENES
+    max_genes_per_pathway: int = DEFAULT_MAX_GENES
+    fdr_threshold: float = DEFAULT_FDR
     run_gsea: bool = False
     restrict_to_network: bool = False
     create_similarity_matrix: bool = False
@@ -60,62 +75,60 @@ class Settings:
     plot_output_path: Path = field(init=False, default=None)
 
     def __post_init__(self):
-        """Initialize derived paths and settings after basic initialization.
-        
-        This method sets up all necessary file paths and directories based on the 
-        provided configuration.
-        """
+        """Initialize derived paths and settings after basic initialization."""
+        # Initialize basic paths
         self.root_folder = Path(__file__).resolve().parent
         self.data_dir = self.root_folder / "Data" / self.species
-        self.date = datetime.today().strftime("%d_%m_%Y__%H_%M_%S")
+        self.date = datetime.today().strftime("%Y-%m-%dT%H-%M-%S")
 
-        # Set up matrix path based on network type and create_similarity_matrix flag
-        if self.network.startswith('custom/'):
-            # For custom networks, use the custom matrix directory
-            matrix_dir = self.data_dir / "matrix" / "custom"
-            matrix_dir.mkdir(parents=True, exist_ok=True)
-            self.similarity_matrix_path = matrix_dir / f"{Path(self.network).stem}_{self.alpha}.npz"
+        # Handle matrix settings - alpha=1.0 is special case for GSEA
+        if self.alpha == DEFAULT_ALPHA:
+            self.run_gsea = True
+            self.similarity_matrix_path = None
         else:
-            # For default networks
-            if self.create_similarity_matrix:
-                matrix_dir = self.data_dir / "matrix" / "matrix"
-                matrix_dir.mkdir(parents=True, exist_ok=True)
-                self.similarity_matrix_path = matrix_dir / f"{self.network}_{self.alpha}.npz"
-            else:
-                self.similarity_matrix_path = self.data_dir / "matrix" / f"{self.network}_{self.alpha}.npz"
-
-        # Handle network file path
-        if self.network.startswith('custom/'):
-            # For custom networks, use the path provided in the settings
-            self.network_file_path = Path(self.network)
-        else:
-            # For default networks, just use the network name
-            self.network_file_path = self.data_dir / "network" / self.network
-
-        # Ensure the network file exists
-        if not self.network_file_path.exists():
-            raise FileNotFoundError(f"Network file not found: {self.network_file_path}")
-
+            # Determine matrix path based on network and alpha
+            self._setup_matrix_path()
+        
+        # Set network file path
+        self._setup_network_path()
+        
         # Set up pathway directory and plot output paths
         self.pathway_file_dir = self.data_dir / "pathways" / self.pathway_file
         self.plot_output_path = self.root_folder / "Outputs" / "Plots"
+        
+        # Note: Directory creation should be handled by the pipeline runner
+        # or a dedicated setup function, not within this settings class.
+
+    def _setup_matrix_path(self) -> None:
+        """Set up the similarity matrix path based on network and alpha."""
+        if self._is_custom_network():
+            matrix_path = self.data_dir / "matrix" / "custom" / f"{Path(self.network).stem}_{self.alpha}.npz"
+            self.create_similarity_matrix = True
+        else:
+            # For default networks
+            if self.alpha in PRECOMPUTED_ALPHAS and not self.create_similarity_matrix:
+                matrix_path = self.data_dir / "matrix" / f"{self.network}_{self.alpha}.npz"
+            else:
+                matrix_path = self.data_dir / "matrix" / "matrix" / f"{self.network}_{self.alpha}.npz"
+                self.create_similarity_matrix = True
+        
+        self.similarity_matrix_path = matrix_path
+    
+    def _is_custom_network(self) -> bool:
+        """Check if network is custom."""
+        return self.network == NetworkType.CUSTOM or str(self.network).startswith('custom/')
+    
+    def _setup_network_path(self) -> None:
+        """Set up the network file path."""
+        if self._is_custom_network():
+            self.network_file_path = Path(self.network)
+        else:
+            self.network_file_path = self.data_dir / "network" / self.network
 
 
 @dataclass
 class ConditionSettings:
-    """Holds condition-specific settings and results.
-    
-    This class stores settings and results specific to a single experimental condition.
-    
-    Attributes:
-        condition_name: Name identifier for the condition.
-        experiment_name: Parent experiment name.
-        scores_df: DataFrame containing gene scores (default: empty DataFrame).
-        output_path: Path for result output (auto-generated).
-        date: Timestamp for the analysis (auto-generated).
-        filtered_genes: Set of genes after filtering (default: empty set).
-        pathways_statistics: Dictionary storing pathway statistics (default: empty dict).
-    """
+    """Holds condition-specific settings and results."""
 
     condition_name: str
     experiment_name: str
@@ -127,7 +140,7 @@ class ConditionSettings:
 
     def __post_init__(self):
         """Initialize derived fields after basic initialization."""
-        self.date = datetime.today().strftime("%d_%m_%Y__%H_%M_%S")
+        self.date = datetime.today().strftime("%Y-%m-%dT%H-%M-%S")
         self.output_path = (
             Path(__file__).resolve().parent
             / "Outputs"

@@ -65,7 +65,7 @@ async def pipeline_main(
         # Check for valid conditions
         if not conditions_data:
             logger.error("No condition data provided. Exiting pipeline.")
-            return None
+            raise ValueError("No condition data provided")
         
         logger.info(f"Processing {len(conditions_data)} conditions")
 
@@ -149,7 +149,7 @@ async def pipeline_main(
 
     except Exception as e:
         logger.error(f"An error occurred in pipeline_main: {e}", exc_info=True)
-        return None
+        raise  # Re-raise the exception instead of returning None
 
 
 def _initialize_settings(settings: SettingsInput, debug: bool) -> Settings:
@@ -173,9 +173,9 @@ def _initialize_settings(settings: SettingsInput, debug: bool) -> Settings:
                 create_similarity_matrix=settings.create_similarity_matrix,
                 alpha=settings.alpha,
                 pathway_file=settings.pathway_file,
-                minimum_gene_per_pathway=settings.min_genes_per_pathway,
-                maximum_gene_per_pathway=settings.max_genes_per_pathway,
-                FDR_THRESHOLD=settings.fdr_threshold,
+                min_genes_per_pathway=settings.min_genes_per_pathway,
+                max_genes_per_pathway=settings.max_genes_per_pathway,
+                fdr_threshold=settings.fdr_threshold,
                 figure_title=settings.figure_title,
                 run_gsea=settings.run_gsea,
                 restrict_to_network=settings.restrict_to_network
@@ -187,7 +187,7 @@ def _initialize_settings(settings: SettingsInput, debug: bool) -> Settings:
             
             if settings.network == 'custom' and settings.network_file:
                 # Save uploaded network file and use its path
-                network_path = f"custom/{settings.network_file}"
+                network_path = f"custom/{settings.network_file.filename}"
                 create_matrix = True
                 logger.info(f"Using custom network from {network_path}")
 
@@ -198,9 +198,9 @@ def _initialize_settings(settings: SettingsInput, debug: bool) -> Settings:
                 create_similarity_matrix=create_matrix,
                 alpha=settings.alpha,
                 pathway_file=settings.pathway_file,
-                minimum_gene_per_pathway=settings.min_genes_per_pathway,
-                maximum_gene_per_pathway=settings.max_genes_per_pathway,
-                FDR_THRESHOLD=settings.fdr_threshold,
+                min_genes_per_pathway=settings.min_genes_per_pathway,
+                max_genes_per_pathway=settings.max_genes_per_pathway,
+                fdr_threshold=settings.fdr_threshold,
                 figure_title=settings.figure_title,
                 run_gsea=settings.run_gsea,
                 restrict_to_network=settings.restrict_to_network

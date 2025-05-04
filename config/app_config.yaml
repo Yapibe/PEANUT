@@ -1,0 +1,25 @@
+# PEANUT Application Configuration
+
+# App basics
+app_name: "PEANUT"
+app_description: "Pathway Enrichment Analysis Using Network Propagation"
+app_version: "1.0.0"
+
+# Path configuration
+root_path: "/peanut"
+static_url_prefix: "/static"
+
+# Documentation
+docs_url: "/docs"
+
+# Security
+cors_origins:
+  - "http://localhost:8000"
+  - "http://localhost:3000"
+allow_credentials: true
+
+# Job settings
+job_expiry_hours: 4
+
+# Performance
+worker_count: 4 

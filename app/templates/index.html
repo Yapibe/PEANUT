@@ -277,7 +277,6 @@
             Maximum file size: 50MB
           </p>
           <p class="warning-text" style="color: red; font-weight: bold;">
-            Note: Running with a custom network may take approximately 120 minutes.
           </p>
         </div>
       </div>
@@ -285,12 +284,24 @@
         <span data-tippy-content="The alpha parameter controls how far the signal spreads through the network:
         • 0.1: Allows broader signal diffusion, better for detecting pathway-level effects
         • 0.2: More conservative propagation, emphasizing direct interactions
-        Note: For custom networks, you can select any alpha value, but computing the similarity matrix will require significant computational time (~120 minutes).">?</span>
+        • 1.0: Special case that runs equivalent to standard GSEA
+        • Custom: Any other value requires computing a similarity matrix (~120 minutes)">?</span>
       </label>
-      <select id="alpha" name="alpha" required>
+      <select id="alpha" name="alpha" onchange="ui.toggleCustomAlphaAndUpdateWarning()" required>
         <option value="0.1">0.1</option>
         <option value="0.2">0.2</option>
+        <option value="1">1.0 (GSEA equivalent)</option>
+        <option value="custom">Custom Alpha</option>
       </select>
+      <div id="custom_alpha_section" style="display: none;">
+        <label for="custom_alpha">Custom Alpha Value
+          <span data-tippy-content="Enter a custom alpha value between 0 and 1. Note: Using a custom alpha will require computing a new similarity matrix, which may take up to 120 minutes.">?</span>
+        </label>
+        <input type="number" id="custom_alpha" name="custom_alpha" step="0.01" min="0" max="1" value="0.1">
+      </div>
+      <div id="matrix_generation_warning" class="warning-text" style="display: none; color: red; font-weight: bold;">
+        Note: Your selected combination of network and alpha will require generating a new similarity matrix, which may take approximately 120 minutes.
+      </div>
       <label for="pathway_file">Gene Set
         <span data-tippy-content="Choose from pre-loaded pathway databases: KEGG (metabolic and signaling pathways) or MSigDB C2 (curated gene sets from various sources). Custom GMT files allow using your own gene sets following the same format.">?</span>
       </label>
@@ -334,19 +345,19 @@
         </a> or XLSX (Columns: GeneID, Score)
       </p>
       <input type="file" id="files" name="files" accept=".xlsx,.xls,.rnk" multiple required>
-      <button type="button" class="sample-data-btn" onclick="openSampleDataModal()">Download Sample Data</button>
-      <div class="advanced-toggle" onclick="toggleAdvancedSettings()" aria-expanded="false" aria-controls="advancedSettings">
+      <button type="button" class="sample-data-btn" onclick="openSampleDataModal()">View Sample Data</button>
+      <div class="advanced-toggle" onclick="ui.toggleAdvancedSettings()" aria-expanded="false" aria-controls="advancedSettings">
         Advanced Settings ▼
       </div>
       <div class="advanced-settings" id="advancedSettings" aria-hidden="true">
         <div class="form-group">
-          <input type="checkbox" id="run_gsea" name="run_gsea" onclick="toggleNetworkRestriction()">
+          <input type="checkbox" id="run_gsea" name="run_gsea" onclick="ui.toggleNetworkRestriction()">
           <label for="run_gsea">Run Additional GSEA Analysis
             <span data-tippy-content="Performs traditional Gene Set Enrichment Analysis alongside PEANUT, allowing direct comparison between network-based and standard enrichment results.">?</span>
           </label>
         </div>
         <div class="form-group">
-          <input type="checkbox" id="network_restriction" name="network_restriction" disabled>
+          <input type="checkbox" id="network_restriction" name="restrict_to_network" disabled>
           <label for="network_restriction">Network Restriction
             <span data-tippy-content="When enabled, GSEA analysis will only consider genes present in the selected network, ensuring fair comparison with PEANUT results. Disable to include all genes in GSEA analysis.">?</span>
           </label>
@@ -401,8 +412,9 @@
             <li><strong>Gene Expression Data:</strong> Data from a study on Alzheimer's disease (GSE5281) comparing gene expression in the visual cortex
                 <ul>
                     <li>Format: Tab-separated .rnk file with GeneID and expression score columns</li>
-                    <li><a href="/peanut/sample-data/expression" 
-                          class="sample-data-btn">
+                    <li><a href="/sample-data/expression" 
+                          class="sample-data-btn"
+                          download="GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk">
                         Download Expression Data
                     </a></li>
                 </ul>
@@ -410,8 +422,9 @@
             <li><strong>KEGG Pathways:</strong> Comprehensive collection of curated biological pathways from the KEGG database
                 <ul>
                     <li>Format: GMT file containing pathway definitions</li>
-                    <li><a href="/peanut/sample-data/kegg" 
-                          class="sample-data-btn">
+                    <li><a href="/sample-data/kegg" 
+                          class="sample-data-btn"
+                          download="kegg.gmt">
                         Download KEGG Pathways
                     </a></li>
                 </ul>
@@ -430,106 +443,23 @@
     const ROOT_PATH = document.querySelector('meta[name="root-path"]').content;
     const MAX_NETWORK_SIZE_MB = 50;
     const MAX_INPUT_SIZE_MB = 20;
-    function validateFileSize(file, maxSizeMB) {
+
+    // Utility functions
+    const utils = {
+      validateFileSize(file, maxSizeMB) {
       const maxSizeBytes = maxSizeMB * 1024 * 1024;
       if (file.size > maxSizeBytes) {
         alert(`File "${file.name}" is too large. Maximum size is ${maxSizeMB}MB.`);
         return false;
       }
       return true;
-    }
-    let statusCheckInterval = null;
+      },
 
-    function updateJobStatus(result, jobCode) {
-      console.log('Updating job status:', {
-        result: result,
-        jobCode: jobCode,
-        currentUrl: window.location.href
-      });
+      logStatusCheckStart(jobCode, url) {
+        console.log('Checking job status:', { jobCode, url, fullUrl: window.location.origin + url });
+      },
 
-      const resultDiv = document.getElementById('result');
-      resultDiv.style.display = 'block';
-      
-      const statusHtml = `
-        <h2>Job Status</h2>
-        <p>Job Code: <strong>${jobCode}</strong></p>
-        <p id="jobStatus">Status: ${result.status}</p>
-        <p id="downloadLink"></p>
-      `;
-      
-      console.log('Setting status HTML:', statusHtml);
-      resultDiv.innerHTML = statusHtml;
-
-      const downloadElement = document.getElementById('downloadLink');
-      if (result.status === 'Completed' && result.download_url) {
-        const fullDownloadUrl = window.location.origin + result.download_url;
-        console.log('Setting download link:', fullDownloadUrl);
-        downloadElement.innerHTML = `<a href="${fullDownloadUrl}" download>Download Results</a>`;
-      } else if (result.status === 'Processing') {
-        console.log('Job still processing');
-        downloadElement.innerHTML = `<p>Your job is still processing. Please check again later.</p>`;
-      } else if (result.status === 'Failed') {
-        console.log('Job failed:', result.error);
-        downloadElement.innerHTML = `<p>Your job has failed. Please try submitting again or contact support if the issue persists.</p>`;
-        if (result.error) {
-          downloadElement.innerHTML += `<p>Error: ${result.error}</p>`;
-        }
-      } else {
-        console.log('Unexpected job status:', result.status);
-        downloadElement.innerHTML = `<p>Unexpected job status. Please contact support.</p>`;
-      }
-    }
-
-    async function checkJobStatus(jobCode, isNewSubmission = false) {
-      try {
-        // 1. Construct the URL for status check
-        const url = buildStatusCheckUrl(jobCode);
-        logStatusCheckStart(jobCode, url);
-        
-        // 2. Make the request and validate response
-        const response = await fetch(url);
-        logResponseDetails(response);
-        
-        if (!response.ok) {
-          await handleFailedResponse(response);
-        }
-        
-        // 3. Parse response and update UI
-        const result = await response.json();
-        logStatusResult(result);
-
-        if (result.status === 'Completed' || result.status === 'Failed') {
-          const submitButton = document.getElementById('submitButton');
-          submitButton.disabled = false;
-          submitButton.textContent = "Submit Pathway Analysis";
-        }
-        // 4. Update the UI with job status
-        updateJobStatus(result, jobCode);
-        
-        // 5. Schedule next check if job is still processing
-        if (shouldScheduleNextCheck(isNewSubmission, result)) {
-          scheduleNextCheck(jobCode);
-        }
-        
-      } catch (error) {
-        handleStatusCheckError(error);
-      }
-    }
-
-    // Helper functions
-    function buildStatusCheckUrl(jobCode) {
-      return `${ROOT_PATH}/check-status/${jobCode}`;
-    }
-
-    function logStatusCheckStart(jobCode, url) {
-      console.log('Checking job status:', {
-        jobCode,
-        url,
-        fullUrl: window.location.origin + url
-      });
-    }
-
-    function logResponseDetails(response) {
+      logResponseDetails(response) {
       console.log('Status check response:', {
         status: response.status,
         ok: response.ok,
@@ -537,9 +467,9 @@
         headers: Object.fromEntries([...response.headers]),
         url: response.url
       });
-    }
+      },
 
-    async function handleFailedResponse(response) {
+      async handleFailedResponse(response) {
       const errorText = await response.text();
       console.error('Status check failed:', {
         status: response.status,
@@ -547,135 +477,52 @@
         responseUrl: response.url
       });
       throw new Error(`Status check failed (${response.status}): ${errorText}`);
-    }
+      },
 
-    function logStatusResult(result) {
+      logStatusResult(result) {
       console.log('Status check result:', {
-        result: result,
+          result,
         downloadUrl: result.download_url ? window.location.origin + result.download_url : null
       });
     }
+    };
 
-    function shouldScheduleNextCheck(isNewSubmission, result) {
-      return isNewSubmission && result.status === 'Processing';
-    }
-
-    function scheduleNextCheck(jobCode) {
-      console.log(`Scheduling next status check for job ${jobCode} in 5 seconds`);
-      setTimeout(() => checkJobStatus(jobCode, true), 5000);
-    }
-
-    function handleStatusCheckError(error) {
-      console.error('Status check error:', {
-        error: error,
-        message: error.message,
-        stack: error.stack
-      });
-      showRetryForm();
-    }
-
-
-    function validateFileUpload() {
-      const networkFileInput = document.getElementById('network_file');
-      networkFileInput.addEventListener('change', function() {
-        const file = this.files[0];
-        if (file && !validateFileSize(file, MAX_NETWORK_SIZE_MB)) {
-          this.value = '';
-        }
-      });
-    }
-
-    function handleStatusFormSubmit(e) {
-      e.preventDefault();
-      const jobCode = document.getElementById('jobCode').value;
-      clearInterval(statusCheckInterval);
-      checkJobStatus(jobCode, false);
-      document.getElementById('jobStatusForm').style.display = 'none';
-    }
-    function toggleAdvancedSettings() {
-      const advancedSettings = document.getElementById("advancedSettings");
-      const toggleButton = document.querySelector(".advanced-toggle");
-      const isExpanded = toggleButton.getAttribute('aria-expanded') === 'true';
-      if (isExpanded) {
-        advancedSettings.style.display = "none";
-        toggleButton.innerHTML = "Advanced Settings ▼";
-        toggleButton.setAttribute('aria-expanded', 'false');
-        advancedSettings.setAttribute('aria-hidden', 'true');
-      } else {
-        advancedSettings.style.display = "block";
-        toggleButton.innerHTML = "Advanced Settings ▲";
-        toggleButton.setAttribute('aria-expanded', 'true');
-        advancedSettings.setAttribute('aria-hidden', 'false');
+    // Modal handling
+    const modal = {
+      open() {
+        document.getElementById('sampleDataModal').style.display = 'block';
+      },
+      close() {
+        document.getElementById('sampleDataModal').style.display = 'none';
+      },
+      init() {
+        window.onclick = (event) => {
+          const modal = document.getElementById('sampleDataModal');
+          if (event.target === modal) {
+            this.close();
+          }
+        };
       }
-    }
-    function toggleNetworkRestriction() {
-      const runGseaCheckbox = document.getElementById('run_gsea');
-      const networkRestrictionCheckbox = document.getElementById('network_restriction');
-      if (runGseaCheckbox.checked) {
-        networkRestrictionCheckbox.disabled = false;
-        networkRestrictionCheckbox.parentElement.style.opacity = '1';
-      } else {
-        networkRestrictionCheckbox.checked = false;
-        networkRestrictionCheckbox.disabled = true;
-        networkRestrictionCheckbox.parentElement.style.opacity = '0.6';
-      }
-    }
-    function showRetryForm() {
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = `
-        <p>Job code cannot be found. Please try again.</p>
-        <form id="retryStatusForm">
-          <label for="retryJobCode">Enter Job Code:</label>
-          <input type="text" id="retryJobCode" name="retryJobCode" required>
-          <button type="submit">Check Status</button>
-        </form>
-      `;
-      document.getElementById('retryStatusForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const retryJobCode = document.getElementById('retryJobCode').value;
-        clearInterval(statusCheckInterval);
-        checkJobStatus(retryJobCode, false);
-      });
-    }
-    function validateForm() {
-      const validators = {
-        geneInputs: () => {
-          const min = parseInt(minGenesInput.value);
-          const max = parseInt(maxGenesInput.value);
-          return min < max;
-        },
-        fdr: () => {
-          const val = parseFloat(fdrInput.value);
-          return val > 0 && val < 1;
-        }
-      };
-      return Object.values(validators).every(v => v());
-    }
-    document.addEventListener('DOMContentLoaded', () => {
-      // Element references
-      const pipelineForm = document.getElementById('pipelineForm');
-      const statusForm = document.getElementById('statusForm');
-      const minGenesInput = document.getElementById('min_genes_per_pathway');
-      const maxGenesInput = document.getElementById('max_genes_per_pathway');
-      const fdrInput = document.getElementById('fdr_threshold');
-      const networkSelect = document.getElementById('network');
-      const customNetworkSection = document.getElementById('custom_network_section');
-      const networkFileInput = document.getElementById('network_file');
-      const pathwaySelect = document.getElementById('pathway_file');
-      const customPathwaySection = document.getElementById('custom_pathway_section');
-      const pathwayFileInput = document.getElementById('pathway_file_upload');
+    };
 
-      // Functions
-      async function handleFormSubmit(e) {
+    // Form handling
+    const formHandler = {
+      async handleFormSubmit(e) {
         e.preventDefault();
         console.log('Form submission started');
         
-        const formData = new FormData(pipelineForm);
-        const resultDiv = document.getElementById('result');
-        const submitButton = document.getElementById('submitButton');
+        const formData = new FormData(document.getElementById('pipelineForm'));
         const jobStatusForm = document.getElementById('jobStatusForm');
+        const submitButton = document.getElementById('submitButton');
 
-        // Disable button at start
+        // Handle custom alpha value
+        const alphaSelect = document.getElementById('alpha');
+        if (alphaSelect.value === 'custom') {
+          const customAlphaValue = document.getElementById('custom_alpha').value;
+          formData.set('alpha', customAlphaValue);
+          console.log('Using custom alpha value:', customAlphaValue);
+        }
+
         submitButton.disabled = true;
         submitButton.textContent = "Submitting...";
         
@@ -713,19 +560,16 @@
             const result = await response.json();
             console.log('Form submission result:', result);
 
-            resultDiv.style.display = 'block';
-            resultDiv.innerHTML = `
+            // Transform the job status form into the process status display
+            jobStatusForm.innerHTML = `
                 <h2>Job Submitted Successfully</h2>
                 <p>Your job code is: <strong>${result.job_code}</strong></p>
                 <p>Status: Processing</p>
+                <p>Your job is being processed. Please wait...</p>
             `;
-
-            jobStatusForm.style.display = 'none';
             
             console.log('Starting status checks for job:', result.job_code);
             checkJobStatus(result.job_code, true);
-            
-            // Note: Button stays disabled until checkJobStatus determines job is complete
             
         } catch (error) {
             console.error('Form submission error:', {
@@ -733,72 +577,129 @@
                 message: error.message,
                 stack: error.stack
             });
-            resultDiv.style.display = 'block';
-            resultDiv.innerHTML = `
-                <p>Error submitting job: ${error.message}</p>
+            jobStatusForm.innerHTML = `
+                <h2>Error Submitting Job</h2>
+                <p>Error: ${error.message}</p>
                 <p>Please try again or contact support if the problem persists.</p>
+                <button onclick="location.reload()">Return to Form</button>
             `;
-            // Only re-enable button on error
             submitButton.disabled = false;
             submitButton.textContent = "Submit Pathway Analysis";
         }
-        // Removed the finally block to prevent premature button reset
-      }
+      },
       
-      function handleStatusFormSubmit(e) {
+      handleStatusFormSubmit(e) {
         e.preventDefault();
         const jobCode = document.getElementById('jobCode').value;
         checkJobStatus(jobCode, false);
       }
+    };
 
-      function updateNetworkSection() {
-        const isCustom = networkSelect.value === 'custom';
-        customNetworkSection.style.display = isCustom ? 'block' : 'none';
-        customNetworkSection.setAttribute('aria-hidden', !isCustom);
-        networkSelect.setAttribute('aria-expanded', isCustom);
-        networkFileInput.required = isCustom;
-      }
+    // UI updates
+    const ui = {
+      updateJobStatus(result, jobCode) {
+        console.log('raw status payload:', result);
+        console.log('normalized status:', result.status?.toLowerCase());
+        
+        const jobStatusForm = document.getElementById('jobStatusForm');
+        const status = result.status?.toLowerCase();
+        let statusHtml = '';
+        
+        if (status === 'processing') {
+          statusHtml = `
+            <h2>Job Status</h2>
+            <p>Job Code: <strong>${jobCode}</strong></p>
+            <p>Status: Processing</p>
+            <p>Your job is being processed. Please wait...</p>
+          `;
+        } else if (status === 'completed') {
+          statusHtml = `
+            <h2>Job Completed Successfully</h2>
+            <p>Job Code: <strong>${jobCode}</strong></p>
+            <p>Status: Completed</p>
+            <p><a href="${result.download_url}" class="download-btn" download>Download Results</a></p>
+            <button onclick="location.reload()">Start New Analysis</button>
+          `;
+        } else if (status === 'failed') {
+          statusHtml = `
+            <h2>Job Failed</h2>
+            <p>Job Code: <strong>${jobCode}</strong></p>
+            <p>Status: Failed</p>
+            <p>Error: ${result.error || 'Unknown error occurred'}</p>
+            <button onclick="location.reload()">Return to Form</button>
+          `;
+        }
+        
+        jobStatusForm.innerHTML = statusHtml;
 
-      function toggleCustomPathway() {
+        if (status === 'completed' || status === 'failed') {
+          const submitButton = document.getElementById('submitButton');
+          submitButton.disabled = false;
+          submitButton.textContent = "Submit Pathway Analysis";
+        }
+      },
+
+      toggleAdvancedSettings() {
+        const advancedSettings = document.getElementById("advancedSettings");
+        const toggleButton = document.querySelector(".advanced-toggle");
+        const isExpanded = toggleButton.getAttribute('aria-expanded') === 'true';
+        
+        advancedSettings.style.display = isExpanded ? "none" : "block";
+        toggleButton.innerHTML = isExpanded ? "Advanced Settings ▼" : "Advanced Settings ▲";
+        toggleButton.setAttribute('aria-expanded', !isExpanded);
+        advancedSettings.setAttribute('aria-hidden', isExpanded);
+      },
+
+      toggleCustomPathway() {
+        const pathwaySelect = document.getElementById('pathway_file');
+        const customSection = document.getElementById('custom_pathway_section');
+        const fileInput = document.getElementById('pathway_file_upload');
         const isCustom = pathwaySelect.value === 'custom';
-        customPathwaySection.style.display = isCustom ? 'block' : 'none';
-        pathwayFileInput.required = isCustom;
-      }
+        
+        customSection.style.display = isCustom ? 'block' : 'none';
+        fileInput.required = isCustom;
+      },
 
-      function validateGeneInputs() {
-        const minVal = parseInt(minGenesInput.value);
-        const maxVal = parseInt(maxGenesInput.value);
-        if (minVal >= maxVal) {
-          minGenesInput.setCustomValidity('Minimum must be less than maximum');
-          maxGenesInput.setCustomValidity('Maximum must be greater than minimum');
-        } else {
-          minGenesInput.setCustomValidity('');
-          maxGenesInput.setCustomValidity('');
-        }
-      }
+      toggleNetworkRestriction() {
+        const runGseaCheckbox = document.getElementById('run_gsea');
+        const networkRestrictionCheckbox = document.getElementById('network_restriction');
+        const isEnabled = runGseaCheckbox.checked;
+        
+        networkRestrictionCheckbox.disabled = !isEnabled;
+        networkRestrictionCheckbox.parentElement.style.opacity = isEnabled ? '1' : '0.6';
+        if (!isEnabled) networkRestrictionCheckbox.checked = false;
+      },
 
-      function validateFDR() {
-        const fdrVal = parseFloat(fdrInput.value);
-        if (fdrVal <= 0 || fdrVal >= 1) {
-          fdrInput.setCustomValidity('FDR threshold must be between 0 and 1');
-        } else {
-          fdrInput.setCustomValidity('');
-        }
+      toggleCustomAlphaAndUpdateWarning() {
+        const alphaSelect = document.getElementById('alpha');
+        const customSection = document.getElementById('custom_alpha_section');
+        const alphaInput = document.getElementById('custom_alpha');
+        const isCustom = alphaSelect.value === 'custom';
+        
+        customSection.style.display = isCustom ? 'block' : 'none';
+        alphaInput.required = isCustom;
+        
+        this.updateMatrixGenerationWarning();
+      },
+      
+      updateMatrixGenerationWarning() {
+        const alphaSelect = document.getElementById('alpha');
+        const networkSelect = document.getElementById('network');
+        const warningDiv = document.getElementById('matrix_generation_warning');
+        
+        // Show warning if:
+        // 1. Custom network (any alpha)
+        // 2. Default network with custom alpha (not 0.1, 0.2 or 1.0)
+        const needsMatrixGeneration = 
+          networkSelect.value === 'custom' || 
+          (alphaSelect.value === 'custom');
+          
+        warningDiv.style.display = needsMatrixGeneration ? 'block' : 'none';
       }
+    };
 
-      // Attach event listeners
-      if (pipelineForm) {
-        pipelineForm.addEventListener('submit', handleFormSubmit); // Form submission
-      }
-      if (statusForm) {
-        statusForm.addEventListener('submit', handleStatusFormSubmit); // Job status check
-      }
-      networkSelect.addEventListener('change', updateNetworkSection); // Network selection
-      pathwaySelect.addEventListener('change', toggleCustomPathway); // Pathway selection
-      minGenesInput.addEventListener('input', validateGeneInputs); // Gene input validation
-      maxGenesInput.addEventListener('input', validateGeneInputs); // Gene input validation
-      fdrInput.addEventListener('input', validateFDR); // FDR input validation
-
+    // Initialize everything
+    document.addEventListener('DOMContentLoaded', () => {
       // Initialize tooltips
       tippy('[data-tippy-content]', {
         placement: 'right',
@@ -806,30 +707,73 @@
         theme: 'light',
       });
 
-      // Initial validations and setup
-      updateNetworkSection();
-      toggleCustomPathway();
-      validateGeneInputs();
-      validateFDR();
+      // Initialize modal
+      modal.init();
+
+      // Add event listeners
+      document.getElementById('pipelineForm').addEventListener('submit', formHandler.handleFormSubmit);
+      document.getElementById('statusForm').addEventListener('submit', formHandler.handleStatusFormSubmit);
+      document.getElementById('network').addEventListener('change', () => {
+        const isCustom = document.getElementById('network').value === 'custom';
+        document.getElementById('custom_network_section').style.display = isCustom ? 'block' : 'none';
+        document.getElementById('network_file').required = isCustom;
+        ui.updateMatrixGenerationWarning();
+      });
+      document.getElementById('alpha').addEventListener('change', ui.toggleCustomAlphaAndUpdateWarning);
+      document.getElementById('pathway_file').addEventListener('change', ui.toggleCustomPathway);
+      document.getElementById('run_gsea').addEventListener('change', ui.toggleNetworkRestriction);
+      document.getElementById('min_genes_per_pathway').addEventListener('input', formHandler.validateForm);
+      document.getElementById('max_genes_per_pathway').addEventListener('input', formHandler.validateForm);
+      document.getElementById('fdr_threshold').addEventListener('input', formHandler.validateForm);
+      
+      // Ensure advanced settings starts hidden
+      const advancedSettings = document.getElementById('advancedSettings');
+      const toggleButton = document.querySelector('.advanced-toggle');
+      advancedSettings.style.display = 'none';
+      toggleButton.setAttribute('aria-expanded', 'false');
+      advancedSettings.setAttribute('aria-hidden', 'true');
+      toggleButton.innerHTML = 'Advanced Settings ▼';
     });
 
-    function toggleCollapsible(button) {
-      const content = button.nextElementSibling;
-      const isVisible = content.style.display === 'block';
-      content.style.display = isVisible ? 'none' : 'block';
-      button.textContent = isVisible ? 'Advanced Settings ▼' : 'Advanced Settings ▲';
-    }
-    function toggleCustomPathway() {
-      const pathwaySelect = document.getElementById('pathway_file');
-      const customSection = document.getElementById('custom_pathway_section');
-      const fileInput = document.getElementById('pathway_file_upload');
-      if (pathwaySelect.value === 'custom') {
-        customSection.style.display = 'block';
-        fileInput.required = true;
-      } else {
-        customSection.style.display = 'none';
-        fileInput.required = false;
+    // Job status checking
+    async function checkJobStatus(jobCode, isNewSubmission = false) {
+      try {
+        const url = `${ROOT_PATH}/check-status/${jobCode}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Status check failed (${response.status}): ${errorText}`);
+        }
+        
+        const result = await response.json();
+        ui.updateJobStatus(result, jobCode);
+        
+        if (isNewSubmission && result.status === 'Processing') {
+          setTimeout(() => checkJobStatus(jobCode, true), 5000);
+        }
+        
+      } catch (error) {
+        console.error('Status check error:', error);
+        showRetryForm();
       }
+    }
+
+    function showRetryForm() {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = `
+        <p>Job code cannot be found. Please try again.</p>
+        <form id="retryStatusForm">
+          <label for="retryJobCode">Enter Job Code:</label>
+          <input type="text" id="retryJobCode" name="retryJobCode" required>
+          <button type="submit">Check Status</button>
+        </form>
+      `;
+      document.getElementById('retryStatusForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const retryJobCode = document.getElementById('retryJobCode').value;
+        checkJobStatus(retryJobCode, false);
+      });
     }
 
     function openSampleDataModal() {
@@ -838,14 +782,6 @@
 
     function closeSampleDataModal() {
         document.getElementById('sampleDataModal').style.display = 'none';
-    }
-
-    // Close modal when clicking outside of it
-    window.onclick = function(event) {
-        const modal = document.getElementById('sampleDataModal');
-        if (event.target == modal) {
-            modal.style.display = 'none';
-        }
     }
   </script>
 </body>

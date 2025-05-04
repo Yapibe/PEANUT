@@ -13,8 +13,10 @@ class SettingsInput(BaseModel):
         alpha: Network propagation parameter (0-1)
         network: Network type ('Anat', 'HumanNet', or 'custom')
         network_file: Optional custom network file
+        network_file_path: Optional path to saved network file
         pathway_file: Pathway database ('KEGG', 'Reactome', or 'custom')
         pathway_file_upload: Optional custom pathway file
+        pathway_file_path: Optional path to saved pathway file
         min_genes_per_pathway: Minimum genes per pathway
         max_genes_per_pathway: Maximum genes per pathway
         fdr_threshold: False discovery rate threshold
@@ -26,9 +28,7 @@ class SettingsInput(BaseModel):
     experiment_name: Annotated[str, StringConstraints(min_length=1, max_length=100)] = Field(
         ..., description="Name of the experiment"
     )
-    species: Literal['human', 'mouse'] = Field(
-        ..., description="Species for the analysis"
-    )
+    species: Literal['H_sapiens','mouse'] = Field(..., description="Species for the analysis")
     alpha: float = Field(
         ..., ge=0.0, le=1.0, description="Network propagation parameter"
     )
@@ -38,11 +38,17 @@ class SettingsInput(BaseModel):
     network_file: Optional[UploadFile] = Field(
         None, description="Custom network file (required if network='custom')"
     )
-    pathway_file: Literal['KEGG', 'Reactome', 'custom'] = Field(
+    network_file_path: Optional[str] = Field(
+        None, description="Path to saved network file"
+    )
+    pathway_file: Literal['kegg', 'msig_c2_canonical', 'custom'] = Field(
         ..., description="Pathway database to use"
     )
     pathway_file_upload: Optional[UploadFile] = Field(
         None, description="Custom pathway file (required if pathway_file='custom')"
+    )
+    pathway_file_path: Optional[str] = Field(
+        None, description="Path to saved pathway file"
     )
     min_genes_per_pathway: int = Field(
         default=15, ge=1, le=1000, description="Minimum genes per pathway"
@@ -75,11 +81,43 @@ class SettingsInput(BaseModel):
 
     def is_custom_network(self) -> bool:
         """Check if using a custom network."""
-        return self.network == 'custom' and self.network_file is not None
+        return self.network == 'custom' and (self.network_file is not None or self.network_file_path is not None)
 
     def is_custom_pathway(self) -> bool:
         """Check if using a custom pathway file."""
-        return self.pathway_file == 'custom' and self.pathway_file_upload is not None
+        return self.pathway_file == 'custom' and (self.pathway_file_upload is not None or self.pathway_file_path is not None)
+        
+    def needs_similarity_matrix(self) -> bool:
+        """Check if computation needs a similarity matrix.
+        
+        Returns:
+            bool: True if computation requires a similarity matrix
+        """
+        # No matrix needed for alpha=1 (GSEA equivalent)
+        if self.alpha == 1.0:
+            return False
+            
+        return True
+        
+    def needs_matrix_generation(self) -> bool:
+        """Determine if a new similarity matrix needs to be generated.
+        
+        Returns:
+            bool: True if a new matrix needs to be generated
+        """
+        # Custom network always needs matrix generation
+        if self.is_custom_network():
+            return True
+            
+        # No matrix needed for alpha=1 (GSEA equivalent)
+        if self.alpha == 1.0:
+            return False
+            
+        # For default networks, only alpha 0.1 and 0.2 have precomputed matrices
+        if self.network in ['Anat', 'HumanNet'] and self.alpha not in [0.1, 0.2]:
+            return True
+            
+        return False
 
     class Config:
         arbitrary_types_allowed = True
@@ -119,6 +157,7 @@ class JobStatus(BaseModel):
         status: Current status of the job
         download_url: URL to download results (if completed)
         error: Error message (if failed)
+        job_code: Unique identifier for the job
     """
     status: Literal['Processing', 'Completed', 'Failed'] = Field(
         ..., description="Current status of the job"
@@ -128,4 +167,7 @@ class JobStatus(BaseModel):
     )
     error: Optional[str] = Field(
         None, description="Error message (if failed)"
+    )
+    job_code: str = Field(
+        ..., description="Unique identifier for the job"
     )

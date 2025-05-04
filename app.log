@@ -1,0 +1,141 @@
+2025-05-04 15:14:36,613 - app.app_main - INFO - Static files will be served from: /home/yair/projects/Yair_propagation/app/static
+2025-05-04 15:14:36,614 - app.app_main - INFO - Contents of static directory: [PosixPath('/home/yair/projects/Yair_propagation/app/static/sample_data'), PosixPath('/home/yair/projects/Yair_propagation/app/static/favicon.png')]
+2025-05-04 15:14:36,631 - app.app_main - INFO - Application is starting up
+2025-05-04 15:14:46,744 - app.app_main - INFO - Request: GET / - Status: 200 - Time: 0.0212s
+2025-05-04 15:14:53,348 - app.routes - INFO - Generated job code: f2cda4b3-b708-42bf-902a-6e6fe8f7303c
+2025-05-04 15:14:53,349 - app.routes - DEBUG - Initializing job storage for f2cda4b3-b708-42bf-902a-6e6fe8f7303c
+2025-05-04 15:14:53,349 - app.routes - DEBUG - Current job storage state: {'f2cda4b3-b708-42bf-902a-6e6fe8f7303c': {'status': 'Processing', 'output_file': None, 'error': None, 'created_at': '2025-05-04T15:14:53.349515', 'last_updated': '2025-05-04T15:14:53.349540'}}
+2025-05-04 15:14:53,382 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2025-05-04 15:14:53,386 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2025-05-04 15:14:53,386 - app.pipeline_runner - INFO - === Initialized PipelineRunner for job f2cda4b3-b708-42bf-902a-6e6fe8f7303c ===
+2025-05-04 15:14:53,387 - app.routes - INFO - Adding pipeline task to background tasks
+2025-05-04 15:14:53,388 - app.routes - INFO - Pipeline request processed successfully. Returning job code: f2cda4b3-b708-42bf-902a-6e6fe8f7303c
+2025-05-04 15:14:53,389 - app.app_main - INFO - Request: POST /run-pipeline - Status: 200 - Time: 0.0830s
+2025-05-04 15:14:53,391 - app.routes - INFO - === Starting background pipeline task for job f2cda4b3-b708-42bf-902a-6e6fe8f7303c ===
+2025-05-04 15:14:53,391 - app.routes - DEBUG - Current job storage state: {'f2cda4b3-b708-42bf-902a-6e6fe8f7303c': {'status': 'Processing', 'output_file': None, 'error': None, 'created_at': '2025-05-04T15:14:53.349515', 'last_updated': '2025-05-04T15:14:53.349540'}}
+2025-05-04 15:14:53,391 - app.routes - INFO - Executing pipeline
+2025-05-04 15:14:53,391 - app.pipeline_runner - INFO - Starting pipeline for job f2cda4b3-b708-42bf-902a-6e6fe8f7303c
+2025-05-04 15:14:53,392 - app.pipeline_runner - INFO - Using temporary files: False
+2025-05-04 15:14:53,392 - pipeline.pipeline_main - INFO - Starting pipeline for experiment: test
+2025-05-04 15:14:53,393 - pipeline.pipeline_main - INFO - Running with settings: alpha=0.1, network=Anat
+2025-05-04 15:14:53,394 - pipeline.pipeline_main - INFO - Settings initialized: experiment=test, network=Anat
+2025-05-04 15:14:53,394 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2025-05-04 15:15:00,110 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2025-05-04 15:15:00,110 - pipeline.pipeline_main - INFO - Successfully loaded network with 19950 nodes
+2025-05-04 15:15:00,111 - pipeline.pipeline_main - INFO - Processing 1 conditions
+2025-05-04 15:15:00,111 - pipeline.pipeline_main - INFO - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2025-05-04 15:15:00,112 - pipeline.propagation_routines - INFO - Starting propagation for condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2025-05-04 15:15:00,112 - pipeline.propagation_routines - INFO - Loading existing similarity matrix...
+2025-05-04 15:15:00,112 - pipeline.propagation_routines - INFO - Reading similarity matrix from /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.1.npz
+2025-05-04 15:15:51,603 - pipeline.propagation_routines - INFO - Successfully loaded similarity matrix of shape (19950, 19950)
+2025-05-04 15:15:53,843 - pipeline.propagation_routines - INFO - Filtered from 20648 to 17591 genes in network.
+2025-05-04 15:15:58,109 - pipeline.propagation_routines - INFO - Normalized propagation scores for 17591 genes.
+2025-05-04 15:15:58,244 - pipeline.utils - INFO - Loaded 805 pathways from /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/pathways/kegg
+2025-05-04 15:15:58,384 - pipeline.utils - INFO - Filtered to 388 pathways with size between 15 and 500 genes
+2025-05-04 15:16:15,949 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 388 pathways.
+2025-05-04 15:16:28,197 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/test_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_04_05_2025__15_15_00.xlsx.
+2025-05-04 15:16:28,198 - pipeline.propagation_routines - INFO - Completed propagation for condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2025-05-04 15:16:28,292 - pipeline.pipeline_main - INFO - Processing propagation results
+2025-05-04 15:16:28,293 - pipeline.utils - INFO - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2025-05-04 15:16:28,298 - pipeline.utils - INFO - Loaded 805 pathways from /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/pathways/kegg
+2025-05-04 15:16:28,336 - pipeline.utils - INFO - Processed 389 pathways, 0 were significant
+2025-05-04 15:16:28,338 - pipeline.pipeline_main - INFO - Processed propagation for GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2025-05-04 15:16:28,338 - pipeline.pipeline_main - INFO - Generating pathway plots
+2025-05-04 15:16:28,338 - pipeline.visualization_tools - INFO - Starting pathway plotting...
+2025-05-04 15:16:28,339 - pipeline.visualization_tools - INFO - Found 0 relevant pathways
+2025-05-04 15:16:28,339 - pipeline.visualization_tools - INFO - No significant pathways to plot after filtering.
+2025-05-04 15:16:28,339 - pipeline.pipeline_main - WARNING - No plot was generated
+2025-05-04 15:16:28,341 - pipeline.pipeline_main - INFO - Created archive with 1 files at /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2025-05-04 15:16:28,341 - pipeline.pipeline_main - INFO - Pipeline completed successfully. Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2025-05-04 15:16:28,345 - app.pipeline_runner - INFO - Pipeline execution completed with output: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2025-05-04 15:16:28,345 - app.routes - INFO - Pipeline execution completed. Output file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip
+2025-05-04 15:16:28,346 - app.routes - DEBUG - Generated download URL: /peanut/download/f2cda4b3-b708-42bf-902a-6e6fe8f7303c
+2025-05-04 15:16:28,346 - app.routes - DEBUG - Updating job storage for f2cda4b3-b708-42bf-902a-6e6fe8f7303c
+2025-05-04 15:16:28,347 - app.routes - INFO - Pipeline completed successfully for job f2cda4b3-b708-42bf-902a-6e6fe8f7303c. Results available at /peanut/download/f2cda4b3-b708-42bf-902a-6e6fe8f7303c
+2025-05-04 15:16:28,361 - app.routes - INFO - === Checking status for job f2cda4b3-b708-42bf-902a-6e6fe8f7303c ===
+2025-05-04 15:16:28,361 - app.routes - DEBUG - Current job storage state: {'f2cda4b3-b708-42bf-902a-6e6fe8f7303c': {'status': 'Completed', 'output_file': '/home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip', 'error': None, 'created_at': '2025-05-04T15:14:53.349515', 'last_updated': '2025-05-04T15:16:28.346760', 'download_url': '/peanut/download/f2cda4b3-b708-42bf-902a-6e6fe8f7303c'}}
+2025-05-04 15:16:28,361 - app.routes - DEBUG - Retrieved job data: {'status': 'Completed', 'output_file': '/home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/test_results.zip', 'error': None, 'created_at': '2025-05-04T15:14:53.349515', 'last_updated': '2025-05-04T15:16:28.346760', 'download_url': '/peanut/download/f2cda4b3-b708-42bf-902a-6e6fe8f7303c'}
+2025-05-04 15:16:28,361 - app.routes - INFO - Job completed. Download URL: /peanut/download/f2cda4b3-b708-42bf-902a-6e6fe8f7303c
+2025-05-04 15:16:28,361 - app.routes - INFO - Returning status for job f2cda4b3-b708-42bf-902a-6e6fe8f7303c: Completed
+2025-05-04 15:16:28,364 - app.app_main - ERROR - Request: GET /check-status/f2cda4b3-b708-42bf-902a-6e6fe8f7303c - Error: 1 validation error for JobStatus
+job_code
+  Field required [type=missing, input_value={'status': 'Completed', '...8f7303c', 'error': None}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.9/v/missing - Time: 0.0033s
+2025-05-04 15:17:15,993 - app.app_main - INFO - Application is shutting down
+2025-05-04 15:17:35,175 - app.app_main - INFO - Static files will be served from: /home/yair/projects/Yair_propagation/app/static
+2025-05-04 15:17:35,175 - app.app_main - INFO - Contents of static directory: [PosixPath('/home/yair/projects/Yair_propagation/app/static/sample_data'), PosixPath('/home/yair/projects/Yair_propagation/app/static/favicon.png')]
+2025-05-04 15:17:35,191 - app.app_main - INFO - Application is starting up
+2025-05-04 15:17:50,049 - app.app_main - INFO - Application is shutting down
+2025-05-04 15:17:51,949 - app.app_main - INFO - Static files will be served from: /home/yair/projects/Yair_propagation/app/static
+2025-05-04 15:17:51,949 - app.app_main - INFO - Contents of static directory: [PosixPath('/home/yair/projects/Yair_propagation/app/static/sample_data'), PosixPath('/home/yair/projects/Yair_propagation/app/static/favicon.png')]
+2025-05-04 15:17:51,958 - app.app_main - INFO - Application is starting up
+2025-05-04 15:18:09,896 - app.app_main - INFO - Application is shutting down
+2025-05-04 15:18:12,719 - app.app_main - INFO - Static files will be served from: /home/yair/projects/Yair_propagation/app/static
+2025-05-04 15:18:12,720 - app.app_main - INFO - Contents of static directory: [PosixPath('/home/yair/projects/Yair_propagation/app/static/sample_data'), PosixPath('/home/yair/projects/Yair_propagation/app/static/favicon.png')]
+2025-05-04 15:18:12,736 - app.app_main - INFO - Application is starting up
+2025-05-04 15:18:38,006 - app.app_main - INFO - Application is shutting down
+2025-05-04 15:18:43,886 - app.app_main - INFO - Static files will be served from: /home/yair/projects/Yair_propagation/app/static
+2025-05-04 15:18:43,886 - app.app_main - INFO - Contents of static directory: [PosixPath('/home/yair/projects/Yair_propagation/app/static/sample_data'), PosixPath('/home/yair/projects/Yair_propagation/app/static/favicon.png')]
+2025-05-04 15:18:43,905 - app.app_main - INFO - Application is starting up
+2025-05-04 15:18:44,516 - app.app_main - INFO - Application is shutting down
+2025-05-04 15:18:47,879 - app.app_main - INFO - Static files will be served from: /home/yair/projects/Yair_propagation/app/static
+2025-05-04 15:18:47,879 - app.app_main - INFO - Contents of static directory: [PosixPath('/home/yair/projects/Yair_propagation/app/static/sample_data'), PosixPath('/home/yair/projects/Yair_propagation/app/static/favicon.png')]
+2025-05-04 15:18:47,896 - app.app_main - INFO - Application is starting up
+2025-05-04 15:18:54,825 - app.app_main - INFO - Request: GET / - Status: 200 - Time: 0.0198s
+2025-05-04 15:19:06,326 - app.routes - INFO - Generated job code: 4139f839-d0cc-484e-b161-bee3e969fc4a
+2025-05-04 15:19:06,326 - app.routes - DEBUG - Initializing job storage for 4139f839-d0cc-484e-b161-bee3e969fc4a
+2025-05-04 15:19:06,326 - app.routes - DEBUG - Current job storage state: {'4139f839-d0cc-484e-b161-bee3e969fc4a': {'status': 'Processing', 'output_file': None, 'error': None, 'created_at': '2025-05-04T15:19:06.326310', 'last_updated': '2025-05-04T15:19:06.326319'}}
+2025-05-04 15:19:06,336 - app.utils - INFO - Successfully read rnk file: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2025-05-04 15:19:06,337 - app.utils - INFO - Input file validation successful: /tmp/GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2025-05-04 15:19:06,337 - app.pipeline_runner - INFO - === Initialized PipelineRunner for job 4139f839-d0cc-484e-b161-bee3e969fc4a ===
+2025-05-04 15:19:06,337 - app.routes - INFO - Adding pipeline task to background tasks
+2025-05-04 15:19:06,338 - app.routes - INFO - Pipeline request processed successfully. Returning job code: 4139f839-d0cc-484e-b161-bee3e969fc4a
+2025-05-04 15:19:06,338 - app.app_main - INFO - Request: POST /run-pipeline - Status: 200 - Time: 0.0294s
+2025-05-04 15:19:06,339 - app.routes - INFO - === Starting background pipeline task for job 4139f839-d0cc-484e-b161-bee3e969fc4a ===
+2025-05-04 15:19:06,339 - app.routes - DEBUG - Current job storage state: {'4139f839-d0cc-484e-b161-bee3e969fc4a': {'status': 'Processing', 'output_file': None, 'error': None, 'created_at': '2025-05-04T15:19:06.326310', 'last_updated': '2025-05-04T15:19:06.326319'}}
+2025-05-04 15:19:06,339 - app.routes - INFO - Executing pipeline
+2025-05-04 15:19:06,339 - app.pipeline_runner - INFO - Starting pipeline for job 4139f839-d0cc-484e-b161-bee3e969fc4a
+2025-05-04 15:19:06,339 - app.pipeline_runner - INFO - Using temporary files: False
+2025-05-04 15:19:06,339 - pipeline.pipeline_main - INFO - Starting pipeline for experiment: status
+2025-05-04 15:19:06,339 - pipeline.pipeline_main - INFO - Running with settings: alpha=0.1, network=Anat
+2025-05-04 15:19:06,339 - pipeline.pipeline_main - INFO - Settings initialized: experiment=status, network=Anat
+2025-05-04 15:19:06,339 - pipeline.utils - INFO - Reading network from: /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/network/Anat
+2025-05-04 15:19:10,794 - pipeline.utils - INFO - Successfully loaded network with 19950 nodes and 899737 edges
+2025-05-04 15:19:10,794 - pipeline.pipeline_main - INFO - Successfully loaded network with 19950 nodes
+2025-05-04 15:19:10,795 - pipeline.pipeline_main - INFO - Processing 1 conditions
+2025-05-04 15:19:10,795 - pipeline.pipeline_main - INFO - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2025-05-04 15:19:10,796 - pipeline.propagation_routines - INFO - Starting propagation for condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2025-05-04 15:19:10,796 - pipeline.propagation_routines - INFO - Loading existing similarity matrix...
+2025-05-04 15:19:10,796 - pipeline.propagation_routines - INFO - Reading similarity matrix from /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/matrix/Anat_0.1.npz
+2025-05-04 15:20:01,696 - pipeline.propagation_routines - INFO - Successfully loaded similarity matrix of shape (19950, 19950)
+2025-05-04 15:20:03,864 - pipeline.propagation_routines - INFO - Filtered from 20648 to 17591 genes in network.
+2025-05-04 15:20:07,741 - pipeline.propagation_routines - INFO - Normalized propagation scores for 17591 genes.
+2025-05-04 15:20:07,835 - pipeline.utils - INFO - Loaded 805 pathways from /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/pathways/kegg
+2025-05-04 15:20:07,962 - pipeline.utils - INFO - Filtered to 388 pathways with size between 15 and 500 genes
+2025-05-04 15:20:25,164 - pipeline.pathway_enrichment - INFO - Completed Mann-Whitney U test and ranking for 388 pathways.
+2025-05-04 15:20:41,463 - pipeline.pathway_enrichment - INFO - Enrichment analysis completed. Results saved to /home/yair/projects/Yair_propagation/pipeline/Outputs/status_GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk_04_05_2025__15_19_10.xlsx.
+2025-05-04 15:20:41,464 - pipeline.propagation_routines - INFO - Completed propagation for condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2025-05-04 15:20:41,570 - pipeline.pipeline_main - INFO - Processing propagation results
+2025-05-04 15:20:41,571 - pipeline.utils - INFO - Processing condition: GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2025-05-04 15:20:41,576 - pipeline.utils - INFO - Loaded 805 pathways from /home/yair/projects/Yair_propagation/pipeline/Data/H_sapiens/pathways/kegg
+2025-05-04 15:20:41,613 - pipeline.utils - INFO - Processed 389 pathways, 0 were significant
+2025-05-04 15:20:41,614 - pipeline.pipeline_main - INFO - Processed propagation for GSE5281VCX_KEGG_ALZHEIMERS_DISEASE.rnk
+2025-05-04 15:20:41,615 - pipeline.pipeline_main - INFO - Generating pathway plots
+2025-05-04 15:20:41,615 - pipeline.visualization_tools - INFO - Starting pathway plotting...
+2025-05-04 15:20:41,615 - pipeline.visualization_tools - INFO - Found 0 relevant pathways
+2025-05-04 15:20:41,615 - pipeline.visualization_tools - INFO - No significant pathways to plot after filtering.
+2025-05-04 15:20:41,615 - pipeline.pipeline_main - WARNING - No plot was generated
+2025-05-04 15:20:41,617 - pipeline.pipeline_main - INFO - Created archive with 1 files at /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/status_results.zip
+2025-05-04 15:20:41,617 - pipeline.pipeline_main - INFO - Pipeline completed successfully. Results archived at: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/status_results.zip
+2025-05-04 15:20:41,620 - app.pipeline_runner - INFO - Pipeline execution completed with output: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/status_results.zip
+2025-05-04 15:20:41,620 - app.routes - INFO - Pipeline execution completed. Output file: /home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/status_results.zip
+2025-05-04 15:20:41,620 - app.routes - DEBUG - Generated download URL: /peanut/download/4139f839-d0cc-484e-b161-bee3e969fc4a
+2025-05-04 15:20:41,621 - app.routes - DEBUG - Updating job storage for 4139f839-d0cc-484e-b161-bee3e969fc4a
+2025-05-04 15:20:41,621 - app.routes - INFO - Pipeline completed successfully for job 4139f839-d0cc-484e-b161-bee3e969fc4a. Results available at /peanut/download/4139f839-d0cc-484e-b161-bee3e969fc4a
+2025-05-04 15:20:41,640 - app.routes - INFO - === Checking status for job 4139f839-d0cc-484e-b161-bee3e969fc4a ===
+2025-05-04 15:20:41,641 - app.routes - DEBUG - Current job storage state: {'4139f839-d0cc-484e-b161-bee3e969fc4a': {'status': 'Completed', 'output_file': '/home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/status_results.zip', 'error': None, 'created_at': '2025-05-04T15:19:06.326310', 'last_updated': '2025-05-04T15:20:41.621551', 'download_url': '/peanut/download/4139f839-d0cc-484e-b161-bee3e969fc4a'}}
+2025-05-04 15:20:41,641 - app.routes - DEBUG - Retrieved job data: {'status': 'Completed', 'output_file': '/home/yair/projects/Yair_propagation/pipeline/Outputs/Archives/status_results.zip', 'error': None, 'created_at': '2025-05-04T15:19:06.326310', 'last_updated': '2025-05-04T15:20:41.621551', 'download_url': '/peanut/download/4139f839-d0cc-484e-b161-bee3e969fc4a'}
+2025-05-04 15:20:41,641 - app.routes - INFO - Job completed. Download URL: /peanut/download/4139f839-d0cc-484e-b161-bee3e969fc4a
+2025-05-04 15:20:41,641 - app.routes - INFO - Returning status for job 4139f839-d0cc-484e-b161-bee3e969fc4a: Completed
+2025-05-04 15:20:41,646 - app.app_main - INFO - Request: GET /check-status/4139f839-d0cc-484e-b161-bee3e969fc4a - Status: 200 - Time: 0.0090s
+2025-05-04 15:20:48,007 - app.app_main - INFO - Request: GET /peanut/download/4139f839-d0cc-484e-b161-bee3e969fc4a - Status: 200 - Time: 0.0057s

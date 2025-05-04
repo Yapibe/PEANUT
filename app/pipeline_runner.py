@@ -7,6 +7,7 @@ import pandas as pd
 import traceback
 from datetime import datetime
 from .utils import setup_logging
+import asyncio
 
 logger = setup_logging()
 
@@ -56,29 +57,40 @@ class PipelineRunner:
             return
 
         try:
-            with self.temp_manager.create_temp_files(
-                network_filename=settings_input.network_file.filename if settings_input.is_custom_network() else None,
-                pathway_filename=settings_input.pathway_file_upload.filename if settings_input.is_custom_pathway() else None
-            ) as temp_mgr:
-                # Handle custom network file
-                if settings_input.is_custom_network():
-                    logger.debug("Handling custom network file")
-                    network_content = await settings_input.network_file.read()
-                    with open(temp_mgr.network_path, 'wb') as f:
-                        f.write(network_content)
-                    settings_input.network = str(temp_mgr.network_path)
-                    logger.info(f"Custom network saved to {temp_mgr.network_path}")
+            # For path-based files, we'll use those directly
+            if settings_input.network_file_path:
+                logger.debug(f"Using provided network file path: {settings_input.network_file_path}")
+                settings_input.network = settings_input.network_file_path
+                
+            if settings_input.pathway_file_path:
+                logger.debug(f"Using provided pathway file path: {settings_input.pathway_file_path}")
+                settings_input.pathway_file = settings_input.pathway_file_path
+                
+            # For UploadFile objects, we need to create temporary files
+            if settings_input.network_file or settings_input.pathway_file_upload:
+                with self.temp_manager.create_temp_files(
+                    network_filename=settings_input.network_file.filename if settings_input.network_file else None,
+                    pathway_filename=settings_input.pathway_file_upload.filename if settings_input.pathway_file_upload else None
+                ) as temp_mgr:
+                    # Handle custom network file
+                    if settings_input.network_file:
+                        logger.debug("Handling custom network file from upload")
+                        network_content = await settings_input.network_file.read()
+                        with open(temp_mgr.network_path, 'wb') as f:
+                            f.write(network_content)
+                        settings_input.network = str(temp_mgr.network_path)
+                        logger.info(f"Custom network saved to {temp_mgr.network_path}")
 
-                # Handle custom pathway file
-                if settings_input.is_custom_pathway():
-                    logger.debug("Handling custom pathway file")
-                    pathway_content = await settings_input.pathway_file_upload.read()
-                    with open(temp_mgr.pathway_file_path, 'wb') as f:
-                        f.write(pathway_content)
-                    settings_input.pathway_file = str(temp_mgr.pathway_file_path)
-                    logger.info(f"Custom pathway saved to {temp_mgr.pathway_file_path}")
+                    # Handle custom pathway file
+                    if settings_input.pathway_file_upload:
+                        logger.debug("Handling custom pathway file from upload")
+                        pathway_content = await settings_input.pathway_file_upload.read()
+                        with open(temp_mgr.pathway_file_path, 'wb') as f:
+                            f.write(pathway_content)
+                        settings_input.pathway_file = str(temp_mgr.pathway_file_path)
+                        logger.info(f"Custom pathway saved to {temp_mgr.pathway_file_path}")
 
-                yield
+            yield
         except Exception as e:
             logger.error(f"Error handling temporary files: {str(e)}")
             raise
@@ -101,8 +113,20 @@ class PipelineRunner:
         logger.info(f"Starting pipeline for job {self.job_id}")
         
         try:
+            # Log matrix generation needs
+            if settings_input.needs_matrix_generation():
+                if settings_input.is_custom_network():
+                    logger.info(f"Custom network detected - matrix generation will take approximately 120 minutes")
+                else:
+                    logger.info(f"Custom alpha {settings_input.alpha} with default network - matrix generation will take approximately 120 minutes")
+            
+            # Set create_similarity_matrix flag based on needs
+            if settings_input.needs_matrix_generation():
+                logger.info("Setting create_similarity_matrix=True for computation")
+                settings_input.create_similarity_matrix = True
+            
+            # Real pipeline execution
             async with self._handle_temp_files(settings_input):
-                # Execute the pipeline
                 logger.debug("Executing pipeline")
                 output_file = await execute_pipeline(
                     [(name, df) for name, df in zip(filenames, file_dfs)],

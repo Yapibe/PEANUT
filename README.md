@@ -135,6 +135,7 @@ For users preferring command-line execution, the pipeline consists of:
 - **YAIR_PROPAGATION**
   - **app/**: Contains the FastAPI web server and associated routes.
     - `static/`: Static assets for the web interface.
+    - `templates/`: HTML templates for the web interface.
     - `app_main.py`: FastAPI entry point.
     - `models.py`: Defines the data models.
     - `pipeline_runner.py`: Executes the backend pipeline.
