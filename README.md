@@ -103,7 +103,7 @@ We welcome contributions! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) for 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Contact
-For support or inquiries, please contact [your_email@example.com].
+For support or inquiries, please contact [yairp1@mail.tau.ac.il].
 
 ## Acknowledgments
 - Acknowledge any funding sources, collaborators, or institutions that contributed to the development of the tool.
