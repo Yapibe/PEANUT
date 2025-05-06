@@ -35,7 +35,7 @@ def passes_size_filter(pathway: str, pathway_sizes: Dict[str, int], settings: Se
     - bool: True if the pathway passes the filter, False otherwise.
     """
     pathway_size = pathway_sizes.get(pathway, 0)
-    return settings.minimum_gene_per_pathway <= pathway_size <= settings.maximum_gene_per_pathway
+    return settings.MIN_GENES_PER_PATHWAY <= pathway_size <= settings.MAX_GENES_PER_PATHWAY
 
 
 def calculate_mean_score(pathway: str, genes_by_pathway: Dict[str, Set[str]], scores: Dict[str, float]) -> float:

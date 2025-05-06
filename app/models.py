@@ -50,13 +50,13 @@ class SettingsInput(BaseModel):
     pathway_file_path: Optional[str] = Field(
         None, description="Path to saved pathway file"
     )
-    min_genes_per_pathway: int = Field(
+    MIN_GENES_PER_PATHWAY: int = Field(
         default=15, ge=1, le=1000, description="Minimum genes per pathway"
     )
-    max_genes_per_pathway: int = Field(
+    MAX_GENES_PER_PATHWAY: int = Field(
         default=500, ge=1, le=5000, description="Maximum genes per pathway"
     )
-    fdr_threshold: float = Field(
+    FDR_THRESHOLD: float = Field(
         default=0.05, ge=0.0, le=1.0, description="False discovery rate threshold"
     )
     run_gsea: bool = Field(

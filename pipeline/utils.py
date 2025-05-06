@@ -186,12 +186,12 @@ def load_pathways_and_propagation_scores(settings: Settings, scores_df: pd.DataF
             intersection = string_genes.intersection(scores_keys)
             
             # Check if pathway meets size criteria
-            if (settings.minimum_gene_per_pathway <= len(intersection) <= 
-                settings.maximum_gene_per_pathway):
+            if (settings.MIN_GENES_PER_PATHWAY <= len(intersection) <= 
+                settings.MAX_GENES_PER_PATHWAY):
                 genes_by_pathway[pathway] = intersection
 
         logger.info(f"Filtered to {len(genes_by_pathway)} pathways with size between "
-                   f"{settings.minimum_gene_per_pathway} and {settings.maximum_gene_per_pathway} genes")
+                   f"{settings.MIN_GENES_PER_PATHWAY} and {settings.MAX_GENES_PER_PATHWAY} genes")
 
         return genes_by_pathway, scores
     except Exception as e:
@@ -600,8 +600,8 @@ def process_condition(
             intersection = genes_as_strings.intersection(scores_keys)
             
             # Apply size filters
-            if (settings.minimum_gene_per_pathway <= len(intersection) <= 
-                settings.maximum_gene_per_pathway):
+            if (settings.MIN_GENES_PER_PATHWAY <= len(intersection) <= 
+                settings.MAX_GENES_PER_PATHWAY):
                 local_genes_by_pathway[pathway] = intersection
         
         # Update global genes_by_pathway dictionary

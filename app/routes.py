@@ -12,7 +12,7 @@ from concurrent.futures import ThreadPoolExecutor
 from .models import SettingsInput, JobStatus
 from .utils import validate_input_file, setup_logging
 from .pipeline_runner import PipelineRunner
-from .app_main import config
+from .config import config
 
 logger = setup_logging()
 router = APIRouter()

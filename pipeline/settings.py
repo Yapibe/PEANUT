@@ -57,9 +57,9 @@ class Settings:
     alpha: float = DEFAULT_ALPHA
     network: NetworkType = NetworkType.ANAT
     pathway_file: PathwayFileType = PathwayFileType.KEGG
-    min_genes_per_pathway: int = DEFAULT_MIN_GENES
-    max_genes_per_pathway: int = DEFAULT_MAX_GENES
-    fdr_threshold: float = DEFAULT_FDR
+    MIN_GENES_PER_PATHWAY: int = DEFAULT_MIN_GENES
+    MAX_GENES_PER_PATHWAY: int = DEFAULT_MAX_GENES
+    FDR_THRESHOLD: float = DEFAULT_FDR
     run_gsea: bool = False
     restrict_to_network: bool = False
     create_similarity_matrix: bool = False

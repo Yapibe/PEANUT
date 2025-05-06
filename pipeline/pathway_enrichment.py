@@ -262,8 +262,8 @@ def _run_gsea_analysis(
             gene_sets=genes_by_pathway,
             verbose=True,
             no_plot=True,
-            min_size=settings.minimum_gene_per_pathway,
-            max_size=settings.maximum_gene_per_pathway,
+            min_size=settings.MIN_GENES_PER_PATHWAY,
+            max_size=settings.MAX_GENES_PER_PATHWAY,
         )
     
         # Save results

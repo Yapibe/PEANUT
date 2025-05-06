@@ -1,21 +1,15 @@
 """
-Configuration loader for PEANUT.
+Configuration module for PEANUT.
 
-This module loads and provides access to the application configuration from YAML.
+This module loads the application configuration from YAML and provides it to other modules.
 """
 
 import yaml
 from pathlib import Path
 from typing import Dict, Any
 
-
 def load_config() -> Dict[str, Any]:
-    """Load configuration from YAML file.
-    
-    Returns:
-        Dictionary containing the configuration values.
-    """
-    # Load from YAML
+    """Load configuration from YAML file with environment variable overrides."""
     config_path = Path(__file__).resolve().parent.parent / "config" / "app_config.yaml"
     if not config_path.exists():
         raise FileNotFoundError(f"Configuration file not found: {config_path}")
@@ -31,6 +25,5 @@ def load_config() -> Dict[str, Any]:
     
     return config
 
-
-# Load the configuration once at module import
-config = load_config() 
+# Load configuration at module import time
+config = load_config()

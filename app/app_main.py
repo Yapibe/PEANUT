@@ -5,7 +5,6 @@ This module initializes the FastAPI application with all routes and middleware.
 """
 
 import os
-import yaml
 from pathlib import Path
 from typing import Dict, Any
 
@@ -16,34 +15,13 @@ from fastapi.staticfiles import StaticFiles
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 import traceback
 
-from .routes import router
+from .config import config
 from .utils import setup_logging
 from .middleware import (
     AddCacheControlHeadersMiddleware,
     RequestLoggingMiddleware,
     SecurityHeadersMiddleware,
 )
-
-# Load configuration from YAML
-def load_config() -> Dict[str, Any]:
-    """Load configuration from YAML file with environment variable overrides."""
-    config_path = Path(__file__).resolve().parent.parent / "config" / "app_config.yaml"
-    if not config_path.exists():
-        raise FileNotFoundError(f"Configuration file not found: {config_path}")
-    
-    with open(config_path, "r") as f:
-        config = yaml.safe_load(f)
-    
-    # Add computed paths (not in YAML)
-    base_dir = Path(__file__).resolve().parent
-    config["base_dir"] = base_dir
-    config["static_dir"] = base_dir / "static"
-    config["sample_data_dir"] = base_dir / "static" / "sample_data"
-    
-    return config
-
-# Load configuration
-config = load_config()
 
 # Initialize app without logging - will be set up in startup event
 app = FastAPI(
@@ -118,4 +96,5 @@ async def health_check() -> Dict[str, str]:
     return {"status": "healthy", "service": config["app_name"]}
 
 # Include routes
+from .routes import router
 app.include_router(router)

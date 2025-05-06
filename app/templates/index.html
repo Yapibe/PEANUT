@@ -581,7 +581,7 @@
                 <h2>Error Submitting Job</h2>
                 <p>Error: ${error.message}</p>
                 <p>Please try again or contact support if the problem persists.</p>
-                <button onclick="location.reload()">Return to Form</button>
+                <button style="background-color: black; color: white;" onclick="location.reload()">Return to Form</button>
             `;
             submitButton.disabled = false;
             submitButton.textContent = "Submit Pathway Analysis";
@@ -626,7 +626,7 @@
             <p>Job Code: <strong>${jobCode}</strong></p>
             <p>Status: Failed</p>
             <p>Error: ${result.error || 'Unknown error occurred'}</p>
-            <button onclick="location.reload()">Return to Form</button>
+            <button style="background-color: black; color: white;" onclick="location.reload()">Return to Form</button>
           `;
         }
         
