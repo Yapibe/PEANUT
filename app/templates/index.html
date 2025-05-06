@@ -618,7 +618,7 @@
             <p>Job Code: <strong>${jobCode}</strong></p>
             <p>Status: Completed</p>
             <p><a href="${result.download_url}" class="download-btn" download>Download Results</a></p>
-            <button onclick="location.reload()">Start New Analysis</button>
+            <button style="background-color: black; color: white;" onclick="location.reload()">Start New Analysis</button>
           `;
         } else if (status === 'failed') {
           statusHtml = `
