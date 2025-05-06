@@ -256,7 +256,7 @@ def _normalize_prop_scores(
 
 
 
-def filter_network_genes(propagation_input_df: pd.DataFrame, network: nx.Graph) -> Tuple[pd.DataFrame, Dict[str, float]]:
+def filter_network_genes(propagation_input_df: pd.DataFrame, network: nx.Graph) -> Tuple[pd.DataFrame, Dict[float, float]]:
     """
     Filter input genes to only include those present in the network.
     
@@ -265,7 +265,7 @@ def filter_network_genes(propagation_input_df: pd.DataFrame, network: nx.Graph) 
     - network (nx.Graph): Network graph.
     
     Returns:
-    - Tuple[pd.DataFrame, Dict[str, float]]: Filtered DataFrame and dictionary mapping gene IDs to scores.
+    - Tuple[pd.DataFrame, Dict[float, float]]: Filtered DataFrame and dictionary mapping gene IDs to scores.
     """
     try:
         # Convert network nodes to strings for consistent comparison
@@ -278,7 +278,7 @@ def filter_network_genes(propagation_input_df: pd.DataFrame, network: nx.Graph) 
         
         # Create a dictionary mapping gene IDs to scores
         filtered_propagation_input = {
-            str(gene_id): score
+            float(gene_id): float(score)
             for gene_id, score in zip(
                 network_genes_df["GeneID"], network_genes_df["Score"]
             )
